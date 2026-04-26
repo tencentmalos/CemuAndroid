@@ -90,7 +90,7 @@ ControllerPtr ControllerFactory::CreateController(InputAPI::Type api, std::strin
 			return std::make_shared<DSUController>(index);
 		}
 #endif
-#if HAS_GAMECUBE
+#if defined(HAS_GAMECUBE) && HAS_GAMECUBE && defined(HAS_LIBUSB)
 	case InputAPI::GameCube:
 		{
 			const auto index = uuid.find_first_of('_');
@@ -178,7 +178,7 @@ ControllerProviderPtr ControllerFactory::CreateControllerProvider(InputAPI::Type
 		}
 
 #endif
-#if HAS_GAMECUBE
+#if defined(HAS_GAMECUBE) && HAS_GAMECUBE && defined(HAS_LIBUSB)
 	case InputAPI::GameCube:
 		return std::make_shared<GameCubeControllerProvider>();
 #endif
