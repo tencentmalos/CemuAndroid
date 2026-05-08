@@ -222,7 +222,7 @@ target_link_libraries(CemuBin PRIVATE
 )
 
 if(ENABLE_SDL)
-	target_link_libraries(CemuBin PRIVATE SDL2::SDL2)
+	target_link_libraries(CemuBin PRIVATE SDL3::SDL3)
 endif()
 
 if(UNIX AND NOT APPLE)

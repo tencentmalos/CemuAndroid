@@ -158,8 +158,8 @@ option(ENABLE_WXWIDGETS "Build with wxWidgets UI (Currently required)" ON)
 
 find_package(Threads REQUIRED)
 if(ENABLE_SDL)
-	find_package(SDL2 REQUIRED)
-	add_compile_definitions("HAS_SDL=1")
+	find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
+	add_compile_definitions(HAS_SDL)
 endif()
 find_package(CURL REQUIRED)
 find_package(pugixml REQUIRED)
@@ -238,7 +238,6 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/dependencies/foundation/modules/debugbus/CMakeLis
 endif()
 
 if (ENABLE_HIDAPI)
-	find_package(hidapi REQUIRED)
 	set(SUPPORTS_WIIMOTE ON)
 	add_compile_definitions(HAS_HIDAPI)
 endif ()

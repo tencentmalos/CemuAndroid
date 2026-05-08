@@ -57,8 +57,7 @@ InputManager::InputManager()
 
 InputManager::~InputManager()
 {
-	m_update_thread_shutdown.store(true);
-	m_update_thread.join();
+	// destructors will not invoked forever, so we manually release resources in Shutdown().
 }
 
 bool s_input_config_window_has_focus = false;
@@ -966,5 +965,23 @@ void InputManager::update_thread()
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		std::this_thread::yield();
+	}
+}
+
+void InputManager::Shutdown()
+{
+    m_update_thread_shutdown = true;
+
+    if (m_update_thread.joinable())
+    {
+        m_update_thread.join();
+    }
+
+    for (auto& pad : m_vpad) pad.reset();
+	for (auto& pad : m_wpad) pad.reset();
+
+	for (auto& providers : m_api_available)
+	{
+		providers.clear();
 	}
 }

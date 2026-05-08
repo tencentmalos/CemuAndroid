@@ -123,7 +123,7 @@ if (ENABLE_HIDAPI)
 endif()
 
 if(ENABLE_SDL)
-	target_link_libraries(CemuInput PRIVATE	SDL2::SDL2)
+	target_link_libraries(CemuInput PRIVATE SDL3::SDL3)
 endif()
 
 if (ENABLE_BLUEZ)

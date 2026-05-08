@@ -12,7 +12,8 @@
     },
     "rapidjson",
     {
-      "name": "sdl2",
+      "name": "sdl3",
+      "default-features": false,
       "platform": "!android"
     },
     "boost-tokenizer",
@@ -48,7 +49,6 @@
       "name": "fmt",
       "version>=": "12.1.0"
     },
-    "hidapi",
     "libpng",
     "glm",
     {
@@ -58,6 +58,10 @@
     "zstd",
     {
       "name": "wxwidgets",
+      "default-features": false,
+      "features": [
+        "debug-support"
+      ],
       "platform": "!android"
     },
     "openssl",
@@ -93,8 +97,8 @@
       "version": "15.1.0"
     },
     {
-      "name": "sdl2",
-      "version": "2.32.10"
+      "name": "sdl3",
+      "version": "3.4.2"
     },
     {
       "name": "wxwidgets",
