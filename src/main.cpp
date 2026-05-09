@@ -19,7 +19,6 @@
 
 #include "util/helpers/helpers.h"
 #include "config/ActiveSettings.h"
-#include "Cafe/HW/Latte/Renderer/Vulkan/VsyncDriver.h"
 
 #include "Cafe/IOSU/legacy/iosu_crypto.h"
 #include "Cafe/OS/libs/vpad/vpad.h"
@@ -70,7 +69,8 @@ void _putenvSafe(const char* c)
 
 void reconfigureGLDrivers()
 {
-	// reconfigure GL drivers to store 
+#ifdef ENABLE_OPENGL
+	// reconfigure GL drivers to store
 	const fs::path nvCacheDir = ActiveSettings::GetCachePath("shaderCache/driver/nvidia/");
 
 	std::error_code err;
@@ -86,13 +86,15 @@ void reconfigureGLDrivers()
     _putenvSafe(nvCacheDirEnvOption.c_str());
 #endif
     _putenvSafe("__GL_SHADER_DISK_CACHE_SKIP_CLEANUP=1");
-
+#endif
 }
 
 void reconfigureVkDrivers()
 {
+#ifdef ENABLE_VULKAN
     _putenvSafe("DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1=1");
     _putenvSafe("DISABLE_VK_LAYER_VALVE_steam_fossilize_1=1");
+#endif
 }
 
 void WindowsInitCwd()
@@ -264,7 +266,7 @@ int main(int argc, char* argv[])
 int BreathOfTheWildChildProcessMain();
 int main(int argc, char *argv[])
 {
-#if BOOST_OS_LINUX
+#if BOOST_OS_LINUX && defined(ENABLE_VULKAN)
 	if (getenv("CEMU_DETECT_RADV") != nullptr)
 		return BreathOfTheWildChildProcessMain();
 #endif
