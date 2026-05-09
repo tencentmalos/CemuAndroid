@@ -5,7 +5,6 @@
 #include "input/motion/MotionHandler.h"
 #include "input/api/ControllerProvider.h"
 
-
 static bool operator==(const SDL_GUID& g1, const SDL_GUID& g2)
 {
 	return memcmp(&g1, &g2, sizeof(SDL_GUID)) == 0;

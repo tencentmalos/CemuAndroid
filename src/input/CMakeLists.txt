@@ -110,7 +110,9 @@ if(ENABLE_SDL)
 		api/SDL/SDLController.h
 		api/SDL/SDLControllerProvider.h
 	)
+	target_link_libraries(CemuInput PRIVATE SDL3::SDL3)
 endif()
+
 target_include_directories(CemuInput PUBLIC "../")
 
 target_link_libraries(CemuInput PRIVATE
@@ -120,10 +122,6 @@ target_link_libraries(CemuInput PRIVATE
 
 if (ENABLE_HIDAPI)
 	target_link_libraries(CemuInput PRIVATE hidapi::hidapi)
-endif()
-
-if(ENABLE_SDL)
-	target_link_libraries(CemuInput PRIVATE SDL3::SDL3)
 endif()
 
 if (ENABLE_BLUEZ)
