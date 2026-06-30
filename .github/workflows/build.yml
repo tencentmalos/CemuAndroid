@@ -211,6 +211,9 @@ jobs:
 
       - name: "Install system dependencies"
         run: |
+          # Removing azure/bicep and aws to silence warnings in GitHub Actions
+          brew uninstall bicep
+          brew untap aws/tap azure/bicep
           brew update
           brew install nasm automake libtool
 
