@@ -1,31 +1,31 @@
 [submodule "dependencies/ZArchive"]
 	path = dependencies/ZArchive
-	url = https://github.com/Exzap/ZArchive
+	url = git@github.com:tencentmalos/ZArchive.git
 	shallow = true
 [submodule "dependencies/cubeb"]
 	path = dependencies/cubeb
-	url = https://github.com/mozilla/cubeb
+	url = git@github.com:tencentmalos/cubeb.git
 	shallow = true
 [submodule "dependencies/vcpkg"]
 	path = dependencies/vcpkg
-	url = https://github.com/microsoft/vcpkg
+	url = git@github.com:tencentmalos/vcpkg.git
 	shallow = false
 [submodule "dependencies/Vulkan-Headers"]
 	path = dependencies/Vulkan-Headers
-	url = https://github.com/KhronosGroup/Vulkan-Headers
+	url = git@github.com:tencentmalos/Vulkan-Headers.git
 	shallow = true
 [submodule "dependencies/imgui"]
 	path = dependencies/imgui
-	url = https://github.com/ocornut/imgui
+	url = git@github.com:tencentmalos/imgui.git
 	shallow = true
 [submodule "dependencies/metal-cpp"]
 	path = dependencies/metal-cpp
-	url = https://github.com/bkaradzic/metal-cpp.git
+	url = git@github.com:tencentmalos/metal-cpp.git
 	shallow = true
 [submodule "dependencies/xbyak_aarch64"]
 	path = dependencies/xbyak_aarch64
-	url = https://github.com/fujitsu/xbyak_aarch64
+	url = git@github.com:tencentmalos/xbyak_aarch64.git
 [submodule "dependencies/libadrenotools"]
 	path = dependencies/libadrenotools
-	url = https://github.com/bylaws/libadrenotools
+	url = git@github.com:tencentmalos/libadrenotools.git
 	shallow = true
