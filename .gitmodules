@@ -29,3 +29,6 @@
 	path = dependencies/libadrenotools
 	url = git@github.com:tencentmalos/libadrenotools.git
 	shallow = true
+[submodule "dependencies/foundation"]
+	path = dependencies/foundation
+	url = git@github.com:tencentmalos/foundation.git

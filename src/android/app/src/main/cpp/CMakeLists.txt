@@ -15,6 +15,7 @@ add_library(CemuAndroid SHARED
         NativeLib.cpp
         NativeLocalization.cpp
         NativeLogging.cpp
+        NativeDebugDump.cpp
         NativeSettings.cpp
         NativeSwkbd.cpp
         WuaConverter.cpp
@@ -30,6 +31,8 @@ target_link_libraries(CemuAndroid PRIVATE
         CemuCafe
         CemuBin
         CemuGui
+        spatial::foundation_debugbus
+        spatial::foundation_debugbus_dumpsys
         ZArchive::zarchive
         stb
 )

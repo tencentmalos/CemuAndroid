@@ -6,6 +6,7 @@ import info.cemu.cemu.common.settings.AppSettingsStore
 import info.cemu.cemu.common.ui.localization.setLanguage
 import info.cemu.cemu.common.ui.localization.setTranslations
 import info.cemu.cemu.nativeinterface.NativeActiveSettings.initializeActiveSettings
+import info.cemu.cemu.nativeinterface.NativeDebugDump.initialize as initializeDebugDump
 import info.cemu.cemu.nativeinterface.NativeActiveSettings.setInternalDir
 import info.cemu.cemu.nativeinterface.NativeActiveSettings.setNativeLibDir
 import info.cemu.cemu.nativeinterface.NativeEmulation.initializeEmulation
@@ -14,6 +15,7 @@ import info.cemu.cemu.nativeinterface.NativeFiles
 import info.cemu.cemu.nativeinterface.NativeGraphicPacks.refreshGraphicPacks
 import info.cemu.cemu.nativeinterface.NativeLogging.crashLog
 import info.cemu.cemu.nativeinterface.NativeSwkbd.initializeSwkbd
+import info.cemu.cemu.utils.DebugDumpService
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
@@ -36,6 +38,8 @@ class CemuApplication : Application() {
         initializeTranslations()
 
         initializeCemu()
+        initializeDebugDump()
+        DebugDumpService.start(this)
 
         saveDataFiles()
     }

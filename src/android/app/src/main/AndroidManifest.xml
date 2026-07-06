@@ -56,6 +56,10 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".utils.DebugDumpService"
+            android:exported="true" />
+
         <provider
             android:name=".provider.DocumentsProvider"
             android:authorities="${applicationId}.provider"
