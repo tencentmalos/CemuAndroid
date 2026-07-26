@@ -23,21 +23,36 @@ namespace
 				out << "cemu_debug_status:\n";
 				out << "native_debugbus=true\n";
 				out << "emulator_hash=" << CEMU_STRINGIFY(EMULATOR_HASH) << "\n";
+				out << "title_running=" << (CafeSystem::IsTitleRunning() ? "true" : "false") << "\n";
+				out << "title_paused=" << (CafeSystem::IsTitlePaused() ? "true" : "false") << "\n";
 				return out.str();
 			});
 			registry.Register("pause", "Pause emulation", [](const std::vector<std::string>&) {
+				if (!CafeSystem::IsTitleRunning())
+				{
+					return std::string{"pause unavailable: no title running\n"};
+				}
+				if (CafeSystem::IsTitlePaused())
+				{
+					return std::string{"pause unchanged: title already paused\n"};
+				}
 				CafeSystem::PauseTitle();
-				return std::string{"pause requested\n"};
+				return CafeSystem::IsTitlePaused() ? std::string{"pause succeeded\n"}
+												  : std::string{"pause failed: title remains active\n"};
 			});
 			registry.Register("resume", "Resume emulation", [](const std::vector<std::string>&) {
+				if (!CafeSystem::IsTitleRunning())
+				{
+					return std::string{"resume unavailable: no title running\n"};
+				}
+				if (!CafeSystem::IsTitlePaused())
+				{
+					return std::string{"resume unchanged: title already active\n"};
+				}
 				CafeSystem::ResumeTitle();
-				return std::string{"resume requested\n"};
+				return CafeSystem::IsTitlePaused() ? std::string{"resume failed: title remains paused\n"}
+												  : std::string{"resume succeeded\n"};
 			});
-			registry.Register("screenshot", "Capture a screenshot",
-							  [](const std::vector<std::string>&) {
-								  return std::string{
-									  "screenshot unavailable: no Android capture callback registered\n"};
-							  });
 			spatial::debugbus::SetDumpsysRegistry(&registry);
 			return true;
 		}();
@@ -71,7 +86,8 @@ Java_info_cemu_cemu_nativeinterface_NativeDebugDump_getDebugDump(JNIEnv* env, [[
 {
 	const std::string requestString = JNIUtils::FromJString(env, request);
 	const std::vector<std::string> requestArgs = ToStringVector(env, args);
-	return JNIUtils::ToJString(env, GetDebugDumpRegistry().Handle(requestString, requestArgs));
+	(void)GetDebugDumpRegistry();
+	return JNIUtils::ToJString(env, spatial::debugbus::HandleDumpsysRequest(requestString, requestArgs));
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL

@@ -118,7 +118,7 @@ Android debugbus/dumpsys 不依赖这些组件。
 | native target | `CemuAndroid`（`src/android/app/src/main/cpp/CMakeLists.txt`） |
 | `buildConfig` | 已启用（`build.gradle.kts:140-141`） |
 | release minify | `isMinifyEnabled = true` |
-| release 进程模型 | `src/release/AndroidManifest.xml` 把 `EmulationActivity` 放进 `:EmulationProcess`；debug 无此拆分 |
+| 进程模型 | C4 后 Debug/Release 都使用单 App 进程；原 `src/release/AndroidManifest.xml` 已删除 |
 
 ### 已落地的 foundation 接入（commit `914917ce`）
 
@@ -156,8 +156,8 @@ Android debugbus/dumpsys 不依赖这些组件。
 | D2 | 上游 SDL3 迁移引入新子模块时，镜像到 tencentmalos 的操作由谁做 | C1-T4 |
 | D3 | 后续启用 foundation core/network/profiler/XR 时，若传递依赖导致构建时长/产物体积不可接受，是否推动 foundation 侧进一步组件化 | C5/C6 |
 | D4 | C3 裁剪构建图时，哪些子系统必须保留默认开启（需要产品侧确认，不能凭代码猜） | C3-T4 |
-| D5 | C4 Service 进程归属方案 A/B 选择 | C4 |
-| D6 | release 包是否保留 debugbus（保留则需加 permission + R8 keep 规则） | C4 |
+| D5 | **已决定：采用单 App 进程。** 删除 Release `:EmulationProcess`，游戏退出只结束 title；Service、Activity、native registry 同进程 | C4 |
+| D6 | **已决定：release 保留 debugbus。** Service 不导出，增加 signature permission 与 R8 keep 规则 | C4 |
 | D7 | C6 帧路径选型（Surface vs Vulkan），受「是否要做立体 VR」影响 | C6 |
 
 ---
@@ -551,15 +551,36 @@ core/network/profiler/XR 后若出现过大的传递依赖，
 
 前置：阶段一完成。**本阶段起恢复 Android 真机验证。**
 
-修 S1、S2、S4、S5、S7。要点：
+> **实现状态（2026-07-26）：** D5/D6 已按维护者决定落地。代码和当前设备
+> 可用范围内的验证已完成；证据见
+> `docs/verification/20260726-C4/debugbus-hardening.md`。
 
-- **S1 进程归属（触发 D5）** — 方案 A：Service 加 `android:process=":EmulationProcess"`，需处理 `CemuApplication.onCreate` 每进程各跑一次（`initializeCemu()` 等需按进程名分支）。方案 B：双进程各注册一份 registry，命令按能力分流。退出标准：debug 与 release 双变体，`pause` 后模拟器实际暂停、`resume` 恢复，返回值反映真实状态。
-- **S2 线程模型** — 加统一 helper 把 handler 体 Post 到模拟器线程，带超时；超时返回明确错误串，不挂住 binder 线程。退出标准：连续快速 `pause`/`resume` ≥20 次不崩溃不错乱；dumpsys 不超时；超时路径可触发。
-- **S4 变体隔离（触发 D6）** — 默认方案：Service 声明移到新建的 `src/android/app/src/debug/AndroidManifest.xml`；`CemuApplication.kt:41-42` 用 `BuildConfig.DEBUG` 守卫。退出标准：`aapt dump xmltree app-release.apk AndroidManifest.xml | grep -i debugdump` 无输出。
-- **S5 空壳命令** — `screenshot` 在 C5 实装前先摘掉注册。
-- **S7 双路径** — 建议 JNI 层改调 foundation 的 `HandleDumpsysRequest`，与模板一致。
+修 S1、S2、S4、S5、S7。实施结果：
 
-提交建议拆两条：`android: fix debug dump service process and threading`、`android: limit debug dump service to debug builds`。
+- **S1 单进程归属（D5）** — 删除 Release manifest 中的
+  `android:process=":EmulationProcess"`，Debug/Release 均为单 App 进程。
+  游戏退出先调用 `CafeSystem::ShutdownTitle()`，然后关闭 Activity，不再
+  `exitProcess(0)`。Service、Activity 与 native registry 因此天然同进程；
+  Service 在 Application 初始化时启动，并在 Activity started 时幂等恢复，
+  生命周期不再绑定某一局游戏。退出标准：两变体只出现一个 App PID；Debug
+  运行中 title 的 pause/resume 返回并反映实际状态；退出 title 后 App PID 不变。
+- **S2 线程模型** — `DebugDumpRequestExecutor` 把 binder 请求 Post 到 Android
+  主控制线程，2 秒超时，拒绝、超时、中断和 handler 异常都有明确错误串。
+  退出标准：单测覆盖直跑、Post、拒绝、超时和异常；Debug 真机连续
+  pause/resume ≥20 轮不崩溃、不错乱。
+- **S4 Release 保留（D6）** — Service 留在 main manifest，但
+  `exported=false` 并受 `${applicationId}.permission.DEBUG_DUMP` signature
+  permission 保护；ProGuard/R8 显式保留 Service 与 JNI bridge。退出标准：
+  两个 APK 的 merged manifest 均含受保护 Service、均无独立 process；
+  Release `help`/`status`/空闲态 pause/resume 经 R8 后可用。
+- **S5 空壳命令** — `screenshot` 在 C5 实装前已摘掉注册。
+- **S7 双路径** — JNI 统一调用 foundation `HandleDumpsysRequest()`。
+- **验证边界** — 设备未安装正式游戏。Debug 使用临时 WUHB 验证了运行中
+  title 控制；Release 已完成构建、manifest/R8/JNI 和空闲态命令验证，但
+  Release 运行中正式游戏的 pause/resume 仍需在具备游戏时补验，不能用推断
+  代替。
+
+提交建议：`android: use a single process for emulation debug control`。
 
 ---
 

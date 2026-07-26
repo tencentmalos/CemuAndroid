@@ -41,6 +41,7 @@ namespace CafeSystem
 	PREPARE_STATUS_CODE PrepareForegroundTitleFromStandaloneRPX(const fs::path& path);
 	void LaunchForegroundTitle();
 	bool IsTitleRunning();
+	bool IsTitlePaused();
 
 	void PauseTitle();
 	void ResumeTitle();

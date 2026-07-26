@@ -1,6 +1,8 @@
 package info.cemu.cemu
 
+import android.app.Activity
 import android.app.Application
+import android.os.Bundle
 import info.cemu.cemu.common.android.context.internalFolder
 import info.cemu.cemu.common.settings.AppSettingsStore
 import info.cemu.cemu.common.ui.localization.setLanguage
@@ -40,6 +42,7 @@ class CemuApplication : Application() {
         initializeCemu()
         initializeDebugDump()
         DebugDumpService.start(this)
+        registerActivityLifecycleCallbacks(DebugDumpLifecycleCallbacks(this))
 
         saveDataFiles()
     }
@@ -161,4 +164,19 @@ class CemuApplication : Application() {
 
         private var DefaultUncaughtExceptionHandler: Thread.UncaughtExceptionHandler? = null
     }
+}
+
+private class DebugDumpLifecycleCallbacks(
+    private val application: Application,
+) : Application.ActivityLifecycleCallbacks {
+    override fun onActivityStarted(activity: Activity) {
+        DebugDumpService.start(application)
+    }
+
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+    override fun onActivityResumed(activity: Activity) = Unit
+    override fun onActivityPaused(activity: Activity) = Unit
+    override fun onActivityStopped(activity: Activity) = Unit
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+    override fun onActivityDestroyed(activity: Activity) = Unit
 }

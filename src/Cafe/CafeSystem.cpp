@@ -954,6 +954,11 @@ namespace CafeSystem
 		return sSystemRunning;
 	}
 
+	bool IsTitlePaused()
+	{
+		return sTitlePaused;
+	}
+
 	void PauseTitle()
 	{
 		if (!sSystemRunning || sTitlePaused)
@@ -1134,6 +1139,7 @@ namespace CafeSystem
 		UnmountBaseDirectories();
 		DestroyMemorySpace();
 		LaunchSettings::ClearCosArgstr();
+		sTitlePaused = false;
 		sSystemRunning = false;
 	}
 

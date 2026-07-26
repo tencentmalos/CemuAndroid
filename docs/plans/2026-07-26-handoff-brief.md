@@ -17,7 +17,8 @@
 
 **foundation**（`spatial::*`）是一个内部私有库，从另一个模拟器项目 azahar 沉淀出来的通用设施：调试命令总线（debugbus）、OpenXR 框架、Android 平台工具等。它以 git submodule 形式挂在 `dependencies/foundation`。本项目是它的第二个消费方。
 
-**长期目标**是让 Cemu 在 Android XR 头显上运行。当前进度：debugbus 已做过一次试点接入（commit `914917ce`，真机验证过），XR 尚未开始。
+**长期目标**是让 Cemu 在 Android XR 头显上运行。当前进度：debugbus 已完成
+C4 单进程加固，XR 尚未开始。
 
 ---
 
@@ -35,6 +36,14 @@
 264 次编译中命中 262 次（99.24%），wall time 为 10.17s。C3-T4 按维护者决定
 暂缓，Vulkan、libusb、SDL 等现有默认构建项没有裁剪。
 
+另外：C4 已按维护者决策实施。Android Debug/Release 都采用与 Azahar 相同
+方向的单 App 进程模型，不再为 Release 单独创建 `:EmulationProcess`；游戏退出
+只关闭 title，不结束 App 进程。debugbus 跟随 App 生命周期并在 Release 保留，
+Service 不导出且受 signature permission 保护，R8 keep 规则已补齐。Debug 真机
+已用临时 WUHB 完成 20 轮 pause/resume，Release 已验证 manifest、R8/JNI 和
+空闲态命令；设备未安装正式游戏，因此 Release 的运行中 title 控制仍需以后
+随正式游戏补验。证据见 `docs/verification/20260726-C4/debugbus-hardening.md`。
+
 ---
 
 ## 阶段一：你的任务
@@ -50,7 +59,8 @@
 
 **验收面是 mac 桌面**，不是 Android 真机。选 mac 的理由：这三项工作的失败模式全在构建系统层面，桌面即可暴露，且不依赖设备、迭代快。Android 在阶段一**只要求不回归**（`assembleDebug` 仍通过）。
 
-阶段二（C4，Android debugbus 加固）才需要真机。C6/C7 是 XR，含未决设计，**现在别碰**。
+阶段二 C4（Android debugbus 加固）已完成实现并完成当前设备可用范围内的真机
+验证。下一步是 C5 命令面扩展；C6/C7 是 XR，含未决设计，**不要盲目实施**。
 
 ---
 
@@ -81,13 +91,15 @@
 
 ## 什么时候必须停下来问人
 
-spec §3 列了 7 个决策点（D1–D7）。阶段一仍可能遇到的是这四个：
+spec §3 列了 7 个决策点（D1–D7）。D5/D6 已决定；后续仍可能遇到的是：
 
 - **D1** — 内部 `origin/main` 出现官方没有的提交，或更新镜像时 push 被权限拒绝。
 - **D2** — 上游 SDL3 迁移引入新子模块时，需要先在 tencentmalos 建镜像才能合。
 - **D3** — 后续启用 core/network/profiler/XR 等 foundation 组件时，如果其传递依赖导致构建时长/体积不可接受，是否推动 foundation 侧进一步组件化。
 - **D4** — 以后恢复 C3-T4 构建图裁剪时，哪些子系统必须保留默认开启。当前
   已决定暂缓裁剪；恢复前仍必须重新确认，不能凭代码猜。
+- **D7** — C6 帧路径选型。BotW 立体 VR 目标要求 Vulkan path，进入实现前仍
+  要完成 V0 可行性门槛和正式确认。
 
 遇到这些：停下来说明情况并提问，**不要自行选择、不要降级验证标准**。
 
@@ -95,7 +107,7 @@ spec §3 列了 7 个决策点（D1–D7）。阶段一仍可能遇到的是这�
 
 ## 你的第一个动作
 
-**从 C4 的 D5/D6 决策开始，不要直接写实现。**
+**从 C4 验证记录和 C5 任务开始，不要回退单进程与 Release debugbus 决策。**
 
 先确认交接点没有漂移，再阅读 C4 任务与 C3 最终验证：
 
@@ -106,12 +118,14 @@ git fetch origin main feature/malos/basic_version
 git rev-list --left-right --count upstream/main...origin/main
 git merge-base --is-ancestor main feature/malos/basic_version
 sed -n '1,300p' docs/verification/20260726-C3/build-speedup-notes.md
-sed -n '550,575p' docs/plans/2026-07-26-foundation-integration-spec.md
+sed -n '1,260p' docs/verification/20260726-C4/debugbus-hardening.md
+sed -n '550,585p' docs/plans/2026-07-26-foundation-integration-spec.md
 ```
 
 镜像差异按 spec C1-T1/T2 处理；ancestor 检查必须返回 0。若 main 有更新，
-先按 C1-T6 merge 到 `basic_version`。随后先确认 D5（Service 进程归属）与
-D6（release 是否保留 debugbus），得到维护者决定后再实施 C4。
+先按 C1-T6 merge 到 `basic_version`。D5 已决定采用单 App 进程，D6 已决定
+Release 保留 debugbus；不要重新引入独立游戏进程。进入 C5 前，若设备已有
+正式游戏，先补做 C4 Release 运行中 title 的 pause/resume 验证。
 
 ---
 

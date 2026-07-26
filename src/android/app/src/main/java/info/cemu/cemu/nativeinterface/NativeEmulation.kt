@@ -40,6 +40,9 @@ object NativeEmulation {
     external fun launchTitle()
 
     @JvmStatic
+    external fun stopEmulation()
+
+    @JvmStatic
     external fun pauseTitle()
 
     @JvmStatic

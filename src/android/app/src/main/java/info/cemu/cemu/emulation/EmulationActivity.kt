@@ -28,7 +28,6 @@ import info.cemu.cemu.emulation.input.NativeInputDeviceListener
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlin.system.exitProcess
 
 private class InputDelegateManager(context: Context) {
     private val nativeInputDeviceListener = NativeInputDeviceListener(context)
@@ -171,7 +170,6 @@ class EmulationActivity : AppCompatActivity() {
 
     private fun onQuit() {
         finish()
-        exitProcess(0)
     }
 
     companion object {

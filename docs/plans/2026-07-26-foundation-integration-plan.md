@@ -80,8 +80,23 @@
   独立提交把全局 PCH 默认关闭，同时保留 `precompiled.h` 的普通强制包含契约。
   最终二次 clean build 命中 262/264 次（99.24%），`real 10.17s`。
 - C3-T4 按维护者决定暂缓，不裁剪 Vulkan、libusb、SDL 等默认构建项。阶段一
-  最终 macOS GUI、Android Debug/Release 与单测均通过；下一阶段为 C4，开始
-  实施前先确认 D5/D6。
+  最终 macOS GUI、Android Debug/Release 与单测均通过。
+
+### C4 已完成实现，真机验证有一项设备边界
+
+- D5 已决定采用 Azahar 同方向的单 App 进程模型：删除 Release
+  `:EmulationProcess`，游戏退出只调用 `CafeSystem::ShutdownTitle()`，不再
+  `exitProcess(0)`。debugbus 与模拟器共享同一 native registry，并跟随 App
+  生命周期。
+- D6 已决定 Release 保留 debugbus：Service 不导出，增加 signature permission
+  与 R8 keep 规则。
+- binder 请求统一 Post 到 Android 主控制线程并带 2 秒超时；命令返回实际
+  running/paused 状态，空壳 screenshot 已从 help 摘除，JNI 统一走 foundation
+  dumpsys 入口。
+- Debug 真机用临时 WUHB 连续完成 20 轮 pause/resume，退出 title 后 App PID
+  保持不变；Debug/Release 均确认只有单 PID。Release 已验证 manifest、R8/JNI
+  和空闲态命令，但设备没有安装正式游戏，运行中 title 控制留待后续补验。
+  详见 `docs/verification/20260726-C4/debugbus-hardening.md`。
 
 ### 编译加速现状
 
@@ -133,7 +148,7 @@
 | C1（已完成） | 同步官方 Cemu 上游，并把完整 main 历史 merge 到 `basic_version`，转为每阶段前置 | 无 | 中–高 |
 | C2（已完成） | foundation 合入正规化：根 CMake 按需接入、去伪造 target、加 API 版本护栏（S3、S6） | C1 | 中 |
 | C2-F（已完成） | 依赖收敛：复用 Azahar / `tencentmalos` 子模块，减少 vcpkg 交叉构建面 | C2 | 中 |
-| C3 | 编译加速：dev 关 LTO、ccache、unity build、默认关 PCH；构建图裁剪暂缓 | C2 | 低–中 |
+| C3（已完成约定范围） | 编译加速：dev 关 LTO、ccache、unity build、默认关 PCH；构建图裁剪暂缓 | C2 | 低–中 |
 
 三者顺序不可换：
 
@@ -146,7 +161,7 @@
 
 | 阶段 | 内容 | 前置 | 风险 |
 | --- | --- | --- | --- |
-| C4 | Android debugbus 加固（S1、S2、S4、S5、S7），恢复真机验证 | 阶段一 | 低 |
+| C4（已完成实现） | Android debugbus 单进程加固（S1、S2、S4、S5、S7）；Release 正式游戏运行态待设备有游戏后补验 | 阶段一 | 低 |
 | C5 | 命令面扩展：screenshot 实装、profiler、calibration | C4 | 低 |
 | C6 | XR 前置：loader 选型 + 构建 + Gradle manifest + 帧路径选型，纯色纹理跑通 session | C4 | 高 |
 | C7 | XR 输入 adapter + 游戏画面上屏（**平面画面，非立体 VR**，范围界定见 §4） | C6 | 高 |

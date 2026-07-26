@@ -24,6 +24,7 @@ import info.cemu.cemu.nativeinterface.NativeEmulation.PrepareTitleResult
 import info.cemu.cemu.nativeinterface.NativeException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -135,6 +136,7 @@ class EmulationViewModel(
 
     val destroyedSurfaces = ConditionFlags()
     var setSurfaces = ConditionFlags()
+    private var isShuttingDown = false
 
     private inner class CanvasSurfaceHolderCallback(val isMainCanvas: Boolean) :
         SurfaceHolder.Callback {
@@ -175,6 +177,12 @@ class EmulationViewModel(
         }
 
         override fun surfaceDestroyed(surfaceHolder: SurfaceHolder) {
+            if (isShuttingDown) {
+                setSurfaces.set(isMainCanvas, false)
+                destroyedSurfaces.set(isMainCanvas, true)
+                return
+            }
+
             if (setSurfaces.get(isMain = false)) {
                 NativeEmulation.clearPadSurface()
                 setSurfaces.set(isMain = false, false)
@@ -237,6 +245,22 @@ class EmulationViewModel(
                 .onError { _emulationError.value = it }
 
             _isEmulationInitialized.value = true
+        }
+    }
+
+    fun stopEmulation(onStopped: () -> Unit) {
+        if (isShuttingDown) {
+            return
+        }
+
+        isShuttingDown = true
+        viewModelScope.launch {
+            try {
+                emulationInitializationJob?.cancelAndJoin()
+                NativeEmulation.stopEmulation()
+            } finally {
+                onStopped()
+            }
         }
     }
 

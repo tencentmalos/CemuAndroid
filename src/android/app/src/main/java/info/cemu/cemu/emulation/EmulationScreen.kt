@@ -102,6 +102,10 @@ fun EmulationScreen(
         }
     }
 
+    fun quitEmulation() {
+        viewModel.stopEmulation(onQuit)
+    }
+
     suspend fun toggleMenu() {
         drawerState.apply {
             if (isClosed) {
@@ -221,7 +225,7 @@ fun EmulationScreen(
     }
 
     emulationError?.let {
-        EmulationErrorDialog(it, onQuit)
+        EmulationErrorDialog(it, ::quitEmulation)
     }
 
     if (!isEmulationInitialized) {
@@ -230,7 +234,7 @@ fun EmulationScreen(
 
     if (showQuitConfirmationDialog) {
         EmulationQuitConfirmationDialog(
-            onQuit = onQuit,
+            onQuit = ::quitEmulation,
             onDismiss = { showQuitConfirmationDialog = false },
         )
     }

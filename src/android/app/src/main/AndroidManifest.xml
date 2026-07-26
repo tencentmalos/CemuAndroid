@@ -5,6 +5,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <permission
+        android:name="${applicationId}.permission.DEBUG_DUMP"
+        android:protectionLevel="signature" />
+
     <uses-feature
         android:name="android.hardware.vulkan.version"
         android:required="true"
@@ -58,7 +62,8 @@
 
         <service
             android:name=".utils.DebugDumpService"
-            android:exported="true" />
+            android:exported="false"
+            android:permission="${applicationId}.permission.DEBUG_DUMP" />
 
         <provider
             android:name=".provider.DocumentsProvider"
