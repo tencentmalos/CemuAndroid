@@ -46,7 +46,19 @@
 - 官方 main 从内部镜像旧基线快进 59 个提交到 `b8f2cf4b`，并推送 `origin/main`。
 - `fc884596` 将 main 完整 merge 到 `feature/malos/basic_version`。
 - macOS 配置、编译和启动成功；Android `assembleDebug` 与 `testDebugUnitTest` 成功。
-- 详细证据见 `docs/verification/20260726-C1/`。下一步从 C2 开始。
+- 详细证据见 `docs/verification/20260726-C1/`。
+
+### C2 已完成
+
+- foundation 根 CMake 以 `EXCLUDE_FROM_ALL` 注册，真实 target 可供后续功能按需链接；
+  原有两个伪造 INTERFACE target 已删除。
+- Android 当前只链接并构建 debugbus/dumpsys；未使用的 foundation core、
+  network、profiler、XR 和第三方依赖不进入默认构建图。
+- Cemu 的 vcpkg 清单未因 foundation 新增 Crypto++。Azahar 中 Crypto++ 属于其
+  自有 external 层，不能照搬成第二套交叉构建依赖。
+- API 版本与子模块缺失负向护栏均已实际验证；macOS RelWithDebInfo、
+  Android Debug/Release 和单测结果见 `docs/verification/20260726-C2/`。下一步从
+  C3 开始。
 
 ### 编译加速现状
 
@@ -89,21 +101,21 @@
 
 ### 阶段一：mac 版可验基线（C1 + C2 + C3）
 
-**共同目标：在 macOS 桌面上，同步官方最新代码后，带 foundation 完整接入，能配置、能编译、能跑起来、能验证，并且编译速度可接受。**
+**共同目标：在 macOS 桌面上，同步官方最新代码后，带 foundation 根 CMake 按需接入，能配置、能编译、能跑起来、能验证，并且编译速度可接受。**
 
 选 mac 桌面而非 Android 真机作为第一步的验收面，是因为它不依赖设备、迭代快，且这三项工作（上游同步、foundation 根 CMake 接入、编译加速）的失败模式全部在构建系统层面，桌面即可暴露。Android 在阶段一只要求「不回归」（`assembleDebug` 仍通过），真机验证推迟到 C4。
 
 | 阶段 | 内容 | 前置 | 风险 |
 | --- | --- | --- | --- |
 | C1（已完成） | 同步官方 Cemu 上游，并把完整 main 历史 merge 到 `basic_version`，转为每阶段前置 | 无 | 中–高 |
-| C2 | foundation 合入正规化：改根 CMake 接入、去伪造 target、加 API 版本护栏（S3、S6） | C1 | 中 |
+| C2（已完成） | foundation 合入正规化：根 CMake 按需接入、去伪造 target、加 API 版本护栏（S3、S6） | C1 | 中 |
 | C3 | 编译加速：dev 关 LTO、ccache、unity build、裁剪构建图 | C2 | 低–中 |
 
 三者顺序不可换：
 
 - **C1 首轮必须最先且现已完成** —— 当时待同步的 31 个提交里含 `f8fb588b build: macOS CMake fixes`、`0fc74035 ENABLE_OPENGL/ENABLE_VULKAN`、`1c2b7d78 ENABLE_LIBUSB`、`8e3e961b SDL optional`。后三者是 C3 裁剪构建图的**现成工具**。
-- **C2 在 C3 之前** —— C2 会把 foundation 全量 `third_party`（imgui、mimalloc、libevent、openxr、yalantinglibs、msgpack-c、yaml-cpp 等）拉进构建图，构建时长会显著上升。先合入再加速，度量基线才有意义；反过来做，C3 的成果会被 C2 立刻抵消。
-- **C3 收尾** —— 同时也是对 C2 的兜底：如果 foundation 全量接入把构建时长推到不可接受，C3 的裁剪就是解法，实在不行再触发「推动 foundation 侧加模块开关」的决策。
+- **C2 在 C3 之前** —— 先消除伪造 target，建立真实、可测的依赖关系，再优化才不会对错误的构建图调参。Azahar 对照和实测后采用 `EXCLUDE_FROM_ALL`：根 CMake 负责注册，只有宿主明确链接的组件进入构建。
+- **C3 收尾** —— C2 已把 foundation 的未使用组件排除出默认构建，C3 聚焦 Cemu 自身的 LTO、ccache、Unity Build 和平台子系统裁剪；每一刀都以 C2 的 559 条 Ninja 命令基线为起点。
 
 ### 阶段二及以后
 
@@ -178,7 +190,7 @@
 | --- | --- | --- |
 | 无上游同步环节 | 新增 C1，并转为每阶段前置 | 制定 v2 时 android-port 落后官方 31 个提交/约 3 个月；SDL3 迁移与构建选项重构直接压在后续要改的文件上 |
 | Task 3 完成即进 Task 4 | 插入 debugbus 加固（C4）与构建正规化（C2） | Task 3 产物存在 S1–S7，带进 XR 会放大 |
-| 无编译加速环节 | 新增 C3，消费 foundation `build-acceleration.md` | 该手册从未被消费；C2 会显著增大构建图，不加速则后续每轮迭代都被拖慢 |
+| 无编译加速环节 | 新增 C3，消费 foundation `build-acceleration.md` | 该手册从未被消费；C2 已先建立按需构建的真实基线，C3 再优化 Cemu 自身热点 |
 | 第一步验收面是 Android 真机 | 阶段一改为 **mac 桌面可验** | 三项工作的失败模式全在构建系统层面，桌面即可暴露且不依赖设备；上游同步本身带来 3 个 mac 构建修复 |
 | Android debugbus 加固排第一 | 移到 C4 | 需真机、与 mac 验收目标无关，且它要改的文件会被上游同步冲突波及 |
 | 验证只覆盖 debug 包 | C4 起双变体验证 | S1 是只验 debug 的直接后果 |

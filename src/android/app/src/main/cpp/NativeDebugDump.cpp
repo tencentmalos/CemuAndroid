@@ -1,5 +1,6 @@
 #include "Cafe/CafeSystem.h"
 #include "JNIUtils.h"
+#include "spatial/core/FoundationApiVersion.h"
 #include "spatial/debugbus/DebugCommandRegistry.h"
 #include "spatial/debugbus/DumpsysBridge.h"
 
@@ -8,6 +9,8 @@
 
 #define CEMU_STRINGIFY_IMPL(value) #value
 #define CEMU_STRINGIFY(value) CEMU_STRINGIFY_IMPL(value)
+
+static_assert(SPATIAL_FOUNDATION_API_VERSION >= 1, "Unsupported spatial foundation API version");
 
 namespace
 {

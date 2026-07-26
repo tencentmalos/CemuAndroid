@@ -7,7 +7,7 @@
 
 ## 一句话任务
 
-在 `/Users/bytedance/workspace/cemu_android` 这个 Cemu 模拟器的 Android 移植 fork 上，完成阶段一：**同步官方 Cemu 最新代码 → 把 foundation 库正规化接入 → 做编译加速**，验收目标是 **macOS 桌面版能配置、能编译、能启动、能验证，且编译速度可接受**。
+在 `/Users/bytedance/workspace/cemu_android` 这个 Cemu 模拟器的 Android 移植 fork 上，完成阶段一：**同步官方 Cemu 最新代码 → 把 foundation 库按需正规化接入 → 做编译加速**，验收目标是 **macOS 桌面版能配置、能编译、能启动、能验证，且编译速度可接受**。
 
 ---
 
@@ -26,8 +26,8 @@
 三件事你必须先知道，它们直接决定第一步做什么：
 
 1. **C1 上游同步已经完成。** 本地 `main`、`origin/main` 和官方 `upstream/main` 均为 `b8f2cf4b`；`fc884596` 已把完整 main 历史 merge 到 `feature/malos/basic_version`，main 现在是该分支的祖先。同步前 mac 构建失败是合法基线；同步和兼容修复后 mac 配置、编译、启动以及 Android `assembleDebug` / `testDebugUnitTest` 均已通过。
-2. **foundation 是 hack 接入的。** 现在的 `CMakeLists.txt:219-229` 伪造了两个空的 INTERFACE target 顶替 foundation 的真实依赖，然后只 `add_subdirectory` 了它的一个子模块。这挡住了后续所有扩展。
-3. **mac 桌面构建基线已经建立。** 同步前失败、同步后成功的命令与结果在 `docs/verification/20260726-C1/`。这只证明 C1 的当前提交可验，不代表后续改动可以靠推断跳过复验。
+2. **C2 foundation 正规化已经完成。** 根 CMake 通过 `add_subdirectory(dependencies/foundation EXCLUDE_FROM_ALL)` 注册真实 target，已删除伪造 target；Android 只构建当前实际链接的 debugbus/dumpsys。未使用的 core/network/profiler/XR 和第三方库不会进入默认构建，也没有为 foundation 向 Cemu 的 vcpkg 清单新增 Crypto++。
+3. **mac 桌面构建基线已经建立并复验。** C1 证据在 `docs/verification/20260726-C1/`，C2 接入取舍、前后度量和负向测试在 `docs/verification/20260726-C2/`。这些只证明对应提交可验，不代表后续改动可以靠推断跳过复验。
 
 另外：编译加速一项没做（`RelWithDebInfo` 还开着 LTO、无 ccache 且本机未安装、Unity Build 完全未用），而 foundation 自带的编译加速手册从未被消费过。
 
@@ -40,8 +40,8 @@
 | | 阶段 | 做什么 | 为什么是这个顺序 |
 | --- | --- | --- | --- |
 | **C1（已完成）** | 上游同步 | 官方 main 更新 59 个提交，并把完整 main 历史 merge 到 `basic_version` | 这些提交含 mac 构建修复和 C3 所需的 `ENABLE_OPENGL`/`ENABLE_VULKAN`/`ENABLE_LIBUSB`/SDL optional 开关 |
-| **C2** | foundation 合入正规化 | 改用根 CMake 接入，去掉伪造 target，加 API 版本护栏 | 必须在 C3 前：C2 会把 foundation 全量第三方依赖拉进构建图，先合入再加速，度量基线才有意义 |
-| **C3** | 编译加速 | Dev 关 LTO → ccache → Unity Build → 裁剪构建图 | 同时是 C2 的兜底：如果全量接入把构建时长推爆，裁剪就是解法 |
+| **C2（已完成）** | foundation 合入正规化 | 根 CMake 按需接入，去掉伪造 target，加 API 版本护栏 | 先建立真实 target 关系与度量基线；`EXCLUDE_FROM_ALL` 保证未使用组件不污染默认构建图 |
+| **C3（下一步）** | 编译加速 | Dev 关 LTO → ccache → Unity Build → 裁剪 Cemu 构建图 | foundation 的未使用组件已按需排除，C3 聚焦 Cemu 自身的可量化热点 |
 
 **验收面是 mac 桌面**，不是 Android 真机。选 mac 的理由：这三项工作的失败模式全在构建系统层面，桌面即可暴露，且不依赖设备、迭代快。Android 在阶段一**只要求不回归**（`assembleDebug` 仍通过）。
 
@@ -80,7 +80,7 @@ spec §3 列了 7 个决策点（D1–D7）。阶段一仍可能遇到的是这�
 
 - **D1** — 内部 `origin/main` 出现官方没有的提交，或更新镜像时 push 被权限拒绝。
 - **D2** — 上游 SDL3 迁移引入新子模块时，需要先在 tencentmalos 建镜像才能合。
-- **D3** — C2 后如果 foundation 全量依赖导致构建时长/体积不可接受，是否推动 foundation 侧加模块开关。
+- **D3** — 后续启用 core/network/profiler/XR 等 foundation 组件时，如果其传递依赖导致构建时长/体积不可接受，是否推动 foundation 侧进一步组件化。
 - **D4** — C3 裁剪构建图时，哪些子系统必须保留默认开启。**这个不能凭代码猜，需要产品侧确认。**
 
 遇到这些：停下来说明情况并提问，**不要自行选择、不要降级验证标准**。
@@ -89,21 +89,21 @@ spec §3 列了 7 个决策点（D1–D7）。阶段一仍可能遇到的是这�
 
 ## 你的第一个动作
 
-**从 C2-T1 开始：把 foundation 改为根 CMake 接入。**
+**从 C3-T0 开始：记录 C2 完成后的度量基线，再逐项做编译加速。**
 
-先确认交接点没有漂移，再阅读现有 hack 和 foundation 接入指南：
+先确认交接点没有漂移，再阅读 C2 验证结果和编译加速指南：
 
 ```sh
 git status --short --branch
 git fetch upstream origin
 git rev-list --left-right --count upstream/main...origin/main
 git merge-base --is-ancestor main feature/malos/basic_version
-sed -n '200,245p' CMakeLists.txt
-sed -n '1,240p' dependencies/foundation/docs/guides/integrating-emulator-host.md
+sed -n '1,260p' docs/verification/20260726-C2/integration.md
+sed -n '1,260p' dependencies/foundation/docs/guides/build-acceleration.md
 ```
 
 镜像差异按 spec C1-T1/T2 处理；ancestor 检查必须返回 0。若 main 有更新，
-先按 C1-T6 merge 到 `basic_version`。随后执行 C2-T1，不要跳到编译加速。
+先按 C1-T6 merge 到 `basic_version`。随后执行 C3-T0，从 C2 基线开始逐刀验证。
 
 ---
 

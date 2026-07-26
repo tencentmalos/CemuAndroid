@@ -6,7 +6,8 @@
 
 ## 阶段一目标（本文重点）
 
-> **在 macOS 桌面上，同步官方 Cemu 最新代码后，带 foundation 完整接入，能配置、能编译、能跑起来、能验证，并且编译速度可接受。**
+> **在 macOS 桌面上，同步官方 Cemu 最新代码后，带 foundation 根 CMake
+> 按需接入，能配置、能编译、能跑起来、能验证，并且编译速度可接受。**
 
 阶段一 = **C1 上游同步** → **C2 foundation 合入正规化** → **C3 编译加速**，顺序不可换（理由见计划 §3）。
 
@@ -88,7 +89,12 @@ sudo cp MoltenVK/lib/libMoltenVK.dylib /opt/homebrew/lib/
 - `spatial::foundation_debugbus_profiler` — 需要 `spatial::foundation_profiler`
 - `spatial::foundation_xr`（`modules/xr/CMakeLists.txt`）— PUBLIC 依赖 `foundation_imgui`、`foundation_math`、`third_party_openxr_headers`、`vulkan-headers`；PRIVATE 依赖 `foundation_platform`、`foundation_profiler`
 
-foundation 根 CMake 会拉入 `third_party` + `basic` + `modules` 全量。`third_party` 含：imgui、imgui-websocket、libevent、luascript、lz4、mimalloc、msgpack-c、nlohmann_json、openxr、rapidjson、tinyxml2、yalantinglibs、yaml-cpp、zip。
+foundation 根 CMake 会注册 `third_party` + `basic` + `modules` 的完整 target
+集合。Cemu 侧以 `add_subdirectory(... EXCLUDE_FROM_ALL)` 接入，因此配置阶段可见
+这些真实 target，但默认构建只沿宿主明确链接的依赖闭包执行。`third_party`
+包括 imgui、imgui-websocket、libevent、luascript、lz4、mimalloc、msgpack-c、
+nlohmann_json、openxr、rapidjson、tinyxml2、yalantinglibs、yaml-cpp、zip；当前
+Android debugbus/dumpsys 不依赖这些组件。
 
 ### cemu 构建加速现状
 
@@ -148,7 +154,7 @@ foundation 根 CMake 会拉入 `third_party` + `basic` + `modules` 全量。`thi
 | --- | --- | --- |
 | D1 | `origin/main` 出现官方没有的提交，或更新镜像时 push 被权限拒绝 | C1-T1/T2 |
 | D2 | 上游 SDL3 迁移引入新子模块时，镜像到 tencentmalos 的操作由谁做 | C1-T4 |
-| D3 | C2 若 foundation 全量 `third_party` 导致构建时长/产物体积不可接受，是否推动 foundation 侧加模块开关（如 `SPATIAL_FOUNDATION_ENABLE_XR`） | C2-T1 |
+| D3 | 后续启用 foundation core/network/profiler/XR 时，若传递依赖导致构建时长/产物体积不可接受，是否推动 foundation 侧进一步组件化 | C5/C6 |
 | D4 | C3 裁剪构建图时，哪些子系统必须保留默认开启（需要产品侧确认，不能凭代码猜） | C3-T4 |
 | D5 | C4 Service 进程归属方案 A/B 选择 | C4 |
 | D6 | release 包是否保留 debugbus（保留则需加 permission + R8 keep 规则） | C4 |
@@ -293,6 +299,10 @@ git merge --no-ff main
 
 前置：C1 完成。**本阶段的验收面同样是 mac 桌面。**
 
+> **已完成。** 结果见 `docs/verification/20260726-C2/integration.md`。
+> Azahar 对照和 Cemu 双平台实测后，最终采用根 CMake
+> `EXCLUDE_FROM_ALL` 的按需构建方式；不向 Cemu vcpkg 清单新增 Crypto++。
+
 ### C2-T1 改为根 CMake 接入（修 S3）
 
 **问题：** `CMakeLists.txt:219-229` 把 `spatial::foundation_module_network` 和 `spatial::foundation_profiler` 伪造成空 INTERFACE 库，再只 `add_subdirectory(modules/debugbus)`。后果：
@@ -303,11 +313,16 @@ git merge --no-ff main
 
 **做什么：**
 
-- 用 `add_subdirectory(dependencies/foundation)` 替换现有的 stub + 子目录接入
+- 用 `add_subdirectory(dependencies/foundation EXCLUDE_FROM_ALL)` 替换现有的
+  stub + 子目录接入。根目录负责注册真实 target，`EXCLUDE_FROM_ALL` 保证只有
+  Cemu 明确链接的组件进入默认构建
 - 把 `if(EXISTS ...)` 改成显式选项 `CEMU_ENABLE_FOUNDATION`；开启但子模块缺失时 `message(FATAL_ERROR "foundation submodule missing, run: git submodule update --init --recursive")`
-- **mac 与 Android 都要能配过。** 现结构下 mac 上 foundation 只是被 `add_subdirectory` 但无人链接；改根接入后 foundation 全量 `third_party` 会真的进 mac 构建图——这正是本任务在 mac 上最可能爆的地方（第三方库的 mac 兼容性、与 cemu 自身 vcpkg 依赖的符号/版本冲突，尤其 imgui、yaml-cpp、nlohmann_json 这类两边都可能有的库）。
+- **mac 与 Android 都要能配过。** mac 当前不链接 foundation 组件，默认构建图
+  不应因此膨胀；Android 当前只链接 debugbus/dumpsys。不得为了未使用的
+  foundation core/network/profiler/XR 提前在 Cemu 中补 Crypto++ 或兼容 target
 - foundation 里的 `CITRA_USE_UNITY_BUILD` 是从 azahar 带过来的变量名，cemu 侧此刻不定义（C3 再统一处理）
-- **若构建时长或产物体积不可接受 → 触发 D3**，推动 foundation 侧加模块开关，**不要在 cemu 侧继续伪造 target**
+- 后续组件一旦成为真实消费者，其依赖应由对应 foundation target 自洽带入；
+  若依赖闭包不可接受再触发 D3，**不要在 Cemu 侧伪造 target 或引入第二套依赖层**
 
 **退出标准：**
 
@@ -315,7 +330,8 @@ git merge --no-ff main
 - Android：`assembleDebug` + `assembleRelease` 通过
 - 故意重命名 `dependencies/foundation` 目录后配置报出上述 FATAL_ERROR（验证后改回）
 - **记录接入前后的 build edges 数、编译 wall time、产物体积对比**，写进 `docs/verification/<YYYYMMDD>-C2/`——这是 C3 的度量输入
-- 若出现第三方库重复/冲突，处理方式记录在案
+- Cemu `vcpkg.json` 不因未使用的 foundation 组件增加依赖；若出现第三方库
+  重复/冲突，处理方式记录在案
 
 ### C2-T2 API 版本护栏（修 S6）
 
@@ -336,7 +352,7 @@ static_assert(SPATIAL_FOUNDATION_API_VERSION >= 1, "foundation submodule too old
 
 ## 6. C3：编译加速
 
-前置：C2 完成（先合入再加速，否则度量基线立刻失效）。
+前置：C2 完成（先建立真实按需依赖图与度量基线，再做加速）。
 
 **手册：** `dependencies/foundation/docs/guides/build-acceleration.md`。以下按该手册的收益/风险排序裁剪到 cemu 现状。
 
@@ -422,7 +438,10 @@ C1 同步带来的上游开关是现成工具，**先用它们，不要自己造
 | `ENABLE_LIBUSB` | `1c2b7d78` | 按是否需要实体 USB 设备决定 |
 | SDL optional | `8e3e961b` | 按输入需求决定 |
 
-foundation 侧的裁剪机会：`third_party` 里 cemu 用不到的（luascript、imgui-websocket、msgpack-c 等）能否不进构建图——**若需要改 foundation，走 foundation 仓单独提交**，不要在 cemu 侧 hack。
+foundation 未使用的 `third_party` 已由 C2 的 `EXCLUDE_FROM_ALL` 排除，不再作为
+C3 的裁剪对象。后续若链接 core/network/profiler/XR 后出现过大的传递依赖，
+再触发 D3；**若需要改 foundation，走 foundation 仓单独提交**，不要在 Cemu
+侧 hack。
 
 **约束先行 → 触发 D4：** 明确哪些子系统必须保留默认开启，写进裁剪记录，避免后人误删。**这个不能凭代码猜，需要产品侧确认。**
 
@@ -444,7 +463,7 @@ foundation 侧的裁剪机会：`third_party` 里 cemu 用不到的（luascript�
 - [ ] mac：`cmake` 配置成功、编译成功、GUI 可启动
 - [ ] mac：编译耗时与 build edges 相对 C2 完成时有可量化改善，数据归档
 - [ ] Android：`assembleDebug` 与 `assembleRelease` 均通过（不回归）
-- [ ] foundation 以根 CMake 方式接入，无伪造 target，有 API 版本护栏
+- [x] foundation 以根 CMake + `EXCLUDE_FROM_ALL` 按需接入，无伪造 target，有 API 版本护栏
 - [ ] `main = upstream/main = origin/main`，且 main 是
       `feature/malos/basic_version` 的祖先
 - [ ] 全部证据归档在 `docs/verification/` 下
