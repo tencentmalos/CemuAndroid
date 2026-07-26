@@ -28,7 +28,7 @@ void RPLLoader_CallEntrypoints();
 void RPLLoader_CallCoreinitEntrypoint();
 void RPLLoader_NotifyControlPassedToApplication();
 
-void RPLLoader_AddDependency(std::string_view name);
+void RPLLoader_AddDependency(std::string_view name, bool isMainExecutable = false);
 void RPLLoader_RemoveDependency(uint32 handle);
 bool RPLLoader_HasDependency(std::string_view name);
 void RPLLoader_UpdateDependencies();
@@ -36,6 +36,7 @@ void RPLLoader_UpdateDependencies();
 void RPLLoader_LoadCoreinit();
 
 uint32 RPLLoader_GetHandleByModuleName(const char* name);
+const std::string RPLLoader_GetModuleNameByHandle(uint32 handle);
 uint32 RPLLoader_GetMaxTLSModuleIndex();
 bool RPLLoader_GetTLSDataByTLSIndex(sint16 tlsModuleIndex, uint8** tlsData, sint32* tlsSize);
 
@@ -46,6 +47,7 @@ uint32 RPLLoader_GetSDA2Base();
 
 sint32 RPLLoader_GetModuleCount();
 RPLModule** RPLLoader_GetModuleList();
+RPLModule* RPLLoader_GetModuleByName(std::string_view name);
 
 MEMPTR<void> RPLLoader_AllocateCodeCaveMem(uint32 alignment, uint32 size);
 void RPLLoader_ReleaseCodeCaveMem(MEMPTR<void> addr);

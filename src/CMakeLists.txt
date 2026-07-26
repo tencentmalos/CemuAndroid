@@ -104,6 +104,12 @@ if(APPLE AND CMAKE_GENERATOR STREQUAL "Xcode")
     )
 endif()
 
+if(APPLE AND CMAKE_GENERATOR STREQUAL "Xcode")
+    set_target_properties(CemuBin PROPERTIES
+        XCODE_ATTRIBUTE_ENABLE_DEBUG_DYLIB[variant=Debug] "YES"
+    )
+endif()
+
 string(TIMESTAMP CURRENT_YEAR "%Y" UTC)
 	set_property(TARGET CemuBin PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 	set_property(TARGET CemuBin PROPERTY WIN32_EXECUTABLE $<NOT:$<CONFIG:Debug>>)
@@ -147,7 +153,6 @@ if (MACOS_BUNDLE)
 			message(FATAL_ERROR "failed to find libMoltenVK.dylib")
 		endif ()
   endif()
-
 	if (ENABLE_LIBUSB)
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 		    set(LIBUSB_PATH "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/debug/lib/libusb-1.0.0.dylib")

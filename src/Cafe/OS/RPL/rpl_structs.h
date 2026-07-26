@@ -156,6 +156,7 @@ struct RPLModule
 	MEMPTR<void> regionMappingBase_text; // base destination address for text region
 	MPTR regionMappingBase_data; // base destination address for data region
 	MPTR regionMappingBase_loaderInfo; // base destination address for loaderInfo region
+	MEMPTR<char> ppcName; // name of the module in PPC memory
 	uint8* tempRegionPtr;
 	uint32 tempRegionAllocSize;
 
@@ -164,14 +165,16 @@ struct RPLModule
 	uint32 exportFCount;
 	rplExportTableEntry_t* exportFDataPtr;
 
-	std::string moduleName2;
+	std::string moduleName;
 	
 	std::vector<rplSectionAddressEntry_t> sectionAddressTable2;
 
 	uint32 tlsStartAddress;
 	uint32 tlsEndAddress;
 	uint32 regionSize_text;
+	uint32 regionOrigAddr_text;
 	uint32 regionSize_data;
+	uint32 regionOrigAddr_data;
 	uint32 regionSize_loaderInfo;
 
 	uint32 patchCRC; // Cemuhook style module crc for patches.txt
@@ -234,11 +237,11 @@ struct RPLModule
 
 struct RPLDependency
 {
-	char modulename[RPL_MODULE_NAME_LENGTH];
-	std::string filepath;
-	bool loadAttempted;
+	std::string moduleName;
+	bool isMainExecutable{false};
+	bool loadAttempted{false};
 	bool hleEntrypointCalled{false};
-	bool isCafeOSModule; // name is a known Cafe OS system RPL
+	bool isCafeOSModule{false}; // name is a known Cafe OS system RPL
 	RPLModule* rplLoaderContext{}; // context of loaded module, can be nullptr for HLE COS modules
 	class COSModule* rplHLEModule{}; // set if this is a HLE module
 	sint32 referenceCount;

@@ -34,6 +34,7 @@
 
 #include "Cafe/TitleList/TitleList.h"
 #include "Cafe/TitleList/SaveList.h"
+#include "Cafe/CafeSystem.h"
 
 wxIMPLEMENT_APP_NO_MAIN(CemuApp);
 
@@ -414,17 +415,19 @@ int CemuApp::OnExit()
 		m_sdlEventPumpTimer = nullptr;
 	}
 #endif
-
 	wxApp::OnExit();
 	wxTheClipboard->Flush();
 	InputManager::instance().Shutdown();
+	int retValue = 0;
+	if (auto r = CafeSystem::GetForegroundTitleReturnStatus(); (LaunchSettings::GetLoadFile() || LaunchSettings::GetLoadTitleID()) && r)
+		retValue = *r;
 #if BOOST_OS_MACOS
 	SDLControllerProvider::ShutdownSDL();
 #endif
 #if BOOST_OS_WINDOWS
-	ExitProcess(0);
+	ExitProcess(retValue);
 #else
-	_Exit(0);
+	_Exit(retValue);
 #endif
 }
 
@@ -475,7 +478,7 @@ int CemuApp::FilterEvent(wxEvent& event)
 	}
 
 	// track if debugger window or its child windows are focused
-	if (g_debugger_window && (event.GetEventType() == wxEVT_SET_FOCUS || event.GetEventType() == wxEVT_ACTIVATE))
+	if (s_debuggerWindow && (event.GetEventType() == wxEVT_SET_FOCUS || event.GetEventType() == wxEVT_ACTIVATE))
 	{
 		wxWindow* target_window = wxDynamicCast(event.GetEventObject(), wxWindow);
 
@@ -488,12 +491,12 @@ int CemuApp::FilterEvent(wxEvent& event)
 			wxWindow* window_it = target_window;
 			while (window_it)
 			{
-				if (window_it == g_debugger_window) g_window_info.debugger_focused = true;
+				if (window_it == s_debuggerWindow) g_window_info.debugger_focused = true;
 				window_it = window_it->GetParent();
 			}
 		}
 	}
-	else if (!g_debugger_window)
+	else if (!s_debuggerWindow)
 	{
 		g_window_info.debugger_focused = false;
 	}

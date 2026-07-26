@@ -69,7 +69,7 @@ sint32 ScoreStackTrace(OSThread_t* thread, MPTR sp)
 	return score;
 }
 
-void DebugLogStackTrace(OSThread_t* thread, MPTR sp, bool printSymbols)
+void DebugLogStackTrace(OSThread_t* thread, MPTR sp)
 {
 	// sp might not point to a valid stackframe
 	// scan stack and evaluate which sp is most likely the beginning of the stackframe
@@ -88,10 +88,7 @@ void DebugLogStackTrace(OSThread_t* thread, MPTR sp, bool printSymbols)
 		}
 	}
 
-	if (highestScoreSP != sp)
-		cemuLog_log(LogType::Force, fmt::format("Trace starting at SP {0:08x} r1 = {1:08x}", highestScoreSP, sp));
-	else
-		cemuLog_log(LogType::Force, fmt::format("Trace starting at SP/r1 {0:08x}", highestScoreSP));
+	cemuLog_log(LogType::Force, fmt::format("Trace starting at SP {:08x} r1={:08x}", highestScoreSP, sp));
 
 	// print stack trace
 	uint32 currentStackPtr = highestScoreSP;
@@ -108,9 +105,7 @@ void DebugLogStackTrace(OSThread_t* thread, MPTR sp, bool printSymbols)
 		uint32 returnAddress = 0;
 		returnAddress = memory_readU32(nextStackPtr + 4);
 
-		RPLStoredSymbol* symbol = nullptr;
-		if(printSymbols)
-			symbol = rplSymbolStorage_getByClosestAddress(returnAddress);
+		RPLStoredSymbol* symbol = rplSymbolStorage_getByClosestAddress(returnAddress);
 
 		if(symbol)
 			cemuLog_log(LogType::Force, fmt::format("SP {:08x} ReturnAddr {:08x}   ({}.{}+0x{:x})", nextStackPtr, returnAddress, (const char*)symbol->libName, (const char*)symbol->symbolName, returnAddress - symbol->address));
@@ -243,15 +238,6 @@ namespace coreinit
 		osLib_returnFromFunction(hCPU, 1);
 	}
 
-	void coreinit_exit(uint32 r)
-	{
-		cemuLog_log(LogType::Force, "The title terminated the process by calling coreinit.exit({})", (sint32)r);
-        DebugLogStackTrace(coreinit::OSGetCurrentThread(), coreinit::OSGetStackPointer());
-		cemu_assert_debug(false);
-		// never return
-		while (true) std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
-
 	bool OSIsOffBoot()
 	{
 		return true;
@@ -294,7 +280,6 @@ namespace coreinit
 
 		osLib_addFunction("coreinit", "ENVGetEnvironmentVariable", coreinitExport_ENVGetEnvironmentVariable);
 
-		cafeExportRegisterFunc(coreinit_exit, "coreinit", "exit", LogType::CoreinitThread);
 		cafeExportRegister("coreinit", OSIsOffBoot, LogType::CoreinitThread);
 		cafeExportRegister("coreinit", OSGetBootPMFlags, LogType::CoreinitThread);
 		cafeExportRegister("coreinit", OSGetSystemMode, LogType::CoreinitThread);

@@ -169,7 +169,7 @@ void LoadMainExecutable()
 	else
 	{
 		// RPX
-		RPLLoader_AddDependency(_pathToExecutable.c_str());
+		RPLLoader_AddDependency(_pathToExecutable.c_str(), true);
 		applicationRPX = RPLLoader_LoadFromMemory(rpxData, rpxSize, (char*)_pathToExecutable.c_str());
 		if (!applicationRPX)
 		{
@@ -461,6 +461,7 @@ namespace CafeSystem
 	static SystemImplementation* s_implementation{nullptr};
     bool sLaunchModeIsStandalone = false;
 	std::optional<std::vector<std::string>> s_overrideArgs;
+	std::optional<sint32> s_foregroundReturnStatus;
 
 	bool sSystemRunning = false;
 	TitleId sForegroundTitleId = 0;
@@ -519,21 +520,43 @@ namespace CafeSystem
 	std::string GetWindowsNamedVersion(uint32& buildNumber)
 	{
 		char productName[256];
+		char buildNumberStr[32];
+		char featureVersion[32];
 		HKEY hKey;
 		DWORD dwType = REG_SZ;
 		DWORD dwSize = sizeof(productName);
+		buildNumber = 0;
+		featureVersion[0] = '\0';
 		if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_QUERY_VALUE, &hKey) == ERROR_SUCCESS)
 		{
 			if (RegQueryValueExA(hKey, "ProductName", NULL, &dwType, (LPBYTE)productName, &dwSize) != ERROR_SUCCESS)
 				strcpy(productName, "Windows");
+			dwType = REG_SZ;
+			dwSize = sizeof(buildNumberStr);
+			if (RegQueryValueExA(hKey, "CurrentBuildNumber", NULL, &dwType, (LPBYTE)buildNumberStr, &dwSize) == ERROR_SUCCESS)
+				buildNumber = (uint32)atoi(buildNumberStr);
+			dwType = REG_SZ;
+			dwSize = sizeof(featureVersion);
+			if (RegQueryValueExA(hKey, "DisplayVersion", NULL, &dwType, (LPBYTE)featureVersion, &dwSize) != ERROR_SUCCESS)
+			{
+				dwType = REG_SZ;
+				dwSize = sizeof(featureVersion);
+				if (RegQueryValueExA(hKey, "ReleaseId", NULL, &dwType, (LPBYTE)featureVersion, &dwSize) != ERROR_SUCCESS)
+					featureVersion[0] = '\0';
+			}
 			RegCloseKey(hKey);
 		}
-		OSVERSIONINFO osvi;
-		ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
-		osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-		GetVersionEx(&osvi);
-		buildNumber = osvi.dwBuildNumber;
-		return std::string(productName);
+		std::string result(productName);
+		// ProductName still reads as "Windows 10" on Windows 11. Find and replace with "Windows 11" based on build number.
+		if (buildNumber >= 22000)
+		{
+			size_t pos = result.find("Windows 10");
+			if (pos != std::string::npos)
+				result.replace(pos, 10, "Windows 11");
+		}
+		if (featureVersion[0] != '\0')
+			result += fmt::format(" {}", featureVersion);
+		return result;
 	}
 	#endif
 
@@ -686,6 +709,22 @@ namespace CafeSystem
         fsc_unmount("/cemuBossStorage/", FSC_PRIORITY_BASE);
     }
 
+	void MountExtras()
+	{
+		for (const auto& [host_path, emulatedPath] : LaunchSettings::CosMounts())
+		{
+			FSCDeviceHostFS_Mount(boost::nowide::narrow(emulatedPath), _pathToUtf8(host_path), FSC_PRIORITY_BASE);
+		}
+	}
+
+	void UnmountExtras()
+	{
+		for (const auto& [_, emulatedPath] : LaunchSettings::CosMounts())
+		{
+			fsc_unmount(boost::nowide::narrow(emulatedPath), FSC_PRIORITY_BASE);
+		}
+	}
+
 	PREPARE_STATUS_CODE LoadAndMountForegroundTitle(TitleId titleId)
 	{
         cemuLog_log(LogType::Force, "Mounting title {:016x}", (uint64)titleId);
@@ -821,6 +860,7 @@ namespace CafeSystem
 	{
 		CafeTitleList::WaitForMandatoryScan();
 		sLaunchModeIsStandalone = false;
+		s_foregroundReturnStatus = std::nullopt;
         _pathToExecutable.clear();
 		TitleIdParser tip(titleId);
 		if (tip.GetType() == TitleIdParser::TITLE_TYPE::AOC || tip.GetType() == TitleIdParser::TITLE_TYPE::BASE_TITLE_UPDATE)
@@ -839,6 +879,7 @@ namespace CafeSystem
 		if (r != PREPARE_STATUS_CODE::SUCCESS)
 			return r;
 		InitVirtualMlcStorage();
+		MountExtras();
 		return PREPARE_STATUS_CODE::SUCCESS;
 	}
 
@@ -882,6 +923,7 @@ namespace CafeSystem
         // load executable
         PrepareExecutable();
 		InitVirtualMlcStorage();
+		MountExtras();
 		return PREPARE_STATUS_CODE::SUCCESS;
 	}
 
@@ -985,6 +1027,9 @@ namespace CafeSystem
 
 	std::string GetForegroundTitleArgStr()
 	{
+		auto optional_arguments = LaunchSettings::CosArgstr();
+		if (optional_arguments.has_value())
+			return *optional_arguments;
 		if (sLaunchModeIsStandalone)
 			return "";
 		auto& update = sGameInfo_ForegroundTitle.GetUpdate();
@@ -997,19 +1042,30 @@ namespace CafeSystem
 	{
 		if (sLaunchModeIsStandalone)
 			return CosCapabilityBits::All;
+
+		CosCapabilityBits resultMask = static_cast<CosCapabilityBits>(0);
+		for (const auto& pack : GraphicPack2::GetActiveGraphicPacks())
+		{
+			for (const auto& permissionOverrides : pack->GetPermissionOverrides()) 
+			{
+				if (permissionOverrides.first == group)
+					resultMask |= static_cast<CosCapabilityBits>(permissionOverrides.second);
+			}
+		}
+
 		auto& update = sGameInfo_ForegroundTitle.GetUpdate();
 		if (update.IsValid())
 		{
 			ParsedCosXml* cosXml = update.GetCosInfo();
 			if (cosXml)
-				return cosXml->GetCapabilityBits(group);
+				return cosXml->GetCapabilityBits(group) | resultMask;
 		}
 		auto& base = sGameInfo_ForegroundTitle.GetBase();
 		if(base.IsValid())
 		{
 			ParsedCosXml* cosXml = base.GetCosInfo();
 			if (cosXml)
-				return cosXml->GetCapabilityBits(group);
+				return cosXml->GetCapabilityBits(group) | resultMask;
 		}
 		return CosCapabilityBits::All;
 	}
@@ -1058,24 +1114,26 @@ namespace CafeSystem
 	{
 		if(!sSystemRunning)
 			return;
-        coreinit::OSSchedulerEnd();
-        Latte_Stop();
-        // reset Cafe OS userspace modules
-        snd_core::reset();
-        coreinit::OSAlarm_Shutdown();
-        GX2::_GX2DriverReset();
-        nn::save::ResetToDefaultState();
-        coreinit::__OSDeleteAllActivePPCThreads();
-        RPLLoader_UnloadAll();
+		coreinit::OSSchedulerEnd();
+		Latte_Stop();
+		// reset Cafe OS userspace modules
+		snd_core::reset();
+		coreinit::OSAlarm_Shutdown();
+		GX2::_GX2DriverReset();
+		nn::save::ResetToDefaultState();
+		coreinit::__OSDeleteAllActivePPCThreads();
+		RPLLoader_UnloadAll();
 		for(auto it = s_iosuModules.rbegin(); it != s_iosuModules.rend(); ++it)
 			(*it)->TitleStop();
-        // reset Cemu subsystems
-        PPCRecompiler_Shutdown();
-        GraphicPack2::Reset();
-        UnmountCurrentTitle();
-        MlcStorageUnmountAllTitles();
-        UnmountBaseDirectories();
-        DestroyMemorySpace();
+		// reset Cemu subsystems
+		PPCRecompiler_Shutdown();
+		GraphicPack2::Reset();
+		UnmountCurrentTitle();
+		UnmountExtras();
+		MlcStorageUnmountAllTitles();
+		UnmountBaseDirectories();
+		DestroyMemorySpace();
+		LaunchSettings::ClearCosArgstr();
 		sSystemRunning = false;
 	}
 
@@ -1175,6 +1233,17 @@ namespace CafeSystem
 	void RequestRecreateCanvas()
 	{
 		s_implementation->CafeRecreateCanvas();
+	}
+
+	void NotifyPPCProcessExit(sint32 status)
+	{
+		s_foregroundReturnStatus = status;
+		s_implementation->CafePPCProcessExit();
+	}
+
+	std::optional<sint32> GetForegroundTitleReturnStatus()
+	{
+		return s_foregroundReturnStatus;
 	}
 
 }
