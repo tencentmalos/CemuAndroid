@@ -92,6 +92,50 @@ endif()
 option(ENABLE_LTO "Enable link-time optimization" ${DEFAULT_ENABLE_LTO})
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${ENABLE_LTO})
 
+option(CEMU_USE_CCACHE "Use ccache as a compiler launcher when available" ON)
+if (CEMU_USE_CCACHE)
+	if (NOT "$ENV{NDK_CCACHE}" STREQUAL "")
+		set(CEMU_CCACHE_EXECUTABLE "$ENV{NDK_CCACHE}")
+	else()
+		find_program(CEMU_CCACHE_EXECUTABLE ccache)
+	endif()
+
+	if (CEMU_CCACHE_EXECUTABLE)
+		execute_process(
+			COMMAND "${CEMU_CCACHE_EXECUTABLE}" --version
+			RESULT_VARIABLE CEMU_CCACHE_VERSION_RESULT
+			OUTPUT_QUIET
+			ERROR_QUIET
+			TIMEOUT 10
+		)
+		if (CEMU_CCACHE_VERSION_RESULT EQUAL 0)
+			execute_process(
+				COMMAND "${CEMU_CCACHE_EXECUTABLE}" --get-config sloppiness
+				RESULT_VARIABLE CEMU_CCACHE_SLOPPINESS_RESULT
+				OUTPUT_VARIABLE CEMU_CCACHE_SLOPPINESS
+				OUTPUT_STRIP_TRAILING_WHITESPACE
+				ERROR_QUIET
+				TIMEOUT 10
+			)
+			if (CEMU_CCACHE_SLOPPINESS_RESULT EQUAL 0
+				AND CEMU_CCACHE_SLOPPINESS MATCHES "(^|,)pch_defines(,|$)")
+				message(FATAL_ERROR
+					"ccache sloppiness must not contain pch_defines when building Cemu")
+			endif()
+
+			foreach(language IN ITEMS C CXX OBJC OBJCXX)
+				set(CMAKE_${language}_COMPILER_LAUNCHER "${CEMU_CCACHE_EXECUTABLE}")
+			endforeach()
+			message(STATUS "Using ccache: ${CEMU_CCACHE_EXECUTABLE}")
+		else()
+			message(WARNING
+				"Ignoring unusable ccache executable: ${CEMU_CCACHE_EXECUTABLE}")
+		endif()
+	else()
+		message(STATUS "ccache not found; continuing without a compiler launcher")
+	endif()
+endif()
+
 option(CEMU_USE_UNITY_BUILD "Enable Unity Build across the complete build graph" ON)
 set(CMAKE_UNITY_BUILD ${CEMU_USE_UNITY_BUILD})
 
