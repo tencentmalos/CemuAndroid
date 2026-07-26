@@ -1,7 +1,6 @@
 #pragma once
 #if HAS_SDL
 #include <SDL3/SDL_joystick.h>
-#endif
 #include "input/motion/MotionHandler.h"
 #include "input/api/ControllerProvider.h"
 

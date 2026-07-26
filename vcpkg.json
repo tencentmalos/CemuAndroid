@@ -42,10 +42,6 @@
     },
     "boost-random",
     {
-      "name": "hidapi",
-      "platform": "!android"
-    },
-    {
       "name": "fmt",
       "version>=": "12.1.0"
     },
