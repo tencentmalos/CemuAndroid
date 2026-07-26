@@ -1,0 +1,466 @@
+[1/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_cavlc_tables.c.o
+[2/570] Building C object dependencies/cubeb/CMakeFiles/cubeb.dir/src/cubeb_strings.c.o
+[3/570] Building C object dependencies/cubeb/CMakeFiles/cubeb.dir/src/cubeb.c.o
+[4/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_buf_mgr.c.o
+[5/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_chroma_intra_pred_filters.c.o
+[6/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_cabac_tables.c.o
+[7/570] Building C object dependencies/cubeb/CMakeFiles/speex.dir/subprojects/speex/resample.c.o
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/subprojects/speex/resample.c:674:20: warning: comparison of integers of different signs: 'int' and 'unsigned int' [-Wsign-compare]
+  674 |          for (j=0;j<st->filt_len;j++)
+      |                   ~^~~~~~~~~~~~~
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/subprojects/speex/resample.c:946:21: warning: comparison of integers of different signs: 'int' and 'unsigned int' [-Wsign-compare]
+  946 |            for(j=0;j<ichunk;++j)
+      |                    ~^~~~~~~
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/subprojects/speex/resample.c:949:20: warning: comparison of integers of different signs: 'int' and 'unsigned int' [-Wsign-compare]
+  949 |           for(j=0;j<ichunk;++j)
+      |                   ~^~~~~~~
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/subprojects/speex/resample.c:1002:19: warning: comparison of integers of different signs: 'int' and 'unsigned int' [-Wsign-compare]
+ 1002 |          for(j=0;j<ichunk;++j)
+      |                  ~^~~~~~~
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/subprojects/speex/resample.c:1009:19: warning: comparison of integers of different signs: 'int' and 'unsigned int' [-Wsign-compare]
+ 1009 |          for(j=0;j<ichunk;++j)
+      |                  ~^~~~~~~
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/subprojects/speex/resample.c:1019:16: warning: comparison of integers of different signs: 'int' and 'unsigned int' [-Wsign-compare]
+ 1019 |      for (j=0;j<ochunk+omagic;++j)
+      |               ~^~~~~~~~~~~~~~
+6 warnings generated.
+[8/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_common_tables.c.o
+[9/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_deblk_tables.c.o
+[10/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_disp_mgr.c.o
+[11/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_ihadamard_scaling.c.o
+[12/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_deblk_edge_filters.c.o
+[13/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_dpb_mgr.c.o
+[14/570] Building CXX object dependencies/cubeb/CMakeFiles/cubeb.dir/src/cubeb_osx_run_loop.cpp.o
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_osx_run_loop.cpp:24:7: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+   24 |       kAudioObjectPropertyElementMaster};
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+1 warning generated.
+[15/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_inter_pred_filters.c.o
+[16/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_iquant_itrans_recon.c.o
+[17/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_padding.c.o
+[18/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_mem_fns.c.o
+[19/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_list.c.o
+[20/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_luma_intra_pred_filters.c.o
+[21/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_trans_data.c.o
+[22/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_resi_trans_quant.c.o
+[23/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ih264_weighted_pred.c.o
+[24/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/common/ithread.c.o
+/Users/bytedance/workspace/cemu_android/dependencies/ih264d/common/ithread.c:324:9: warning: 'sem_init' is deprecated [-Wdeprecated-declarations]
+  324 |         return sem_init((sem_t*)sem, pshared, value);
+      |                ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/semaphore.h:55:42: note: 'sem_init' has been explicitly marked deprecated here
+   55 | int sem_init(sem_t *, int, unsigned int) __deprecated;
+      |                                          ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:214:40: note: expanded from macro '__deprecated'
+  214 | #define __deprecated    __attribute__((__deprecated__))
+      |                                        ^
+/Users/bytedance/workspace/cemu_android/dependencies/ih264d/common/ithread.c:341:9: warning: 'sem_destroy' is deprecated [-Wdeprecated-declarations]
+  341 |         return sem_destroy((sem_t*)sem);
+      |                ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/semaphore.h:53:26: note: 'sem_destroy' has been explicitly marked deprecated here
+   53 | int sem_destroy(sem_t *) __deprecated;
+      |                          ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:214:40: note: expanded from macro '__deprecated'
+  214 | #define __deprecated    __attribute__((__deprecated__))
+      |                                        ^
+2 warnings generated.
+[25/570] Building CXX object dependencies/cubeb/CMakeFiles/cubeb.dir/src/cubeb_utils.cpp.o
+[26/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_bitstrm.c.o
+[27/570] Building CXX object dependencies/cubeb/CMakeFiles/cubeb.dir/src/cubeb_mixer.cpp.o
+[28/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_cabac.c.o
+[29/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_cabac_init_tables.c.o
+[30/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_deblocking.c.o
+[31/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_compute_bs.c.o
+[32/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_dpb_mgr.c.o
+[33/570] Building CXX object dependencies/cubeb/CMakeFiles/cubeb.dir/src/cubeb_resampler.cpp.o
+[34/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_api.c.o
+[35/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_function_selector_generic.c.o
+[36/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_format_conv.c.o
+[37/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_mb_utils.c.o
+[38/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_inter_pred.c.o
+[39/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_mvpred.c.o
+[40/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_nal.c.o
+[41/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_parse_bslice.c.o
+[42/570] Building CXX object dependencies/cubeb/CMakeFiles/cubeb.dir/src/cubeb_log.cpp.o
+[43/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_parse_headers.c.o
+[44/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_parse_cabac.c.o
+[45/570] Building CXX object dependencies/cubeb/CMakeFiles/cubeb.dir/src/cubeb_audio_dump.cpp.o
+[46/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_parse_cavlc.c.o
+[47/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_parse_islice.c.o
+[48/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_parse_mb_header.c.o
+[49/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_parse_pslice.c.o
+[50/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_parse_slice.c.o
+[51/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_process_pslice.c.o
+[52/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_quant_scaling.c.o
+[53/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_process_bslice.c.o
+[54/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_tables.c.o
+[55/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_process_intra_mb.c.o
+[56/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_sei.c.o
+[57/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_deblk_chroma_av8.s.o
+[58/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_thread_compute_bs.c.o
+[59/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_vui.c.o
+[60/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_thread_parse_decode.c.o
+[61/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_deblk_luma_av8.s.o
+[62/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_default_weighted_pred_av8.s.o
+[63/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_ihadamard_scaling_av8.s.o
+[64/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_chroma_av8.s.o
+[65/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/ih264d_utils.c.o
+[66/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_filters_luma_horz_av8.s.o
+[67/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_filters_luma_vert_av8.s.o
+[68/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_luma_copy_av8.s.o
+[69/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_luma_horz_hpel_vert_hpel_av8.s.o
+[70/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_luma_horz_hpel_vert_qpel_av8.s.o
+[71/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_luma_horz_qpel_av8.s.o
+[72/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_luma_horz_qpel_vert_hpel_av8.s.o
+[73/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_luma_horz_qpel_vert_qpel_av8.s.o
+[74/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_inter_pred_luma_vert_qpel_av8.s.o
+[75/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_intra_pred_chroma_av8.s.o
+[76/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_intra_pred_luma_16x16_av8.s.o
+[77/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_intra_pred_luma_4x4_av8.s.o
+[78/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_intra_pred_luma_8x8_av8.s.o
+[79/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_iquant_itrans_recon_dc_av8.s.o
+[80/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_mem_fns_neon_av8.s.o
+[81/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_iquant_itrans_recon_av8.s.o
+[82/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_neon_macros.s.o
+[83/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_padding_neon_av8.s.o
+[84/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_resi_trans_quant_av8.s.o
+[85/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_weighted_bi_pred_av8.s.o
+[86/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/ih264_weighted_pred_av8.s.o
+[87/570] Building ASM object dependencies/ih264d/CMakeFiles/ih264d.dir/common/armv8/macos_arm_symbol_aliases.s.o
+[88/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/arm/ih264d_function_selector_av8.c.o
+[89/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/arm/ih264d_function_selector_a9q.c.o
+[90/570] Building C object dependencies/ih264d/CMakeFiles/ih264d.dir/decoder/arm/ih264d_function_selector.c.o
+[91/570] Building CXX object dependencies/cubeb/CMakeFiles/cubeb.dir/src/cubeb_audiounit.cpp.o
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:76:5: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+   76 |     kAudioObjectPropertyElementMaster};
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:80:5: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+   80 |     kAudioObjectPropertyElementMaster};
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:84:5: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+   84 |     kAudioObjectPropertyElementMaster};
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:88:5: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+   88 |     kAudioObjectPropertyElementMaster};
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:92:5: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+   92 |     kAudioObjectPropertyElementMaster};
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:96:5: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+   96 |     kAudioObjectPropertyElementMaster};
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1215:7: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1215 |       kAudioObjectPropertyElementMaster};
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1273:7: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1273 |       kAudioObjectPropertyElementMaster};
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1330:7: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1330 |       kAudioObjectPropertyElementMaster};
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1608:40: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1608 |       kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMaster};
+      |                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                        kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1637:7: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1637 |       kAudioObjectPropertyElementMaster};
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1667:7: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1667 |       kAudioObjectPropertyElementMaster};
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1739:46: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1739 |                                              kAudioObjectPropertyElementMaster};
+      |                                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                              kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1782:40: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1782 |       kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMaster};
+      |                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                        kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1803:7: warning: 'kAudioAggregateDevicePropertyMasterSubDevice' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1803 |       kAudioAggregateDevicePropertyMasterSubDevice,
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioAggregateDevicePropertyMainSubDevice
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareDeprecated.h:939:5: note: 'kAudioAggregateDevicePropertyMasterSubDevice' has been explicitly marked deprecated here
+  939 |     kAudioAggregateDevicePropertyMasterSubDevice API_DEPRECATED_WITH_REPLACEMENT("kAudioAggregateDevicePropertyMainSubDevice", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0))   = kAudioAggregateDevicePropertyMainSubDevice
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1804:40: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1804 |       kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMaster};
+      |                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                        kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1837:7: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1837 |       kAudioObjectPropertyElementMaster};
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1855:29: warning: variable length arrays in C++ are a Clang extension [-Wvla-cxx-extension]
+ 1855 |   AudioObjectID sub_devices[subdevices_num];
+      |                             ^~~~~~~~~~~~~~
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1855:29: note: read of non-const variable 'subdevices_num' is not allowed in a constant expression
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1853:10: note: declared here
+ 1853 |   UInt32 subdevices_num = 0;
+      |          ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1869:7: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1869 |       kAudioObjectPropertyElementMaster};
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:1938:40: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 1938 |                                        kAudioObjectPropertyElementMaster};
+      |                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                        kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:2022:7: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 2022 |       kAudioObjectPropertyElementMaster};
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |       kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:3212:37: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 3212 |                                     kAudioObjectPropertyElementMaster};
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:3238:37: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 3238 |                                     kAudioObjectPropertyElementMaster};
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:3280:37: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 3280 |                                     kAudioObjectPropertyElementMaster};
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:3305:43: warning: 'kAudioObjectPropertyElementMaster' is deprecated: first deprecated in macOS 12.0 [-Wdeprecated-declarations]
+ 3305 |   AudioObjectPropertyAddress adr = {0, 0, kAudioObjectPropertyElementMaster};
+      |                                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                           kAudioObjectPropertyElementMain
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/CoreAudio.framework/Headers/AudioHardwareBase.h:208:5: note: 'kAudioObjectPropertyElementMaster' has been explicitly marked deprecated here
+  208 |     kAudioObjectPropertyElementMaster API_DEPRECATED_WITH_REPLACEMENT("kAudioObjectPropertyElementMain", macos(10.0, 12.0), ios(2.0, 15.0), watchos(1.0, 8.0), tvos(9.0, 15.0)) = kAudioObjectPropertyElementMain
+      |     ^
+In file included from /Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_audiounit.cpp:30:
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_ring_array.h:51:1: warning: unused function 'ring_array_init' [-Wunused-function]
+   51 | ring_array_init(ring_array * ra, uint32_t capacity, uint32_t bytesPerFrame,
+      | ^~~~~~~~~~~~~~~
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_ring_array.h:83:1: warning: unused function 'ring_array_destroy' [-Wunused-function]
+   83 | ring_array_destroy(ring_array * ra)
+      | ^~~~~~~~~~~~~~~~~~
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_ring_array.h:102:1: warning: unused function 'ring_array_get_free_buffer' [-Wunused-function]
+  102 | ring_array_get_free_buffer(ring_array * ra)
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/bytedance/workspace/cemu_android/dependencies/cubeb/src/cubeb_ring_array.h:123:1: warning: unused function 'ring_array_get_data_buffer' [-Wunused-function]
+  123 | ring_array_get_data_buffer(ring_array * ra)
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~
+29 warnings generated.
+[92/570] Building C object dependencies/ZArchive/CMakeFiles/zarchive.dir/src/sha_256.c.o
+[93/570] Building ASM object src/resource/CMakeFiles/CemuResource.dir/embedded/fontawesome_macos.S.o
+[94/570] Building CXX object dependencies/xbyak_aarch64/CMakeFiles/xbyak_aarch64.dir/src/util_impl.cpp.o
+/Users/bytedance/workspace/cemu_android/dependencies/xbyak_aarch64/src/util_impl.cpp:141:26: warning: cast from 'const char *' to 'char *' drops const qualifier [-Wcast-qual]
+  141 |   implementer_ = (char *)implementers[lastId - 1].implementer;
+      |                          ^
+1 warning generated.
+[95/570] Linking CXX static library dependencies/cubeb/libcubeb.a
+[96/570] Linking C static library dependencies/ih264d/libih264d.a
+[97/570] Building CXX object dependencies/ZArchive/CMakeFiles/zarchive.dir/src/zarchivereader.cpp.o
+[98/570] Building CXX object dependencies/ZArchive/CMakeFiles/zarchive.dir/src/zarchivewriter.cpp.o
+[99/570] Linking CXX static library dependencies/ZArchive/libzarchive.a
+[100/570] Building CXX object src/resource/CMakeFiles/CemuResource.dir/cmake_pch.hxx.pch
+[101/570] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/cmake_pch.hxx.pch
+[102/570] Building CXX object src/resource/CMakeFiles/CemuResource.dir/embedded/resources.cpp.o
+[103/570] Building CXX object src/imgui/CMakeFiles/imguiImpl.dir/cmake_pch.hxx.pch
+[104/570] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/cmake_pch.hxx.pch
+[105/570] Building OBJCXX object src/imgui/CMakeFiles/imguiImpl.dir/cmake_pch.objcxx.hxx.pch
+[106/570] Building CXX object src/Cafe/CMakeFiles/CemuCafe.dir/cmake_pch.hxx.pch
+[107/570] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/cpu_features.cpp.o
+FAILED: [code=1] src/Common/CMakeFiles/CemuCommon.dir/cpu_features.cpp.o
+/usr/bin/c++ -DBOOST_NOWIDE_NO_LIB -DEMULATOR_HASH=55be5e21 -DEMULATOR_VERSION_MAJOR=0 -DEMULATOR_VERSION_MINOR=0 -DEMULATOR_VERSION_PATCH=0 -DENABLE_DISCORD_RPC -DENABLE_METAL=1 -DHAS_CUBEB=1 -DHAS_HIDAPI -DHAS_SDL=1 -DVK_NO_PROTOTYPES -DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT -D_XOPEN_SOURCE -I/Users/bytedance/workspace/cemu_android/build_baseline/src/Common -I/Users/bytedance/workspace/cemu_android/src/Common -I/Users/bytedance/workspace/cemu_android/dependencies/Vulkan-Headers/include -I/Users/bytedance/workspace/cemu_android/dependencies/metal-cpp -I/Users/bytedance/workspace/cemu_android/src/Common/.. -isystem /Users/bytedance/workspace/cemu_android/build_baseline/vcpkg_installed/arm64-osx/include -O2 -g -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -mmacosx-version-min=13.4 -Wno-multichar -Wno-invalid-offsetof -Wno-switch -Wno-ignored-attributes -Wno-deprecated-enum-enum-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/bytedance/workspace/cemu_android/build_baseline/src/Common/CMakeFiles/CemuCommon.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/bytedance/workspace/cemu_android/build_baseline/src/Common/CMakeFiles/CemuCommon.dir/cmake_pch.hxx -MD -MT src/Common/CMakeFiles/CemuCommon.dir/cpu_features.cpp.o -MF src/Common/CMakeFiles/CemuCommon.dir/cpu_features.cpp.o.d -o src/Common/CMakeFiles/CemuCommon.dir/cpu_features.cpp.o -c /Users/bytedance/workspace/cemu_android/src/Common/cpu_features.cpp
+/Users/bytedance/workspace/cemu_android/src/Common/cpu_features.cpp:121:2: error: no matching function for call to 'strncpy'
+  121 |         strncpy(m_cpuBrandName, cpuName.c_str(), sizeof(m_cpuBrandName) - 1);
+      |         ^~~~~~~
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_string.h:104:3: note: candidate function not viable: no known conversion from 'std::string' (aka 'basic_string<char>') to 'char *' for 1st argument
+  104 |                 strncpy(char *_LIBC_COUNT(__n) __dst,
+      |                 ^       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+[108/570] Building CXX object src/gui/wxgui/CMakeFiles/CemuWxGui.dir/cmake_pch.hxx.pch
+[109/570] Building OBJCXX object src/Cafe/CMakeFiles/CemuCafe.dir/cmake_pch.objcxx.hxx.pch
+[110/570] Building CXX object src/resource/CMakeFiles/CemuResource.dir/CafeDefaultFont.cpp.o
+[111/570] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/precompiled.cpp.o
+[112/570] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/unix/platform.cpp.o
+[113/570] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/SysAllocator.cpp.o
+[114/570] Building CXX object src/config/CMakeFiles/CemuConfig.dir/cmake_pch.hxx.pch
+[115/570] Building CXX object src/input/CMakeFiles/CemuInput.dir/cmake_pch.hxx.pch
+[116/570] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/unix/FileStream_unix.cpp.o
+[117/570] Building CXX object src/audio/CMakeFiles/CemuAudio.dir/cmake_pch.hxx.pch
+[118/570] Building CXX object src/util/CMakeFiles/CemuUtil.dir/cmake_pch.hxx.pch
+[119/570] Building CXX object src/CMakeFiles/CemuBin.dir/cmake_pch.hxx.pch
+[120/570] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/ExceptionHandler/ExceptionHandler.cpp.o
+/Users/bytedance/workspace/cemu_android/src/Common/ExceptionHandler/ExceptionHandler.cpp:64:9: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+   64 |         sprintf(dumpLine, "RPXHash: %08x (Update: %08x)", CafeSystem::GetRPXHashBase(), CafeSystem::GetRPXHashUpdated());
+      |         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Common/ExceptionHandler/ExceptionHandler.cpp:79:9: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+   79 |         sprintf(dumpLine, "IP 0x%08x LR 0x%08x Thread 0x%08x", hCPU->instructionPointer, hCPU->spr.LR, threadPtr);
+      |         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Common/ExceptionHandler/ExceptionHandler.cpp:85:9: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+   85 |         sprintf(dumpLine, "r0 =%08x r1 =%08x r2 =%08x r3 =%08x r4 =%08x r5 =%08x r6 =%08x r7 =%08x", gprs[0], gprs[1], gprs[2], gprs[3], gprs[4], gprs[5], gprs[6], gprs[7]);
+      |         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Common/ExceptionHandler/ExceptionHandler.cpp:87:9: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+   87 |         sprintf(dumpLine, "r8 =%08x r9 =%08x r10=%08x r11=%08x r12=%08x r13=%08x r14=%08x r15=%08x", gprs[8], gprs[9], gprs[10], gprs[11], gprs[12], gprs[13], gprs[14], gprs[15]);
+      |         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Common/ExceptionHandler/ExceptionHandler.cpp:89:9: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+   89 |         sprintf(dumpLine, "r16=%08x r17=%08x r18=%08x r19=%08x r20=%08x r21=%08x r22=%08x r23=%08x", gprs[16], gprs[17], gprs[18], gprs[19], gprs[20], gprs[21], gprs[22], gprs[23]);
+      |         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Common/ExceptionHandler/ExceptionHandler.cpp:91:9: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+   91 |         sprintf(dumpLine, "r24=%08x r25=%08x r26=%08x r27=%08x r28=%08x r29=%08x r30=%08x r31=%08x", gprs[24], gprs[25], gprs[26], gprs[27], gprs[28], gprs[29], gprs[30], gprs[31]);
+      |         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Common/ExceptionHandler/ExceptionHandler.cpp:108:17: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  108 |                 sprintf(dumpLine, "[0x%08x] %08x %08x %08x %08x - %08x %08x %08x %08x", lineAddr, memory_readU32(lineAddr + 0), memory_readU32(lineAddr + 4), memory_readU32(lineAddr + 8), memory_readU32(lineAddr + 12), memory_readU32(lineAddr + 16), memory_readU32(lineAddr + 20), memory_readU32(lineAddr + 24), memory_readU32(lineAddr + 28));
+      |                 ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Common/ExceptionHandler/ExceptionHandler.cpp:113:17: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  113 |                 sprintf(dumpLine, "[0x%08x] ?", lineAddr);
+      |                 ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Common/ExceptionHandler/ExceptionHandler.cpp:156:9: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  156 |         sprintf(dumpLine, "%08x Ent %08x IP %08x LR %08x %-9s Aff %d%d%d Pri %2d Name %s", threadItrMPTR, threadItrBE->entrypoint.GetMPTR(), threadItrBE->context.srr0, _swapEndianU32(threadItrBE->context.lr), threadStateStr, (affinity >> 0) & 1, (affinity >> 1) & 1, (affinity >> 2) & 1, effectivePriority, threadName);
+      |         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+9 warnings generated.
+[121/570] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/ExceptionHandler/ExceptionHandler_posix.cpp.o
+[122/570] Building CXX object dependencies/xbyak_aarch64/CMakeFiles/xbyak_aarch64.dir/src/xbyak_aarch64_impl.cpp.o
+ninja: build stopped: subcommand failed.
+metric             	count 	avg (us) 	total (ms)
+.ninja parse       	1     	5541.0  	5.5
+.ninja_log load    	1     	6.0     	0.0
+.ninja_deps load   	1     	2.0     	0.0
+node stat          	2144  	3.2     	6.8
+ComputeCriticalPath	1     	69.0    	0.1
+StartEdge          	123   	2401.3  	295.4
+FinishCommand      	122   	3259.7  	397.7
+
+path->node hash load 0.50 (4101 entries / 8192 buckets)
+real 4.11
+user 26.68
+sys 8.23

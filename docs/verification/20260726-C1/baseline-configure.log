@@ -1,0 +1,2121 @@
+-- Running vcpkg install
+Detecting compiler hash for triplet arm64-osx...
+Compiler found: /usr/bin/c++
+The following packages will be built and installed:
+    boost-algorithm:arm64-osx@1.88.0
+  * boost-align:arm64-osx@1.88.0
+  * boost-any:arm64-osx@1.88.0
+  * boost-array:arm64-osx@1.88.0
+    boost-asio:arm64-osx@1.88.0
+  * boost-assert:arm64-osx@1.88.0
+  * boost-atomic:arm64-osx@1.88.0
+  * boost-bind:arm64-osx@1.88.0
+  * boost-chrono:arm64-osx@1.88.0
+  * boost-circular-buffer:arm64-osx@1.88.0
+  * boost-cmake:arm64-osx@1.88.0
+  * boost-concept-check:arm64-osx@1.88.0
+  * boost-config:arm64-osx@1.88.0
+    boost-container:arm64-osx@1.88.0
+  * boost-container-hash:arm64-osx@1.88.0
+  * boost-context:arm64-osx@1.88.0
+  * boost-conversion:arm64-osx@1.88.0
+  * boost-core:arm64-osx@1.88.0
+  * boost-date-time:arm64-osx@1.88.0
+  * boost-describe:arm64-osx@1.88.0
+  * boost-detail:arm64-osx@1.88.0
+  * boost-dynamic-bitset:arm64-osx@1.88.0
+  * boost-endian:arm64-osx@1.88.0
+  * boost-exception:arm64-osx@1.88.0
+  * boost-filesystem:arm64-osx@1.88.0
+  * boost-function:arm64-osx@1.88.0
+  * boost-function-types:arm64-osx@1.88.0
+    boost-functional:arm64-osx@1.88.0
+  * boost-fusion:arm64-osx@1.88.0
+  * boost-headers:arm64-osx@1.88.0
+  * boost-integer:arm64-osx@1.88.0
+  * boost-intrusive:arm64-osx@1.88.0
+  * boost-io:arm64-osx@1.88.0
+  * boost-iterator:arm64-osx@1.88.0
+  * boost-lexical-cast:arm64-osx@1.88.0
+  * boost-move:arm64-osx@1.88.0
+  * boost-mp11:arm64-osx@1.88.0
+  * boost-mpl:arm64-osx@1.88.0
+  * boost-multi-index:arm64-osx@1.88.0
+    boost-nowide:arm64-osx@1.88.0
+  * boost-numeric-conversion:arm64-osx@1.88.0
+    boost-optional:arm64-osx@1.88.0
+  * boost-parameter:arm64-osx@1.88.0
+  * boost-phoenix:arm64-osx@1.88.0
+  * boost-pool:arm64-osx@1.88.0
+  * boost-predef:arm64-osx@1.88.0
+  * boost-preprocessor:arm64-osx@1.88.0
+    boost-program-options:arm64-osx@1.88.0
+    boost-property-tree:arm64-osx@1.88.0
+  * boost-proto:arm64-osx@1.88.0
+    boost-ptr-container:arm64-osx@1.88.0
+    boost-random:arm64-osx@1.88.0
+  * boost-range:arm64-osx@1.88.0
+  * boost-ratio:arm64-osx@1.88.0
+  * boost-regex:arm64-osx@1.88.0
+  * boost-scope:arm64-osx@1.88.0
+  * boost-serialization:arm64-osx@1.88.0
+    boost-signals2:arm64-osx@1.88.0
+  * boost-smart-ptr:arm64-osx@1.88.0
+  * boost-spirit:arm64-osx@1.88.0
+  * boost-static-assert:arm64-osx@1.88.0
+    boost-static-string:arm64-osx@1.88.0
+  * boost-system:arm64-osx@1.88.0
+  * boost-thread:arm64-osx@1.88.0
+  * boost-throw-exception:arm64-osx@1.88.0
+    boost-tokenizer:arm64-osx@1.88.0
+  * boost-tuple:arm64-osx@1.88.0
+  * boost-type-index:arm64-osx@1.88.0
+  * boost-type-traits:arm64-osx@1.88.0
+  * boost-typeof:arm64-osx@1.88.0
+  * boost-uninstall:arm64-osx@1.88.0
+  * boost-unordered:arm64-osx@1.88.0
+  * boost-utility:arm64-osx@1.88.0
+  * boost-variant:arm64-osx@1.88.0
+  * boost-variant2:arm64-osx@1.88.0
+  * boost-winapi:arm64-osx@1.88.0
+    curl[core,openssl]:arm64-osx@8.14.1
+  * egl-registry:arm64-osx@2024-01-25
+  * expat:arm64-osx@2.7.1
+    fmt:arm64-osx@12.1.0
+    glm:arm64-osx@1.0.1#3
+    glslang:arm64-osx@15.1.0
+    hidapi:arm64-osx@0.15.0#1
+  * libiconv:arm64-osx@1.18#1
+  * libjpeg-turbo:arm64-osx@3.1.0#1
+    libpng:arm64-osx@1.6.48
+    libusb:arm64-osx@1.0.26.11791#7 -- /Users/bytedance/workspace/cemu_android/dependencies/vcpkg_overlay_ports_mac/libusb
+  * libwebp[core,libwebpmux,nearlossless,simd]:arm64-osx@1.5.0#1
+    libzip:arm64-osx@1.11.4
+  * nanosvg:arm64-osx@2023-12-29
+  * opengl:arm64-osx@2022-12-04#3
+  * opengl-registry:arm64-osx@2024-02-10#1
+    openssl:arm64-osx@3.5.0#1
+  * pcre2[core,jit,platform-default-features]:arm64-osx@10.45
+    pugixml:arm64-osx@1.15
+    rapidjson:arm64-osx@2025-02-26
+    sdl2:arm64-osx@2.32.10
+    tiff[core,jpeg,zip]:arm64-osx@4.7.0
+  * vcpkg-boost:arm64-osx@2025-03-29
+  * vcpkg-cmake:arm64-osx@2024-04-23
+  * vcpkg-cmake-config:arm64-osx@2024-05-23
+  * vcpkg-cmake-get-vars:arm64-osx@2025-05-29
+    wxwidgets[core,debug-support,sound]:arm64-osx@3.3.2 -- /Users/bytedance/workspace/cemu_android/dependencies/vcpkg_overlay_ports/wxwidgets
+    zlib:arm64-osx@1.3.1
+    zstd:arm64-osx@1.5.7
+Additional packages (*) will be modified to complete this operation.
+Restored 0 package(s) from /Users/bytedance/.cache/vcpkg/archives in 12.9 ms. Use --debug to see more details.
+Installing 1/105 vcpkg-cmake-config:arm64-osx@2024-05-23...
+Building vcpkg-cmake-config:arm64-osx@2024-05-23...
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake-config_arm64-osx/share/vcpkg-cmake-config/vcpkg_cmake_config_fixup.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake-config_arm64-osx/share/vcpkg-cmake-config/vcpkg-port-config.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake-config_arm64-osx/share/vcpkg-cmake-config/copyright
+-- Skipping post-build validation due to VCPKG_POLICY_EMPTY_PACKAGE
+Starting submission of vcpkg-cmake-config:arm64-osx@2024-05-23 to 1 binary cache(s) in the background
+Elapsed time to handle vcpkg-cmake-config:arm64-osx: 57.4 ms
+vcpkg-cmake-config:arm64-osx package ABI: 363da7008a03a449a5ef4a4ea5a59339aa4f17eb799b3bfd10686dfadb027c6f
+Installing 2/105 vcpkg-cmake:arm64-osx@2024-04-23...
+Building vcpkg-cmake:arm64-osx@2024-04-23...
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake_arm64-osx/share/vcpkg-cmake/vcpkg_cmake_configure.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake_arm64-osx/share/vcpkg-cmake/vcpkg_cmake_build.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake_arm64-osx/share/vcpkg-cmake/vcpkg_cmake_install.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake_arm64-osx/share/vcpkg-cmake/vcpkg-port-config.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake_arm64-osx/share/vcpkg-cmake/copyright
+-- Performing post-build validation
+Starting submission of vcpkg-cmake:arm64-osx@2024-04-23 to 1 binary cache(s) in the background
+Elapsed time to handle vcpkg-cmake:arm64-osx: 45.5 ms
+vcpkg-cmake:arm64-osx package ABI: cbc5ca2b1b03a689dc1ff33118c935fa5a3bacd738b221be7c1a71c0d4389eb9
+Completed submission of vcpkg-cmake-config:arm64-osx@2024-05-23 to 1 binary cache(s) in 45.4 ms
+Installing 3/105 vcpkg-boost:arm64-osx@2025-03-29...
+Building vcpkg-boost:arm64-osx@2025-03-29...
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-boost_arm64-osx/share/vcpkg-boost/usage.in
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-boost_arm64-osx/share/vcpkg-boost/boost-install.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-boost_arm64-osx/share/vcpkg-boost/vcpkg-port-config.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-boost_arm64-osx/share/vcpkg-boost/copyright
+-- Performing post-build validation
+Starting submission of vcpkg-boost:arm64-osx@2025-03-29 to 1 binary cache(s) in the background
+Elapsed time to handle vcpkg-boost:arm64-osx: 46.5 ms
+vcpkg-boost:arm64-osx package ABI: 4d2074bb742d28aaa0d3dffb7854d4449d0494d38786c38eb6074644732e9600
+Completed submission of vcpkg-cmake:arm64-osx@2024-04-23 to 1 binary cache(s) in 13.9 ms
+Installing 4/105 boost-uninstall:arm64-osx@1.88.0...
+Building boost-uninstall:arm64-osx@1.88.0...
+--
+Please use the following command when you need to remove all boost ports/components:
+    "./vcpkg remove boost-uninstall:arm64-osx --recurse"
+
+-- Skipping post-build validation due to VCPKG_POLICY_EMPTY_PACKAGE
+Starting submission of boost-uninstall:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-uninstall:arm64-osx: 41.2 ms
+boost-uninstall:arm64-osx package ABI: 7393df9b54e20c0ac0b56ba4e55a9936bd692341458223087ee7e0c7a2e99ebd
+Completed submission of vcpkg-boost:arm64-osx@2025-03-29 to 1 binary cache(s) in 12.3 ms
+Installing 5/105 boost-cmake:arm64-osx@1.88.0...
+Building boost-cmake:arm64-osx@1.88.0...
+-- Using cached boostorg-cmake-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-cmake/src/ost-1.88.0-7ca645f160.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-cmake-boost-1.88.0.tar.gz
+-- Applying patch 0001-vcpkg-build.patch
+-- Applying patch 0002-remove-prefix-and-suffix.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-cmake/src/ost-1.88.0-7ca645f160.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Up-to-date: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost/cmake-build
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost/cmake-build/BoostFetch.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost/cmake-build/BoostInstall.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost/cmake-build/BoostTest.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost/cmake-build/BoostTestJamfile.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost/cmake-build/BoostMessage.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost/cmake-build/BoostRoot.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost-cmake/vcpkg-port-config.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost-cmake/usage
+-- Using cached boost-1.88.0-LICENSE_1_0.txt
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-cmake_arm64-osx/share/boost-cmake/copyright
+-- Performing post-build validation
+Starting submission of boost-cmake:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-cmake:arm64-osx: 349 ms
+boost-cmake:arm64-osx package ABI: 1dd3c49b19982bdbe9ea80f3c2d2f24c4bd57f0e00870eb7e640d1a132cf22b6
+Completed submission of boost-uninstall:arm64-osx@1.88.0 to 1 binary cache(s) in 12.9 ms
+Installing 6/105 boost-headers:arm64-osx@1.88.0...
+Building boost-headers:arm64-osx@1.88.0...
+-- Using cached boostorg-headers-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-headers/src/ost-1.88.0-aa76186add.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-headers-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-headers/src/ost-1.88.0-aa76186add.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-headers_arm64-osx/share/boost-headers/copyright
+-- Performing post-build validation
+Starting submission of boost-headers:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-headers:arm64-osx: 624 ms
+boost-headers:arm64-osx package ABI: 77229ec8787339bc6f9fc48d006dbbba12a8ebaeb228e783feab553db836d040
+Completed submission of boost-cmake:arm64-osx@1.88.0 to 1 binary cache(s) in 18.6 ms
+Installing 7/105 boost-config:arm64-osx@1.88.0...
+Building boost-config:arm64-osx@1.88.0...
+-- Using cached boostorg-config-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-config/src/ost-1.88.0-1c5a9b795a.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-config-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-config/src/ost-1.88.0-1c5a9b795a.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-config_arm64-osx/share/boost-config/copyright
+-- Performing post-build validation
+Starting submission of boost-config:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-config:arm64-osx: 1.1 s
+boost-config:arm64-osx package ABI: 5e4a1b10eb451e1d7dde164a81fb03fb4b15672c1e94eac98ce763d1ef4e2ad4
+Completed submission of boost-headers:arm64-osx@1.88.0 to 1 binary cache(s) in 16.6 ms
+Installing 8/105 boost-assert:arm64-osx@1.88.0...
+Building boost-assert:arm64-osx@1.88.0...
+-- Using cached boostorg-assert-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-assert/src/ost-1.88.0-b153d29229.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-assert-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-assert/src/ost-1.88.0-b153d29229.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-assert_arm64-osx/share/boost-assert/copyright
+-- Performing post-build validation
+Starting submission of boost-assert:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-assert:arm64-osx: 604 ms
+boost-assert:arm64-osx package ABI: 61c19acc71331715d8916cd6af5f16f84d286b79902eb74fee188d5703cbfa9a
+Completed submission of boost-config:arm64-osx@1.88.0 to 1 binary cache(s) in 135 ms
+Installing 9/105 boost-throw-exception:arm64-osx@1.88.0...
+Building boost-throw-exception:arm64-osx@1.88.0...
+-- Using cached boostorg-throw_exception-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-throw-exception/src/ost-1.88.0-48a7409424.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-throw_exception-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-throw-exception/src/ost-1.88.0-48a7409424.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-throw-exception_arm64-osx/share/boost-throw-exception/copyright
+-- Performing post-build validation
+Starting submission of boost-throw-exception:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-throw-exception:arm64-osx: 586 ms
+boost-throw-exception:arm64-osx package ABI: e29236d8122f419f10988f4b39c306589f6ff9921d8bb8d6409fee6cc50527c7
+Completed submission of boost-assert:arm64-osx@1.88.0 to 1 binary cache(s) in 16.6 ms
+Installing 10/105 boost-predef:arm64-osx@1.88.0...
+Building boost-predef:arm64-osx@1.88.0...
+-- Using cached boostorg-predef-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-predef/src/ost-1.88.0-4a841ac442.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-predef-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-predef/src/ost-1.88.0-4a841ac442.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-predef_arm64-osx/share/boost-predef/copyright
+-- Performing post-build validation
+Starting submission of boost-predef:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-predef:arm64-osx: 875 ms
+boost-predef:arm64-osx package ABI: 942d8cfff4bd6b8e0bbe69447ce8b968b4c3e909b43deaeba2c64776befb18b0
+Completed submission of boost-throw-exception:arm64-osx@1.88.0 to 1 binary cache(s) in 15.9 ms
+Installing 11/105 boost-mp11:arm64-osx@1.88.0...
+Building boost-mp11:arm64-osx@1.88.0...
+-- Using cached boostorg-mp11-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-mp11/src/ost-1.88.0-73972791c9.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-mp11-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-mp11/src/ost-1.88.0-73972791c9.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-mp11_arm64-osx/share/boost-mp11/copyright
+-- Performing post-build validation
+Starting submission of boost-mp11:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-mp11:arm64-osx: 741 ms
+boost-mp11:arm64-osx package ABI: 69346d2cf041c642327265e1dd74001e1d651bbe0b3087e287cca6731441af9b
+Completed submission of boost-predef:arm64-osx@1.88.0 to 1 binary cache(s) in 91.6 ms
+Installing 12/105 boost-static-assert:arm64-osx@1.88.0...
+Building boost-static-assert:arm64-osx@1.88.0...
+-- Using cached boostorg-static_assert-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-static-assert/src/ost-1.88.0-f5f10f4cbe.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-static_assert-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-static-assert/src/ost-1.88.0-f5f10f4cbe.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-static-assert_arm64-osx/share/boost-static-assert/copyright
+-- Performing post-build validation
+Starting submission of boost-static-assert:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-static-assert:arm64-osx: 688 ms
+boost-static-assert:arm64-osx package ABI: 58d5cb9a13271b1ea5ea6eda957941c35499fb6fc7652796cbffb0dc4b638d22
+Completed submission of boost-mp11:arm64-osx@1.88.0 to 1 binary cache(s) in 37.1 ms
+Installing 13/105 boost-core:arm64-osx@1.88.0...
+Building boost-core:arm64-osx@1.88.0...
+-- Using cached boostorg-core-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-core/src/ost-1.88.0-b96ab5501d.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-core-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-core/src/ost-1.88.0-b96ab5501d.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-core_arm64-osx/share/boost-core/copyright
+-- Performing post-build validation
+Starting submission of boost-core:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-core:arm64-osx: 759 ms
+boost-core:arm64-osx package ABI: 587130c4e4ed7d04720292f27c8f76c53e8cc87b778d00076a39e1c3648efe7e
+Completed submission of boost-static-assert:arm64-osx@1.88.0 to 1 binary cache(s) in 25 ms
+Installing 14/105 boost-describe:arm64-osx@1.88.0...
+Building boost-describe:arm64-osx@1.88.0...
+-- Using cached boostorg-describe-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-describe/src/ost-1.88.0-590ba4e47e.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-describe-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-describe/src/ost-1.88.0-590ba4e47e.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-describe_arm64-osx/share/boost-describe/copyright
+-- Performing post-build validation
+Starting submission of boost-describe:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-describe:arm64-osx: 558 ms
+boost-describe:arm64-osx package ABI: 4f727ad17fdc8221f1114e4edc621c95751e4df71581ba6ee741abfab6608828
+Completed submission of boost-core:arm64-osx@1.88.0 to 1 binary cache(s) in 39.7 ms
+Installing 15/105 boost-container-hash:arm64-osx@1.88.0...
+Building boost-container-hash:arm64-osx@1.88.0...
+-- Using cached boostorg-container_hash-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-container-hash/src/ost-1.88.0-3cebf95663.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-container_hash-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-container-hash/src/ost-1.88.0-3cebf95663.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-container-hash_arm64-osx/share/boost-container-hash/copyright
+-- Performing post-build validation
+Starting submission of boost-container-hash:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-container-hash:arm64-osx: 574 ms
+boost-container-hash:arm64-osx package ABI: d7202ffd53a4dc9dfb0135826f22f05c9f2553ccca6b4e8bbf6ef90bd01d9925
+Completed submission of boost-describe:arm64-osx@1.88.0 to 1 binary cache(s) in 24.7 ms
+Installing 16/105 boost-unordered:arm64-osx@1.88.0...
+Building boost-unordered:arm64-osx@1.88.0...
+-- Using cached boostorg-unordered-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-unordered/src/ost-1.88.0-92b6910f5b.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-unordered-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-unordered/src/ost-1.88.0-92b6910f5b.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-unordered_arm64-osx/share/boost-unordered/copyright
+-- Performing post-build validation
+Starting submission of boost-unordered:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-unordered:arm64-osx: 968 ms
+boost-unordered:arm64-osx package ABI: ecfb5158daea1a4caf8d69d1ae08f111783d3ce380b4e3023d6687176483e540
+Completed submission of boost-container-hash:arm64-osx@1.88.0 to 1 binary cache(s) in 24.2 ms
+Installing 17/105 boost-type-traits:arm64-osx@1.88.0...
+Building boost-type-traits:arm64-osx@1.88.0...
+-- Using cached boostorg-type_traits-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-type-traits/src/ost-1.88.0-2dbf755bb8.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-type_traits-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-type-traits/src/ost-1.88.0-2dbf755bb8.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-type-traits_arm64-osx/share/boost-type-traits/copyright
+-- Performing post-build validation
+Starting submission of boost-type-traits:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-type-traits:arm64-osx: 1.1 s
+boost-type-traits:arm64-osx package ABI: 0a4bf13cb4aae167aac8942a28520c7e1ac92fa32c8cc181c82b1904c2a0c3b8
+Completed submission of boost-unordered:arm64-osx@1.88.0 to 1 binary cache(s) in 44.9 ms
+Installing 18/105 boost-tuple:arm64-osx@1.88.0...
+Building boost-tuple:arm64-osx@1.88.0...
+-- Using cached boostorg-tuple-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-tuple/src/ost-1.88.0-1590de8f80.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-tuple-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-tuple/src/ost-1.88.0-1590de8f80.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-tuple_arm64-osx/share/boost-tuple/copyright
+-- Performing post-build validation
+Starting submission of boost-tuple:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-tuple:arm64-osx: 529 ms
+boost-tuple:arm64-osx package ABI: d4e82f5fd2cea3b1212278d2e4d14063adf7f31545a9b68b720b82204ea3bd30
+Completed submission of boost-type-traits:arm64-osx@1.88.0 to 1 binary cache(s) in 75.8 ms
+Installing 19/105 boost-smart-ptr:arm64-osx@1.88.0...
+Building boost-smart-ptr:arm64-osx@1.88.0...
+-- Using cached boostorg-smart_ptr-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-smart-ptr/src/ost-1.88.0-22d9bb8b79.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-smart_ptr-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-smart-ptr/src/ost-1.88.0-22d9bb8b79.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-smart-ptr_arm64-osx/share/boost-smart-ptr/copyright
+-- Performing post-build validation
+Starting submission of boost-smart-ptr:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-smart-ptr:arm64-osx: 802 ms
+boost-smart-ptr:arm64-osx package ABI: 457199aa8d15470df081abe5f2d0f219064a16316ee62023df2d6bdb6f773352
+Completed submission of boost-tuple:arm64-osx@1.88.0 to 1 binary cache(s) in 18.9 ms
+Installing 20/105 boost-preprocessor:arm64-osx@1.88.0...
+Building boost-preprocessor:arm64-osx@1.88.0...
+-- Using cached boostorg-preprocessor-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-preprocessor/src/ost-1.88.0-39949f1757.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-preprocessor-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-preprocessor/src/ost-1.88.0-39949f1757.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-preprocessor_arm64-osx/share/boost-preprocessor/copyright
+-- Performing post-build validation
+Starting submission of boost-preprocessor:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-preprocessor:arm64-osx: 1.5 s
+boost-preprocessor:arm64-osx package ABI: 19dcab29d5a862e0b6c857da105c0b193f84143914916ff9f73954c64a5a112b
+Completed submission of boost-smart-ptr:arm64-osx@1.88.0 to 1 binary cache(s) in 48.4 ms
+Installing 21/105 boost-io:arm64-osx@1.88.0...
+Building boost-io:arm64-osx@1.88.0...
+-- Using cached boostorg-io-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-io/src/ost-1.88.0-5f95ee3fba.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-io-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-io/src/ost-1.88.0-5f95ee3fba.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-io_arm64-osx/share/boost-io/copyright
+-- Performing post-build validation
+Starting submission of boost-io:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-io:arm64-osx: 592 ms
+boost-io:arm64-osx package ABI: a21ad709a1bef093f4e720866d0cc107e82059203e5755208114dcf1dcd41dd8
+Completed submission of boost-preprocessor:arm64-osx@1.88.0 to 1 binary cache(s) in 172 ms
+Installing 22/105 boost-utility:arm64-osx@1.88.0...
+Building boost-utility:arm64-osx@1.88.0...
+-- Using cached boostorg-utility-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-utility/src/ost-1.88.0-9cd0a102dc.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-utility-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-utility/src/ost-1.88.0-9cd0a102dc.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-utility_arm64-osx/share/boost-utility/copyright
+-- Performing post-build validation
+Starting submission of boost-utility:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-utility:arm64-osx: 677 ms
+boost-utility:arm64-osx package ABI: a4ecc85b3cdfa34920fa50c68828497ff52373801a7b73abc9f2d6eb2e359977
+Completed submission of boost-io:arm64-osx@1.88.0 to 1 binary cache(s) in 20.8 ms
+Installing 23/105 boost-mpl:arm64-osx@1.88.0...
+Building boost-mpl:arm64-osx@1.88.0...
+-- Using cached boostorg-mpl-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-mpl/src/ost-1.88.0-fa0ace56fe.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-mpl-boost-1.88.0.tar.gz
+-- Applying patch fix-msvc-build.diff
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-mpl/src/ost-1.88.0-fa0ace56fe.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-mpl_arm64-osx/share/boost-mpl/copyright
+-- Performing post-build validation
+Starting submission of boost-mpl:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-mpl:arm64-osx: 2.3 s
+boost-mpl:arm64-osx package ABI: 829a56e9e0c2038a8d4c0489c6923c3a7786cd445985ec47f3398a06f2f21e78
+Completed submission of boost-utility:arm64-osx@1.88.0 to 1 binary cache(s) in 29.4 ms
+Installing 24/105 boost-integer:arm64-osx@1.88.0...
+Building boost-integer:arm64-osx@1.88.0...
+-- Using cached boostorg-integer-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-integer/src/ost-1.88.0-164b88b839.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-integer-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-integer/src/ost-1.88.0-164b88b839.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-integer_arm64-osx/share/boost-integer/copyright
+-- Performing post-build validation
+Starting submission of boost-integer:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-integer:arm64-osx: 719 ms
+boost-integer:arm64-osx package ABI: f9b062e09a73a56c12d6cc17a559ef87a242bec0bdba971f7ec3dd0c954f673f
+Completed submission of boost-mpl:arm64-osx@1.88.0 to 1 binary cache(s) in 509 ms
+Installing 25/105 boost-concept-check:arm64-osx@1.88.0...
+Building boost-concept-check:arm64-osx@1.88.0...
+-- Using cached boostorg-concept_check-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-concept-check/src/ost-1.88.0-b83e6f9b40.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-concept_check-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-concept-check/src/ost-1.88.0-b83e6f9b40.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-concept-check_arm64-osx/share/boost-concept-check/copyright
+-- Performing post-build validation
+Starting submission of boost-concept-check:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-concept-check:arm64-osx: 593 ms
+boost-concept-check:arm64-osx package ABI: 45b4d3378790a624fed37bf01aa57418def57f9690de4635dec911ce5382fa38
+Completed submission of boost-integer:arm64-osx@1.88.0 to 1 binary cache(s) in 19.1 ms
+Installing 26/105 boost-regex:arm64-osx@1.88.0...
+Building boost-regex:arm64-osx@1.88.0...
+-- Using cached boostorg-regex-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-regex/src/ost-1.88.0-2c223cbe1f.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-regex-boost-1.88.0.tar.gz
+-- Applying patch compat.diff
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-regex/src/ost-1.88.0-2c223cbe1f.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-regex_arm64-osx/share/boost-regex/copyright
+-- Performing post-build validation
+Starting submission of boost-regex:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-regex:arm64-osx: 1.7 s
+boost-regex:arm64-osx package ABI: 26cf80babab30badc554e43fe23ae6437dc36a18986f70b0f059df23d771aa50
+Completed submission of boost-concept-check:arm64-osx@1.88.0 to 1 binary cache(s) in 23.1 ms
+Installing 27/105 boost-optional:arm64-osx@1.88.0...
+Building boost-optional:arm64-osx@1.88.0...
+-- Using cached boostorg-optional-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-optional/src/ost-1.88.0-04986b0dfa.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-optional-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-optional/src/ost-1.88.0-04986b0dfa.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-optional_arm64-osx/share/boost-optional/copyright
+-- Performing post-build validation
+Starting submission of boost-optional:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-optional:arm64-osx: 601 ms
+boost-optional:arm64-osx package ABI: bf4454c0fb4e7911810901050f36bc72025e5d5dea1574b502e225b6446e0138
+Completed submission of boost-regex:arm64-osx@1.88.0 to 1 binary cache(s) in 58.6 ms
+Installing 28/105 boost-typeof:arm64-osx@1.88.0...
+Building boost-typeof:arm64-osx@1.88.0...
+-- Using cached boostorg-typeof-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-typeof/src/ost-1.88.0-dc32e7fe62.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-typeof-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-typeof/src/ost-1.88.0-dc32e7fe62.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-typeof_arm64-osx/share/boost-typeof/copyright
+-- Performing post-build validation
+Starting submission of boost-typeof:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-typeof:arm64-osx: 556 ms
+boost-typeof:arm64-osx package ABI: 9b61bb0286b3cf6c25d745f8803821efcf5ce02eb5b3c9e0f24adc4b3fc9de35
+Completed submission of boost-optional:arm64-osx@1.88.0 to 1 binary cache(s) in 20.4 ms
+Installing 29/105 boost-detail:arm64-osx@1.88.0...
+Building boost-detail:arm64-osx@1.88.0...
+-- Using cached boostorg-detail-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-detail/src/ost-1.88.0-5224a59fa4.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-detail-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-detail/src/ost-1.88.0-5224a59fa4.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-detail_arm64-osx/share/boost-detail/copyright
+-- Performing post-build validation
+Starting submission of boost-detail:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-detail:arm64-osx: 584 ms
+boost-detail:arm64-osx package ABI: 7f90ae2c43262a157c871cfe0804cbbb5a0aef1328f52e699b50eedffbcae1cb
+Completed submission of boost-typeof:arm64-osx@1.88.0 to 1 binary cache(s) in 20.7 ms
+Installing 30/105 boost-function-types:arm64-osx@1.88.0...
+Building boost-function-types:arm64-osx@1.88.0...
+-- Using cached boostorg-function_types-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-function-types/src/ost-1.88.0-c035a812a9.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-function_types-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-function-types/src/ost-1.88.0-c035a812a9.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-function-types_arm64-osx/share/boost-function-types/copyright
+-- Performing post-build validation
+Starting submission of boost-function-types:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-function-types:arm64-osx: 690 ms
+boost-function-types:arm64-osx package ABI: 59fff67589215530d9dbe654442214c42ebc4c1669cfa0066473fea60072d660
+Completed submission of boost-detail:arm64-osx@1.88.0 to 1 binary cache(s) in 21 ms
+Installing 31/105 boost-bind:arm64-osx@1.88.0...
+Building boost-bind:arm64-osx@1.88.0...
+-- Using cached boostorg-bind-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-bind/src/ost-1.88.0-bf0ada17c7.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-bind-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-bind/src/ost-1.88.0-bf0ada17c7.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-bind_arm64-osx/share/boost-bind/copyright
+-- Performing post-build validation
+Starting submission of boost-bind:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-bind:arm64-osx: 578 ms
+boost-bind:arm64-osx package ABI: bc6467d89f7d66485a009c28d7f21be459d88a36647141041269b1b35f75d225
+Completed submission of boost-function-types:arm64-osx@1.88.0 to 1 binary cache(s) in 38.9 ms
+Installing 32/105 boost-function:arm64-osx@1.88.0...
+Building boost-function:arm64-osx@1.88.0...
+-- Using cached boostorg-function-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-function/src/ost-1.88.0-e750071483.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-function-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-function/src/ost-1.88.0-e750071483.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-function_arm64-osx/share/boost-function/copyright
+-- Performing post-build validation
+Starting submission of boost-function:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-function:arm64-osx: 576 ms
+boost-function:arm64-osx package ABI: c693782b6babea7eadd66c1303b0fb28280ebb6e7511590e186965a757b64972
+Completed submission of boost-bind:arm64-osx@1.88.0 to 1 binary cache(s) in 21.9 ms
+Installing 33/105 boost-functional:arm64-osx@1.88.0...
+Building boost-functional:arm64-osx@1.88.0...
+-- Using cached boostorg-functional-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-functional/src/ost-1.88.0-5f23a228ff.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-functional-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-functional/src/ost-1.88.0-5f23a228ff.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-functional_arm64-osx/share/boost-functional/copyright
+-- Performing post-build validation
+Starting submission of boost-functional:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-functional:arm64-osx: 627 ms
+boost-functional:arm64-osx package ABI: 78a7731cf877b102e2fc698129a42a5159514779a2da0f0238bca69ceb400bc8
+Completed submission of boost-function:arm64-osx@1.88.0 to 1 binary cache(s) in 19.7 ms
+Installing 34/105 boost-fusion:arm64-osx@1.88.0...
+Building boost-fusion:arm64-osx@1.88.0...
+-- Using cached boostorg-fusion-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-fusion/src/ost-1.88.0-1dce9c04b1.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-fusion-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-fusion/src/ost-1.88.0-1dce9c04b1.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-fusion_arm64-osx/share/boost-fusion/copyright
+-- Performing post-build validation
+Starting submission of boost-fusion:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-fusion:arm64-osx: 2.2 s
+boost-fusion:arm64-osx package ABI: 3605c20aba89ef2edf842206e99d96ce5f74c31f854fa06f39479ecfd0462652
+Completed submission of boost-functional:arm64-osx@1.88.0 to 1 binary cache(s) in 16.4 ms
+Installing 35/105 boost-iterator:arm64-osx@1.88.0...
+Building boost-iterator:arm64-osx@1.88.0...
+-- Using cached boostorg-iterator-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-iterator/src/ost-1.88.0-51514a5505.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-iterator-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-iterator/src/ost-1.88.0-51514a5505.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-iterator_arm64-osx/share/boost-iterator/copyright
+-- Performing post-build validation
+Starting submission of boost-iterator:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-iterator:arm64-osx: 776 ms
+boost-iterator:arm64-osx package ABI: a829e7ad7e91fd18808ed842df35d888bce681758ab64620c9f5b58bdb5c8f2c
+Completed submission of boost-fusion:arm64-osx@1.88.0 to 1 binary cache(s) in 439 ms
+Installing 36/105 boost-conversion:arm64-osx@1.88.0...
+Building boost-conversion:arm64-osx@1.88.0...
+-- Using cached boostorg-conversion-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-conversion/src/ost-1.88.0-77611f6ca4.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-conversion-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-conversion/src/ost-1.88.0-77611f6ca4.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-conversion_arm64-osx/share/boost-conversion/copyright
+-- Performing post-build validation
+Starting submission of boost-conversion:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-conversion:arm64-osx: 551 ms
+boost-conversion:arm64-osx package ABI: 0ee5e16b06a4b408148e2b485b10baacd1221c583ea095a35c7b1b3a593a69f9
+Completed submission of boost-iterator:arm64-osx@1.88.0 to 1 binary cache(s) in 27.9 ms
+Installing 37/105 boost-array:arm64-osx@1.88.0...
+Building boost-array:arm64-osx@1.88.0...
+-- Using cached boostorg-array-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-array/src/ost-1.88.0-2adb23ad65.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-array-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-array/src/ost-1.88.0-2adb23ad65.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-array_arm64-osx/share/boost-array/copyright
+-- Performing post-build validation
+Starting submission of boost-array:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-array:arm64-osx: 569 ms
+boost-array:arm64-osx package ABI: 8a778f436f7298696e2af055b6f27f5bfbb462661cf4f1f3d06850cc6d7fcbd8
+Completed submission of boost-conversion:arm64-osx@1.88.0 to 1 binary cache(s) in 17 ms
+Installing 38/105 boost-range:arm64-osx@1.88.0...
+Building boost-range:arm64-osx@1.88.0...
+-- Using cached boostorg-range-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-range/src/ost-1.88.0-5653dbb6ea.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-range-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-range/src/ost-1.88.0-5653dbb6ea.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-range_arm64-osx/share/boost-range/copyright
+-- Performing post-build validation
+Starting submission of boost-range:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-range:arm64-osx: 953 ms
+boost-range:arm64-osx package ABI: 46be29b847127913f8be08cd7f388383e8e798bb07eefc7d8d60e69feadf7aaa
+Completed submission of boost-array:arm64-osx@1.88.0 to 1 binary cache(s) in 21.1 ms
+Installing 39/105 boost-exception:arm64-osx@1.88.0...
+Building boost-exception:arm64-osx@1.88.0...
+-- Using cached boostorg-exception-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-exception/src/ost-1.88.0-18fd31ba7d.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-exception-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-exception/src/ost-1.88.0-18fd31ba7d.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-exception_arm64-osx/share/boost-exception/copyright
+-- Performing post-build validation
+Starting submission of boost-exception:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-exception:arm64-osx: 653 ms
+boost-exception:arm64-osx package ABI: 3a3b898a9b2b1f9b6499f5959c1ef532273ca0565cac28ddcc2de052d2431d74
+Completed submission of boost-range:arm64-osx@1.88.0 to 1 binary cache(s) in 63.4 ms
+Installing 40/105 boost-algorithm:arm64-osx@1.88.0...
+Building boost-algorithm:arm64-osx@1.88.0...
+-- Using cached boostorg-algorithm-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-algorithm/src/ost-1.88.0-2e7cb75cc7.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-algorithm-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-algorithm/src/ost-1.88.0-2e7cb75cc7.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-algorithm_arm64-osx/share/boost-algorithm/copyright
+-- Performing post-build validation
+Starting submission of boost-algorithm:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-algorithm:arm64-osx: 833 ms
+boost-algorithm:arm64-osx package ABI: c2d8a1c5d21728b73646cb9c4e4f6ef654af6a19260a3a343ce646f3aeb369d4
+Completed submission of boost-exception:arm64-osx@1.88.0 to 1 binary cache(s) in 22 ms
+Installing 41/105 boost-winapi:arm64-osx@1.88.0...
+Building boost-winapi:arm64-osx@1.88.0...
+-- Using cached boostorg-winapi-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-winapi/src/ost-1.88.0-c578dec75e.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-winapi-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-winapi/src/ost-1.88.0-c578dec75e.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-winapi_arm64-osx/share/boost-winapi/copyright
+-- Performing post-build validation
+Starting submission of boost-winapi:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-winapi:arm64-osx: 749 ms
+boost-winapi:arm64-osx package ABI: dad5093168c5ebfcb66a57f9f25dfc392b0a9bb487bc18b49ba7b4a1e31d498a
+Completed submission of boost-algorithm:arm64-osx@1.88.0 to 1 binary cache(s) in 47.5 ms
+Installing 42/105 boost-variant2:arm64-osx@1.88.0...
+Building boost-variant2:arm64-osx@1.88.0...
+-- Using cached boostorg-variant2-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-variant2/src/ost-1.88.0-d6fca4316f.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-variant2-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-variant2/src/ost-1.88.0-d6fca4316f.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-variant2_arm64-osx/share/boost-variant2/copyright
+-- Performing post-build validation
+Starting submission of boost-variant2:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-variant2:arm64-osx: 558 ms
+boost-variant2:arm64-osx package ABI: 1856afa3c953160e2c42c4dd91be034559014f7bed0270f8ce38a27f1941a947
+Completed submission of boost-winapi:arm64-osx@1.88.0 to 1 binary cache(s) in 50.8 ms
+Installing 43/105 boost-system:arm64-osx@1.88.0...
+Building boost-system:arm64-osx@1.88.0...
+-- Using cached boostorg-system-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-system/src/ost-1.88.0-f53ce29d87.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-system-boost-1.88.0.tar.gz
+-- Applying patch compat.diff
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-system/src/ost-1.88.0-f53ce29d87.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-system_arm64-osx/share/boost-system/copyright
+-- Performing post-build validation
+Starting submission of boost-system:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-system:arm64-osx: 1.2 s
+boost-system:arm64-osx package ABI: e065eacd5e69bc39bcf56bdf79e1fcff286b7a70e54c16a702affd48ff5f6356
+Completed submission of boost-variant2:arm64-osx@1.88.0 to 1 binary cache(s) in 20 ms
+Installing 44/105 boost-tokenizer:arm64-osx@1.88.0...
+Building boost-tokenizer:arm64-osx@1.88.0...
+-- Using cached boostorg-tokenizer-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-tokenizer/src/ost-1.88.0-2778161568.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-tokenizer-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-tokenizer/src/ost-1.88.0-2778161568.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-tokenizer_arm64-osx/share/boost-tokenizer/copyright
+-- Performing post-build validation
+Starting submission of boost-tokenizer:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-tokenizer:arm64-osx: 655 ms
+boost-tokenizer:arm64-osx package ABI: 33242143d60d6ad2f891677d352fad3fe4cc3ba3085d6205b7c83c557e249b29
+Completed submission of boost-system:arm64-osx@1.88.0 to 1 binary cache(s) in 26.8 ms
+Installing 45/105 boost-numeric-conversion:arm64-osx@1.88.0...
+Building boost-numeric-conversion:arm64-osx@1.88.0...
+-- Using cached boostorg-numeric_conversion-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-numeric-conversion/src/ost-1.88.0-0973b8e81b.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-numeric_conversion-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-numeric-conversion/src/ost-1.88.0-0973b8e81b.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-numeric-conversion_arm64-osx/share/boost-numeric-conversion/copyright
+-- Performing post-build validation
+Starting submission of boost-numeric-conversion:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-numeric-conversion:arm64-osx: 695 ms
+boost-numeric-conversion:arm64-osx package ABI: f7fde0f944e88d88e2402d8c090203073da3b9ddf228b98b400df0303657d2a1
+Completed submission of boost-tokenizer:arm64-osx@1.88.0 to 1 binary cache(s) in 19.3 ms
+Installing 46/105 boost-move:arm64-osx@1.88.0...
+Building boost-move:arm64-osx@1.88.0...
+-- Using cached boostorg-move-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-move/src/ost-1.88.0-d6f7db8579.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-move-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-move/src/ost-1.88.0-d6f7db8579.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-move_arm64-osx/share/boost-move/copyright
+-- Performing post-build validation
+Starting submission of boost-move:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-move:arm64-osx: 825 ms
+boost-move:arm64-osx package ABI: a85fe8a9f796e727da791297409638d52ba79e715d18be66bff67fc8e3088071
+Completed submission of boost-numeric-conversion:arm64-osx@1.88.0 to 1 binary cache(s) in 31.2 ms
+Installing 47/105 boost-intrusive:arm64-osx@1.88.0...
+Building boost-intrusive:arm64-osx@1.88.0...
+-- Using cached boostorg-intrusive-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-intrusive/src/ost-1.88.0-2b4f794aaf.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-intrusive-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-intrusive/src/ost-1.88.0-2b4f794aaf.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-intrusive_arm64-osx/share/boost-intrusive/copyright
+-- Performing post-build validation
+Starting submission of boost-intrusive:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-intrusive:arm64-osx: 880 ms
+boost-intrusive:arm64-osx package ABI: 5f89658e8feada7391b781687b16081d7a8e774d9afde780ab33a81f640827ab
+Completed submission of boost-move:arm64-osx@1.88.0 to 1 binary cache(s) in 37.1 ms
+Installing 48/105 boost-container:arm64-osx@1.88.0...
+Building boost-container:arm64-osx@1.88.0...
+-- Using cached boostorg-container-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-container/src/ost-1.88.0-ff96641865.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-container-boost-1.88.0.tar.gz
+-- Applying patch posix-threads.diff
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-container/src/ost-1.88.0-ff96641865.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-container_arm64-osx/share/boost-container/copyright
+-- Performing post-build validation
+Starting submission of boost-container:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-container:arm64-osx: 2.1 s
+boost-container:arm64-osx package ABI: 8815850213317fe6881b3f1cb5c10fd6076da7989857273216ed711979c1b8f2
+Completed submission of boost-intrusive:arm64-osx@1.88.0 to 1 binary cache(s) in 63.7 ms
+Installing 49/105 boost-lexical-cast:arm64-osx@1.88.0...
+Building boost-lexical-cast:arm64-osx@1.88.0...
+-- Using cached boostorg-lexical_cast-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-lexical-cast/src/ost-1.88.0-d2336c6fb5.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-lexical_cast-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-lexical-cast/src/ost-1.88.0-d2336c6fb5.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-lexical-cast_arm64-osx/share/boost-lexical-cast/copyright
+-- Performing post-build validation
+Starting submission of boost-lexical-cast:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-lexical-cast:arm64-osx: 799 ms
+boost-lexical-cast:arm64-osx package ABI: 6a6df8dbb923814129286bad3d8ee1a5877bfe9be4023c73fae4881e07f901a7
+Completed submission of boost-container:arm64-osx@1.88.0 to 1 binary cache(s) in 90.6 ms
+Installing 50/105 boost-date-time:arm64-osx@1.88.0...
+Building boost-date-time:arm64-osx@1.88.0...
+-- Using cached boostorg-date_time-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-date-time/src/ost-1.88.0-7b3bfadd76.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-date_time-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-date-time/src/ost-1.88.0-7b3bfadd76.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-date-time_arm64-osx/share/boost-date-time/copyright
+-- Performing post-build validation
+Starting submission of boost-date-time:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-date-time:arm64-osx: 1.6 s
+boost-date-time:arm64-osx package ABI: 7cb23e48808564b9ef9c14680bffb974e633dd5621cffbc6fdd4121d64fd9c7a
+Completed submission of boost-lexical-cast:arm64-osx@1.88.0 to 1 binary cache(s) in 19.5 ms
+Installing 51/105 boost-pool:arm64-osx@1.88.0...
+Building boost-pool:arm64-osx@1.88.0...
+-- Using cached boostorg-pool-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-pool/src/ost-1.88.0-5369ec1359.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-pool-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-pool/src/ost-1.88.0-5369ec1359.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-pool_arm64-osx/share/boost-pool/copyright
+-- Performing post-build validation
+Starting submission of boost-pool:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-pool:arm64-osx: 648 ms
+boost-pool:arm64-osx package ABI: 5e9c05bf2a2dd60333490882ffc03faf52dc7bae6e466938b43670f461f0bc34
+Completed submission of boost-date-time:arm64-osx@1.88.0 to 1 binary cache(s) in 50.8 ms
+Installing 52/105 boost-context:arm64-osx@1.88.0...
+Building boost-context:arm64-osx@1.88.0...
+-- Using cached boostorg-context-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-context/src/ost-1.88.0-ec1a1b465e.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-context-boost-1.88.0.tar.gz
+-- Applying patch marmasm.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-context/src/ost-1.88.0-ec1a1b465e.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-context_arm64-osx/share/boost-context/copyright
+-- Performing post-build validation
+Starting submission of boost-context:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-context:arm64-osx: 1.8 s
+boost-context:arm64-osx package ABI: fefffb455dc49bf658a491b6c5893b9faede4e2bc0338748e375a5f763745f73
+Completed submission of boost-pool:arm64-osx@1.88.0 to 1 binary cache(s) in 23.1 ms
+Installing 53/105 boost-align:arm64-osx@1.88.0...
+Building boost-align:arm64-osx@1.88.0...
+-- Using cached boostorg-align-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-align/src/ost-1.88.0-8fde060681.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-align-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-align/src/ost-1.88.0-8fde060681.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-align_arm64-osx/share/boost-align/copyright
+-- Performing post-build validation
+Starting submission of boost-align:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-align:arm64-osx: 631 ms
+boost-align:arm64-osx package ABI: 9695d3c5b03ccbf0e6df0f956e837f10d94428d54506b8db9f8208bbcc13c573
+Completed submission of boost-context:arm64-osx@1.88.0 to 1 binary cache(s) in 28.9 ms
+Installing 54/105 boost-asio:arm64-osx@1.88.0...
+Building boost-asio:arm64-osx@1.88.0...
+-- Using cached boostorg-asio-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-asio/src/ost-1.88.0-72a6ff0ea7.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-asio-boost-1.88.0.tar.gz
+-- Applying patch opt-dep.diff
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-asio/src/ost-1.88.0-72a6ff0ea7.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-asio_arm64-osx/share/boost-asio/copyright
+-- Performing post-build validation
+Starting submission of boost-asio:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-asio:arm64-osx: 2.1 s
+boost-asio:arm64-osx package ABI: 50797c986eeadc588bff78a6a2b22cd3a60c18c041b1fed74a7c38ad594c8ad4
+Completed submission of boost-align:arm64-osx@1.88.0 to 1 binary cache(s) in 29.1 ms
+Installing 55/105 boost-scope:arm64-osx@1.88.0...
+Building boost-scope:arm64-osx@1.88.0...
+-- Using cached boostorg-scope-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-scope/src/ost-1.88.0-1b9399ecf0.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-scope-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-scope/src/ost-1.88.0-1b9399ecf0.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-scope_arm64-osx/share/boost-scope/copyright
+-- Performing post-build validation
+Starting submission of boost-scope:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-scope:arm64-osx: 610 ms
+boost-scope:arm64-osx package ABI: 37db2f33a13f07324852ecb6a9a529f477c26e24d8fc2eb6f58d4dff74a5a619
+Completed submission of boost-asio:arm64-osx@1.88.0 to 1 binary cache(s) in 248 ms
+Installing 56/105 boost-atomic:arm64-osx@1.88.0...
+Building boost-atomic:arm64-osx@1.88.0...
+-- Using cached boostorg-atomic-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-atomic/src/ost-1.88.0-85e5e1b06b.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-atomic-boost-1.88.0.tar.gz
+-- Applying patch fix-include.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-atomic/src/ost-1.88.0-85e5e1b06b.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-atomic_arm64-osx/share/boost-atomic/copyright
+-- Performing post-build validation
+Starting submission of boost-atomic:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-atomic:arm64-osx: 1.6 s
+boost-atomic:arm64-osx package ABI: 3d400550a4d68a21cc9ca084371dade9c26a12ee7dc629e04e8cb789dccd4cc2
+Completed submission of boost-scope:arm64-osx@1.88.0 to 1 binary cache(s) in 24.7 ms
+Installing 57/105 boost-filesystem:arm64-osx@1.88.0...
+Building boost-filesystem:arm64-osx@1.88.0...
+-- Using cached boostorg-filesystem-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-filesystem/src/ost-1.88.0-941b06f73c.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-filesystem-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-filesystem/src/ost-1.88.0-941b06f73c.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-filesystem_arm64-osx/share/boost-filesystem/copyright
+-- Performing post-build validation
+Starting submission of boost-filesystem:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-filesystem:arm64-osx: 5.2 s
+boost-filesystem:arm64-osx package ABI: 0511f809c8f7ae76877dd3bbc12600e9771f940dbdccc921ee268761035f08a0
+Completed submission of boost-atomic:arm64-osx@1.88.0 to 1 binary cache(s) in 97.1 ms
+Installing 58/105 boost-nowide:arm64-osx@1.88.0...
+Building boost-nowide:arm64-osx@1.88.0...
+-- Using cached boostorg-nowide-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-nowide/src/ost-1.88.0-4814a73442.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-nowide-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-nowide/src/ost-1.88.0-4814a73442.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-nowide_arm64-osx/share/boost-nowide/copyright
+-- Performing post-build validation
+Starting submission of boost-nowide:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-nowide:arm64-osx: 2.2 s
+boost-nowide:arm64-osx package ABI: 058f6e3f8ae8b3a008b17518bd21fce2c8f7556647a261192ba93f4875c68148
+Completed submission of boost-filesystem:arm64-osx@1.88.0 to 1 binary cache(s) in 82.7 ms
+Installing 59/105 boost-type-index:arm64-osx@1.88.0...
+Building boost-type-index:arm64-osx@1.88.0...
+-- Using cached boostorg-type_index-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-type-index/src/ost-1.88.0-1ee8827b7b.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-type_index-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-type-index/src/ost-1.88.0-1ee8827b7b.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-type-index_arm64-osx/share/boost-type-index/copyright
+-- Performing post-build validation
+Starting submission of boost-type-index:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-type-index:arm64-osx: 635 ms
+boost-type-index:arm64-osx package ABI: c6545230fc0ffad606662715c9f0a6c33304e779124a962089c8d43f19d9a8b4
+Completed submission of boost-nowide:arm64-osx@1.88.0 to 1 binary cache(s) in 34.7 ms
+Installing 60/105 boost-any:arm64-osx@1.88.0...
+Building boost-any:arm64-osx@1.88.0...
+-- Using cached boostorg-any-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-any/src/ost-1.88.0-2347ea3720.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-any-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-any/src/ost-1.88.0-2347ea3720.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-any_arm64-osx/share/boost-any/copyright
+-- Performing post-build validation
+Starting submission of boost-any:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-any:arm64-osx: 698 ms
+boost-any:arm64-osx package ABI: c6c055a6e1699204d1fd07b0f4620fda3a4ffe0a0ebe7a335534cc39d35332c2
+Completed submission of boost-type-index:arm64-osx@1.88.0 to 1 binary cache(s) in 27.5 ms
+Installing 61/105 boost-program-options:arm64-osx@1.88.0...
+Building boost-program-options:arm64-osx@1.88.0...
+-- Using cached boostorg-program_options-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-program-options/src/ost-1.88.0-2d907932eb.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-program_options-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-program-options/src/ost-1.88.0-2d907932eb.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-program-options_arm64-osx/share/boost-program-options/copyright
+-- Performing post-build validation
+Starting submission of boost-program-options:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-program-options:arm64-osx: 3 s
+boost-program-options:arm64-osx package ABI: 2897d27c878c4cc4e582e13120cfd9f63d54ea06bbe908225139b027b67b5f0e
+Completed submission of boost-any:arm64-osx@1.88.0 to 1 binary cache(s) in 18.3 ms
+Installing 62/105 boost-variant:arm64-osx@1.88.0...
+Building boost-variant:arm64-osx@1.88.0...
+-- Using cached boostorg-variant-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-variant/src/ost-1.88.0-bccd457088.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-variant-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-variant/src/ost-1.88.0-bccd457088.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-variant_arm64-osx/share/boost-variant/copyright
+-- Performing post-build validation
+Starting submission of boost-variant:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-variant:arm64-osx: 744 ms
+boost-variant:arm64-osx package ABI: 532a8f27ab056d93b529ed3d721809617ea055ce75f8fd3e98c8f6fefcccb7c7
+Completed submission of boost-program-options:arm64-osx@1.88.0 to 1 binary cache(s) in 180 ms
+Installing 63/105 boost-ratio:arm64-osx@1.88.0...
+Building boost-ratio:arm64-osx@1.88.0...
+-- Using cached boostorg-ratio-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-ratio/src/ost-1.88.0-1b2fdeff18.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-ratio-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-ratio/src/ost-1.88.0-1b2fdeff18.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-ratio_arm64-osx/share/boost-ratio/copyright
+-- Performing post-build validation
+Starting submission of boost-ratio:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-ratio:arm64-osx: 583 ms
+boost-ratio:arm64-osx package ABI: 442f9766f7a4361046b322511ddde86fdeff28be54b4c13ad92fdd0a80bcc83a
+Completed submission of boost-variant:arm64-osx@1.88.0 to 1 binary cache(s) in 28 ms
+Installing 64/105 boost-chrono:arm64-osx@1.88.0...
+Building boost-chrono:arm64-osx@1.88.0...
+-- Using cached boostorg-chrono-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-chrono/src/ost-1.88.0-826f0052a6.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-chrono-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-chrono/src/ost-1.88.0-826f0052a6.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-chrono_arm64-osx/share/boost-chrono/copyright
+-- Performing post-build validation
+Starting submission of boost-chrono:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-chrono:arm64-osx: 1.9 s
+boost-chrono:arm64-osx package ABI: 7ae4434ae56b6ce2125472bdb61bedc477a0233069b9800d5fb3f9adc19a201f
+Completed submission of boost-ratio:arm64-osx@1.88.0 to 1 binary cache(s) in 15.5 ms
+Installing 65/105 boost-thread:arm64-osx@1.88.0...
+Building boost-thread:arm64-osx@1.88.0...
+-- Using cached boostorg-thread-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-thread/src/ost-1.88.0-be0a07fbcb.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-thread-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-thread/src/ost-1.88.0-be0a07fbcb.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-thread_arm64-osx/share/boost-thread/copyright
+-- Performing post-build validation
+Starting submission of boost-thread:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-thread:arm64-osx: 3.4 s
+boost-thread:arm64-osx package ABI: 540b7b8191c1ddb7252086b95492c4174121a96fd4a2fb83555c798ca431605a
+Completed submission of boost-chrono:arm64-osx@1.88.0 to 1 binary cache(s) in 47.1 ms
+Installing 66/105 boost-proto:arm64-osx@1.88.0...
+Building boost-proto:arm64-osx@1.88.0...
+-- Using cached boostorg-proto-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-proto/src/ost-1.88.0-de14891009.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-proto-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-proto/src/ost-1.88.0-de14891009.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-proto_arm64-osx/share/boost-proto/copyright
+-- Performing post-build validation
+Starting submission of boost-proto:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-proto:arm64-osx: 899 ms
+boost-proto:arm64-osx package ABI: f82c66f0da09e288d2eef59e8f8ec0c95e0ffdfac803492f0ae03986e0fce176
+Completed submission of boost-thread:arm64-osx@1.88.0 to 1 binary cache(s) in 99 ms
+Installing 67/105 boost-phoenix:arm64-osx@1.88.0...
+Building boost-phoenix:arm64-osx@1.88.0...
+-- Using cached boostorg-phoenix-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-phoenix/src/ost-1.88.0-4252880699.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-phoenix-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-phoenix/src/ost-1.88.0-4252880699.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-phoenix_arm64-osx/share/boost-phoenix/copyright
+-- Performing post-build validation
+Starting submission of boost-phoenix:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-phoenix:arm64-osx: 1.6 s
+boost-phoenix:arm64-osx package ABI: bcc87dda523c7360ce3e8833950586b879705beb8c458aec97157177dfc8c1d3
+Completed submission of boost-proto:arm64-osx@1.88.0 to 1 binary cache(s) in 66.2 ms
+Installing 68/105 boost-endian:arm64-osx@1.88.0...
+Building boost-endian:arm64-osx@1.88.0...
+-- Using cached boostorg-endian-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-endian/src/ost-1.88.0-0d2c52168c.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-endian-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-endian/src/ost-1.88.0-0d2c52168c.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-endian_arm64-osx/share/boost-endian/copyright
+-- Performing post-build validation
+Starting submission of boost-endian:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-endian:arm64-osx: 634 ms
+boost-endian:arm64-osx package ABI: 301555d0626361f71216a527249e761876464385828dd2d5614e10c085036d1d
+Completed submission of boost-phoenix:arm64-osx@1.88.0 to 1 binary cache(s) in 206 ms
+Installing 69/105 boost-spirit:arm64-osx@1.88.0...
+Building boost-spirit:arm64-osx@1.88.0...
+-- Using cached boostorg-spirit-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-spirit/src/ost-1.88.0-b972592977.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-spirit-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-spirit/src/ost-1.88.0-b972592977.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-spirit_arm64-osx/share/boost-spirit/copyright
+-- Performing post-build validation
+Starting submission of boost-spirit:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-spirit:arm64-osx: 3 s
+boost-spirit:arm64-osx package ABI: f495d3d79b7aee1539b6f084e2e756533c90e31ab1508effcc8be9c9316dd4bd
+Completed submission of boost-endian:arm64-osx@1.88.0 to 1 binary cache(s) in 20.4 ms
+Installing 70/105 boost-serialization:arm64-osx@1.88.0...
+Building boost-serialization:arm64-osx@1.88.0...
+-- Using cached boostorg-serialization-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-serialization/src/ost-1.88.0-f3be059345.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-serialization-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-serialization/src/ost-1.88.0-f3be059345.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-serialization_arm64-osx/share/boost-serialization/copyright
+-- Performing post-build validation
+Starting submission of boost-serialization:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-serialization:arm64-osx: 7.2 s
+boost-serialization:arm64-osx package ABI: ca1556c0575bd931f89b9492c7d873cc4354a768a0166b9f4078574fcf59fa30
+Completed submission of boost-spirit:arm64-osx@1.88.0 to 1 binary cache(s) in 383 ms
+Installing 71/105 boost-multi-index:arm64-osx@1.88.0...
+Building boost-multi-index:arm64-osx@1.88.0...
+-- Using cached boostorg-multi_index-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-multi-index/src/ost-1.88.0-9387861b40.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-multi_index-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-multi-index/src/ost-1.88.0-9387861b40.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-multi-index_arm64-osx/share/boost-multi-index/copyright
+-- Performing post-build validation
+Starting submission of boost-multi-index:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-multi-index:arm64-osx: 1.1 s
+boost-multi-index:arm64-osx package ABI: 5d1ca2f5aac6dc4e56540f0a4e447ac3631722ff32ff1fd97d4bd214eff02b21
+Completed submission of boost-serialization:arm64-osx@1.88.0 to 1 binary cache(s) in 435 ms
+Installing 72/105 boost-property-tree:arm64-osx@1.88.0...
+Building boost-property-tree:arm64-osx@1.88.0...
+-- Using cached boostorg-property_tree-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-property-tree/src/ost-1.88.0-b8e5bbbe0d.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-property_tree-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-property-tree/src/ost-1.88.0-b8e5bbbe0d.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-property-tree_arm64-osx/share/boost-property-tree/copyright
+-- Performing post-build validation
+Starting submission of boost-property-tree:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-property-tree:arm64-osx: 999 ms
+boost-property-tree:arm64-osx package ABI: 58c68ebcece567e65b5d2d7530b2823f5dd1d89ee207b41e667017a96d48d9e5
+Completed submission of boost-multi-index:arm64-osx@1.88.0 to 1 binary cache(s) in 43.9 ms
+Installing 73/105 boost-circular-buffer:arm64-osx@1.88.0...
+Building boost-circular-buffer:arm64-osx@1.88.0...
+-- Using cached boostorg-circular_buffer-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-circular-buffer/src/ost-1.88.0-078bc4f11d.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-circular_buffer-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-circular-buffer/src/ost-1.88.0-078bc4f11d.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-circular-buffer_arm64-osx/share/boost-circular-buffer/copyright
+-- Performing post-build validation
+Starting submission of boost-circular-buffer:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-circular-buffer:arm64-osx: 621 ms
+boost-circular-buffer:arm64-osx package ABI: dde134c2f177d17c02887a266ccc5c52409c944d06a2dec9626ec54b5553cf70
+Completed submission of boost-property-tree:arm64-osx@1.88.0 to 1 binary cache(s) in 26.4 ms
+Installing 74/105 boost-ptr-container:arm64-osx@1.88.0...
+Building boost-ptr-container:arm64-osx@1.88.0...
+-- Using cached boostorg-ptr_container-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-ptr-container/src/ost-1.88.0-7a1bb07a07.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-ptr_container-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-ptr-container/src/ost-1.88.0-7a1bb07a07.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-ptr-container_arm64-osx/share/boost-ptr-container/copyright
+-- Performing post-build validation
+Starting submission of boost-ptr-container:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-ptr-container:arm64-osx: 804 ms
+boost-ptr-container:arm64-osx package ABI: a28be931ce0a157f4b6121339696ecd6b430702bc185b24efc9171fd861c3e31
+Completed submission of boost-circular-buffer:arm64-osx@1.88.0 to 1 binary cache(s) in 19 ms
+Installing 75/105 boost-dynamic-bitset:arm64-osx@1.88.0...
+Building boost-dynamic-bitset:arm64-osx@1.88.0...
+-- Using cached boostorg-dynamic_bitset-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-dynamic-bitset/src/ost-1.88.0-364bcbf18a.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-dynamic_bitset-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-dynamic-bitset/src/ost-1.88.0-364bcbf18a.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-dynamic-bitset_arm64-osx/share/boost-dynamic-bitset/copyright
+-- Performing post-build validation
+Starting submission of boost-dynamic-bitset:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-dynamic-bitset:arm64-osx: 673 ms
+boost-dynamic-bitset:arm64-osx package ABI: ce0fbccb0a215c460e9cdda2f5da5189865ecfa1dcb81d1dd5331c23319d29a4
+Completed submission of boost-ptr-container:arm64-osx@1.88.0 to 1 binary cache(s) in 29.3 ms
+Installing 76/105 boost-random:arm64-osx@1.88.0...
+Building boost-random:arm64-osx@1.88.0...
+-- Using cached boostorg-random-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-random/src/ost-1.88.0-0365d589bf.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-random-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-random/src/ost-1.88.0-0365d589bf.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-random_arm64-osx/share/boost-random/copyright
+-- Performing post-build validation
+Starting submission of boost-random:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-random:arm64-osx: 1.9 s
+boost-random:arm64-osx package ABI: 1b92b5f8365613067de0a13184f9d52ac11924e7c8602b1449b67027dd9f2eb5
+Completed submission of boost-dynamic-bitset:arm64-osx@1.88.0 to 1 binary cache(s) in 17.1 ms
+Installing 77/105 boost-parameter:arm64-osx@1.88.0...
+Building boost-parameter:arm64-osx@1.88.0...
+-- Using cached boostorg-parameter-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-parameter/src/ost-1.88.0-646923c0b3.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-parameter-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-parameter/src/ost-1.88.0-646923c0b3.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-parameter_arm64-osx/share/boost-parameter/copyright
+-- Performing post-build validation
+Starting submission of boost-parameter:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-parameter:arm64-osx: 828 ms
+boost-parameter:arm64-osx package ABI: ef434688494a71c2b05f0c6c205c58a5e38b87bc620530cf277edb45e57d4603
+Completed submission of boost-random:arm64-osx@1.88.0 to 1 binary cache(s) in 84.5 ms
+Installing 78/105 boost-signals2:arm64-osx@1.88.0...
+Building boost-signals2:arm64-osx@1.88.0...
+-- Using cached boostorg-signals2-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-signals2/src/ost-1.88.0-1fcf7657ac.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-signals2-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-signals2/src/ost-1.88.0-1fcf7657ac.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-signals2_arm64-osx/share/boost-signals2/copyright
+-- Performing post-build validation
+Starting submission of boost-signals2:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-signals2:arm64-osx: 778 ms
+boost-signals2:arm64-osx package ABI: d51806d7393579d89a76ddcb1717acaa97b361161324c7659823e46c04b4e90b
+Completed submission of boost-parameter:arm64-osx@1.88.0 to 1 binary cache(s) in 47.8 ms
+Installing 79/105 boost-static-string:arm64-osx@1.88.0...
+Building boost-static-string:arm64-osx@1.88.0...
+-- Using cached boostorg-static_string-boost-1.88.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-static-string/src/ost-1.88.0-0e40b29b16.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/boostorg-static_string-boost-1.88.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/boost-static-string/src/ost-1.88.0-0e40b29b16.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/boost-static-string_arm64-osx/share/boost-static-string/copyright
+-- Performing post-build validation
+Starting submission of boost-static-string:arm64-osx@1.88.0 to 1 binary cache(s) in the background
+Elapsed time to handle boost-static-string:arm64-osx: 647 ms
+boost-static-string:arm64-osx package ABI: 4fce787460b6e27dac8f952f74a6ab2fdbfa4c4c9f860daf0345b926dfa7aa5b
+Completed submission of boost-signals2:arm64-osx@1.88.0 to 1 binary cache(s) in 29.6 ms
+Installing 80/105 vcpkg-cmake-get-vars:arm64-osx@2025-05-29...
+Building vcpkg-cmake-get-vars:arm64-osx@2025-05-29...
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake-get-vars_arm64-osx/share/vcpkg-cmake-get-vars/vcpkg_cmake_get_vars.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake-get-vars_arm64-osx/share/vcpkg-cmake-get-vars/cmake_get_vars
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake-get-vars_arm64-osx/share/vcpkg-cmake-get-vars/cmake_get_vars/CMakeLists.txt
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake-get-vars_arm64-osx/share/vcpkg-cmake-get-vars/cmake-get-vars.cmake.in
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake-get-vars_arm64-osx/share/vcpkg-cmake-get-vars/vcpkg-port-config.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/vcpkg-cmake-get-vars_arm64-osx/share/vcpkg-cmake-get-vars/copyright
+-- Performing post-build validation
+Starting submission of vcpkg-cmake-get-vars:arm64-osx@2025-05-29 to 1 binary cache(s) in the background
+Elapsed time to handle vcpkg-cmake-get-vars:arm64-osx: 91.2 ms
+vcpkg-cmake-get-vars:arm64-osx package ABI: 444a735312b5a0f21152263c1ad4b95b799c435e311f718865769ceba05d5762
+Completed submission of boost-static-string:arm64-osx@1.88.0 to 1 binary cache(s) in 23 ms
+Installing 81/105 openssl:arm64-osx@3.5.0#1...
+Building openssl:arm64-osx@3.5.0#1...
+-- Using cached openssl-certstore-crash-2b5e7253b9a6a4cde64d3f2f22d71272f6ad32c5.patch
+-- Using cached openssl-openssl-openssl-3.5.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/openssl/src/nssl-3.5.0-3b91ebed43.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/openssl-openssl-openssl-3.5.0.tar.gz
+-- Applying patch cmake-config.patch
+-- Applying patch command-line-length.patch
+-- Applying patch script-prefix.patch
+-- Applying patch windows/install-layout.patch
+-- Applying patch windows/install-pdbs.patch
+-- Applying patch /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/openssl-certstore-crash-2b5e7253b9a6a4cde64d3f2f22d71272f6ad32c5.patch
+-- Applying patch unix/android-cc.patch
+-- Applying patch unix/move-openssldir.patch
+-- Applying patch unix/no-empty-dirs.patch
+-- Applying patch unix/no-static-libs-for-shared.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/openssl/src/nssl-3.5.0-3b91ebed43.clean
+-- Getting CMake variables for arm64-osx
+-- Loading CMake variables from /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/openssl/cmake-get-vars_C_CXX-arm64-osx.cmake.log
+-- Getting CMake variables for arm64-osx-dbg
+-- Getting CMake variables for arm64-osx-rel
+-- Configuring arm64-osx-dbg
+-- Configuring arm64-osx-rel
+-- Building arm64-osx-dbg
+-- Installing arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/openssl_arm64-osx/lib/pkgconfig/libcrypto.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/openssl_arm64-osx/lib/pkgconfig/libssl.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/openssl_arm64-osx/lib/pkgconfig/openssl.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/openssl_arm64-osx/debug/lib/pkgconfig/libcrypto.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/openssl_arm64-osx/debug/lib/pkgconfig/libssl.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/openssl_arm64-osx/debug/lib/pkgconfig/openssl.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/openssl_arm64-osx/share/openssl/usage
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/openssl_arm64-osx/share/openssl/copyright
+-- Performing post-build validation
+Starting submission of openssl:arm64-osx@3.5.0#1 to 1 binary cache(s) in the background
+Elapsed time to handle openssl:arm64-osx: 1 min
+openssl:arm64-osx package ABI: 50b5a5744531d8ef421d7ed7788677a34766ffef204546488f851e5c5c13c041
+Completed submission of vcpkg-cmake-get-vars:arm64-osx@2025-05-29 to 1 binary cache(s) in 15.2 ms
+Installing 82/105 zlib:arm64-osx@1.3.1...
+Building zlib:arm64-osx@1.3.1...
+-- Using cached madler-zlib-v1.3.1.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/zlib/src/v1.3.1-2e5db616bf.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/madler-zlib-v1.3.1.tar.gz
+-- Applying patch 0001-Prevent-invalid-inclusions-when-HAVE_-is-set-to-0.patch
+-- Applying patch 0002-build-static-or-shared-not-both.patch
+-- Applying patch 0003-android-and-mingw-fixes.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/zlib/src/v1.3.1-2e5db616bf.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/zlib_arm64-osx/share/zlib/vcpkg-cmake-wrapper.cmake
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/zlib_arm64-osx/lib/pkgconfig/zlib.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/zlib_arm64-osx/debug/lib/pkgconfig/zlib.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/zlib_arm64-osx/share/zlib/copyright
+-- Performing post-build validation
+Starting submission of zlib:arm64-osx@1.3.1 to 1 binary cache(s) in the background
+Elapsed time to handle zlib:arm64-osx: 2.4 s
+zlib:arm64-osx package ABI: a07c640ae9af7190bae5739d09059d31caa18a2c6c7c4b5b1df9191efd9144e8
+Completed submission of openssl:arm64-osx@3.5.0#1 to 1 binary cache(s) in 1.9 s
+Installing 83/105 curl[core,openssl]:arm64-osx@8.14.1...
+Building curl[core,openssl]:arm64-osx@8.14.1...
+-- Using cached curl-curl-curl-8_14_1.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/curl/src/url-8_14_1-c688bafef9.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/curl-curl-curl-8_14_1.tar.gz
+-- Applying patch dependencies.patch
+-- Applying patch pkgconfig-curl-config.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/curl/src/url-8_14_1-c688bafef9.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/curl_arm64-osx/lib/pkgconfig/libcurl.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/curl_arm64-osx/debug/lib/pkgconfig/libcurl.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/curl_arm64-osx/share/curl/vcpkg-cmake-wrapper.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/curl_arm64-osx/share/curl/usage
+-- Performing post-build validation
+Starting submission of curl[core,openssl]:arm64-osx@8.14.1 to 1 binary cache(s) in the background
+Elapsed time to handle curl:arm64-osx: 32 s
+curl:arm64-osx package ABI: 3f9207f7cd18a0b23d14c29689363aed69cf44964a115822ce812a90d60c4c96
+Completed submission of zlib:arm64-osx@1.3.1 to 1 binary cache(s) in 39.5 ms
+Installing 84/105 fmt:arm64-osx@12.1.0...
+Building fmt:arm64-osx@12.1.0...
+-- Using cached fmtlib-fmt-12.1.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/fmt/src/12.1.0-54f1f91231.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/fmtlib-fmt-12.1.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/fmt/src/12.1.0-54f1f91231.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/fmt_arm64-osx/lib/pkgconfig/fmt.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/fmt_arm64-osx/debug/lib/pkgconfig/fmt.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/fmt_arm64-osx/share/fmt/usage
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/fmt_arm64-osx/share/fmt/copyright
+-- Performing post-build validation
+Starting submission of fmt:arm64-osx@12.1.0 to 1 binary cache(s) in the background
+Elapsed time to handle fmt:arm64-osx: 2.4 s
+fmt:arm64-osx package ABI: a194931ee5810d1a4843c987ba722c7fcc74f9c9da13dec0c091fce4d416f05a
+Completed submission of curl[core,openssl]:arm64-osx@8.14.1 to 1 binary cache(s) in 213 ms
+Installing 85/105 glm:arm64-osx@1.0.1#3...
+Building glm:arm64-osx@1.0.1#3...
+-- Using cached g-truc-glm-1.0.1.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/glm/src/1.0.1-cf6930f99d.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/g-truc-glm-1.0.1.tar.gz
+-- Applying patch fix-clang.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/glm/src/1.0.1-cf6930f99d.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/glm_arm64-osx/share/glm/copyright
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/glm_arm64-osx/share/glm/usage
+-- Performing post-build validation
+Starting submission of glm:arm64-osx@1.0.1#3 to 1 binary cache(s) in the background
+Elapsed time to handle glm:arm64-osx: 3.3 s
+glm:arm64-osx package ABI: ff6ac15644be1396833a446c36692c969e4abfa657d83daa0a8e77c6abf289f0
+Completed submission of fmt:arm64-osx@12.1.0 to 1 binary cache(s) in 59 ms
+Installing 86/105 glslang:arm64-osx@15.1.0...
+Building glslang:arm64-osx@15.1.0...
+-- Using cached KhronosGroup-glslang-15.1.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/glslang/src/15.1.0-e8045e4175.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/KhronosGroup-glslang-15.1.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/glslang/src/15.1.0-e8045e4175.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/glslang_arm64-osx/share/glslang/usage
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/glslang_arm64-osx/share/glslang/copyright
+-- Performing post-build validation
+Starting submission of glslang:arm64-osx@15.1.0 to 1 binary cache(s) in the background
+Elapsed time to handle glslang:arm64-osx: 13 s
+glslang:arm64-osx package ABI: 3951f14761ac7c6437be02679f91ccf6baa62e7cbd5fab42a1b835e2c67639e9
+Completed submission of glm:arm64-osx@1.0.1#3 to 1 binary cache(s) in 194 ms
+Installing 87/105 hidapi:arm64-osx@0.15.0#1...
+Building hidapi:arm64-osx@0.15.0#1...
+-- Using cached libusb-hidapi-hidapi-0.15.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/hidapi/src/api-0.15.0-9b82da9fc6.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/libusb-hidapi-hidapi-0.15.0.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/hidapi/src/api-0.15.0-9b82da9fc6.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/hidapi_arm64-osx/lib/pkgconfig/hidapi.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/hidapi_arm64-osx/debug/lib/pkgconfig/hidapi.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/hidapi_arm64-osx/share/hidapi/copyright
+-- Performing post-build validation
+Starting submission of hidapi:arm64-osx@0.15.0#1 to 1 binary cache(s) in the background
+Elapsed time to handle hidapi:arm64-osx: 1.4 s
+hidapi:arm64-osx package ABI: 0a3f59f01fb0200131cc48f15b4875f9b9e67c7c00156bc533b91a745f1fe71b
+Installing 88/105 libpng:arm64-osx@1.6.48...
+Building libpng:arm64-osx@1.6.48...
+-- Using cached pnggroup-libpng-v1.6.48.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/libpng/src/v1.6.48-73784f7c8e.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/pnggroup-libpng-v1.6.48.tar.gz
+-- Applying patch cmake.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/libpng/src/v1.6.48-73784f7c8e.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libpng_arm64-osx/share/png/vcpkg-cmake-wrapper.cmake
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libpng_arm64-osx/share/libpng/libpng-config.cmake
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libpng_arm64-osx/lib/pkgconfig/libpng16.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libpng_arm64-osx/debug/lib/pkgconfig/libpng16.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libpng_arm64-osx/debug/lib/pkgconfig/libpng.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libpng_arm64-osx/lib/pkgconfig/libpng.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libpng_arm64-osx/share/libpng/usage
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libpng_arm64-osx/share/libpng/copyright
+-- Performing post-build validation
+Starting submission of libpng:arm64-osx@1.6.48 to 1 binary cache(s) in the background
+Elapsed time to handle libpng:arm64-osx: 2.3 s
+libpng:arm64-osx package ABI: 9ef43f79c66e80930665bcaa66c2df67daebea6c400577875adae99bf793e40d
+Completed submission of glslang:arm64-osx@15.1.0 to 1 binary cache(s) in 1.8 s
+Completed submission of hidapi:arm64-osx@0.15.0#1 to 1 binary cache(s) in 19.2 ms
+Installing 89/105 libusb:arm64-osx@1.0.26.11791#7...
+Building libusb:arm64-osx@1.0.26.11791#7...
+/Users/bytedance/workspace/cemu_android/dependencies/vcpkg_overlay_ports_mac/libusb: info: installing overlay port from here
+-- Using cached libusb-libusb-fcf0c710ef5911ae37fbbf1b39d48a89f6f14e8a.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/libusb/src/89f6f14e8a-1dccf18d37.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/libusb-libusb-fcf0c710ef5911ae37fbbf1b39d48a89f6f14e8a.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/libusb/src/89f6f14e8a-1dccf18d37.clean
+-- Getting CMake variables for arm64-osx-dbg
+-- Getting CMake variables for arm64-osx-rel
+-- Generating configure for arm64-osx
+-- Finished generating configure for arm64-osx
+-- Configuring arm64-osx-dbg
+-- Configuring arm64-osx-rel
+-- Building arm64-osx-dbg
+-- Installing arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libusb_arm64-osx/lib/pkgconfig/libusb-1.0.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libusb_arm64-osx/debug/lib/pkgconfig/libusb-1.0.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libusb_arm64-osx/share/libusb/usage
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libusb_arm64-osx/share/libusb/copyright
+-- Setting install name id of '/Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libusb_arm64-osx/debug/lib/libusb-1.0.0.dylib' to '@rpath/libusb-1.0.0.dylib'
+-- Adjusted RPATH of '/Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libusb_arm64-osx/debug/lib/libusb-1.0.0.dylib' to '@loader_path'
+-- Setting install name id of '/Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libusb_arm64-osx/lib/libusb-1.0.0.dylib' to '@rpath/libusb-1.0.0.dylib'
+-- Adjusted RPATH of '/Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libusb_arm64-osx/lib/libusb-1.0.0.dylib' to '@loader_path'
+-- Performing post-build validation
+Starting submission of libusb:arm64-osx@1.0.26.11791#7 to 1 binary cache(s) in the background
+Elapsed time to handle libusb:arm64-osx: 35 s
+libusb:arm64-osx package ABI: e57f15cbdc99c578d9d40c607db37e140de0ea9c3fcc3af8cb688eceb7b1201e
+Completed submission of libpng:arm64-osx@1.6.48 to 1 binary cache(s) in 68 ms
+Installing 90/105 libzip:arm64-osx@1.11.4...
+Building libzip:arm64-osx@1.11.4...
+-- Using cached nih-at-libzip-v1.11.4.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/libzip/src/v1.11.4-05742a9dee.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/nih-at-libzip-v1.11.4.tar.gz
+-- Applying patch config-vars.diff
+-- Applying patch dependencies.diff
+-- Applying patch use-requires.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/libzip/src/v1.11.4-05742a9dee.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libzip_arm64-osx/lib/pkgconfig/libzip.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libzip_arm64-osx/debug/lib/pkgconfig/libzip.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libzip_arm64-osx/share/libzip/copyright
+-- Performing post-build validation
+Starting submission of libzip:arm64-osx@1.11.4 to 1 binary cache(s) in the background
+Elapsed time to handle libzip:arm64-osx: 14 s
+libzip:arm64-osx package ABI: 31cd93a08b3a9af5fd289311e8b5fab45e098eb3c86e0a62e87f4fefad664acc
+Completed submission of libusb:arm64-osx@1.0.26.11791#7 to 1 binary cache(s) in 29 ms
+Installing 91/105 pugixml:arm64-osx@1.15...
+Building pugixml:arm64-osx@1.15...
+-- Using cached zeux-pugixml-v1.15.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/pugixml/src/v1.15-8a9beec4a5.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/zeux-pugixml-v1.15.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/pugixml/src/v1.15-8a9beec4a5.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pugixml_arm64-osx/lib/pkgconfig/pugixml.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pugixml_arm64-osx/debug/lib/pkgconfig/pugixml.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pugixml_arm64-osx/share/pugixml/copyright
+-- Performing post-build validation
+Starting submission of pugixml:arm64-osx@1.15 to 1 binary cache(s) in the background
+Elapsed time to handle pugixml:arm64-osx: 2.7 s
+pugixml:arm64-osx package ABI: 0193257d0ccdbc5809a2c5825b560993880a929553175720856f512d4c10843a
+Completed submission of libzip:arm64-osx@1.11.4 to 1 binary cache(s) in 56.4 ms
+Installing 92/105 rapidjson:arm64-osx@2025-02-26...
+Building rapidjson:arm64-osx@2025-02-26...
+-- Using cached Tencent-rapidjson-24b5e7a8b27f42fa16b96fc70aade9106cf7102f-2.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/rapidjson/src/106cf7102f-b0877c68bd.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/Tencent-rapidjson-24b5e7a8b27f42fa16b96fc70aade9106cf7102f-2.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/rapidjson/src/106cf7102f-b0877c68bd.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/rapidjson_arm64-osx/lib/pkgconfig/RapidJSON.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/rapidjson_arm64-osx/debug/lib/pkgconfig/RapidJSON.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/rapidjson_arm64-osx/share/rapidjson/copyright
+-- Performing post-build validation
+Starting submission of rapidjson:arm64-osx@2025-02-26 to 1 binary cache(s) in the background
+Elapsed time to handle rapidjson:arm64-osx: 986 ms
+rapidjson:arm64-osx package ABI: a18a4de9b0cc29f1aac951fd078a487e4c3a8dabae68217b194fc88ae01a4607
+Completed submission of pugixml:arm64-osx@1.15 to 1 binary cache(s) in 70.4 ms
+Installing 93/105 sdl2:arm64-osx@2.32.10...
+Building sdl2:arm64-osx@2.32.10...
+Downloading https://github.com/libsdl-org/SDL/archive/release-2.32.10.tar.gz -> libsdl-org-SDL-release-2.32.10.tar.gz
+Successfully downloaded libsdl-org-SDL-release-2.32.10.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/libsdl-org-SDL-release-2.32.10.tar.gz
+-- Applying patch deps.patch
+-- Applying patch alsa-dep-fix.patch
+-- Applying patch cxx-linkage-pkgconfig.diff
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/sdl2/src/se-2.32.10-3b143ac573.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/sdl2_arm64-osx/lib/pkgconfig/sdl2.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/sdl2_arm64-osx/debug/lib/pkgconfig/sdl2.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/sdl2_arm64-osx/share/sdl2/usage
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/sdl2_arm64-osx/share/sdl2/copyright
+-- Performing post-build validation
+Starting submission of sdl2:arm64-osx@2.32.10 to 1 binary cache(s) in the background
+Elapsed time to handle sdl2:arm64-osx: 47 s
+sdl2:arm64-osx package ABI: 3d7d77e9667ec89e9a0d87688d657428f1d615d53251a957e853d6fd7acdce33
+Completed submission of rapidjson:arm64-osx@2025-02-26 to 1 binary cache(s) in 37.4 ms
+Installing 94/105 libjpeg-turbo:arm64-osx@3.1.0#1...
+Building libjpeg-turbo:arm64-osx@3.1.0#1...
+-- Using cached libjpeg-turbo-libjpeg-turbo-3.1.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/libjpeg-turbo/src/3.1.0-61083179ee.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/libjpeg-turbo-libjpeg-turbo-3.1.0.tar.gz
+-- Applying patch add-options-for-exes-docs-headers.patch
+-- Applying patch workaround_cmake_system_processor.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/libjpeg-turbo/src/3.1.0-61083179ee.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libjpeg-turbo_arm64-osx/lib/pkgconfig/libjpeg.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libjpeg-turbo_arm64-osx/lib/pkgconfig/libturbojpeg.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libjpeg-turbo_arm64-osx/debug/lib/pkgconfig/libjpeg.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libjpeg-turbo_arm64-osx/debug/lib/pkgconfig/libturbojpeg.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libjpeg-turbo_arm64-osx/share/libjpeg-turbo/copyright
+-- Performing post-build validation
+Starting submission of libjpeg-turbo:arm64-osx@3.1.0#1 to 1 binary cache(s) in the background
+Elapsed time to handle libjpeg-turbo:arm64-osx: 7.5 s
+libjpeg-turbo:arm64-osx package ABI: 947410156d64f1698eca955be3f5b68499eaef7040e6e216cc190211a52964fc
+Completed submission of sdl2:arm64-osx@2.32.10 to 1 binary cache(s) in 362 ms
+Installing 95/105 tiff[core,jpeg,zip]:arm64-osx@4.7.0...
+Building tiff[core,jpeg,zip]:arm64-osx@4.7.0...
+-- Using cached libtiff-libtiff-v4.7.0.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/tiff/src/v4.7.0-05e0c9997b.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/libtiff-libtiff-v4.7.0.tar.gz
+-- Applying patch FindCMath.patch
+-- Applying patch prefer-config.diff
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/tiff/src/v4.7.0-05e0c9997b.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/tiff_arm64-osx/lib/pkgconfig/libtiff-4.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/tiff_arm64-osx/debug/lib/pkgconfig/libtiff-4.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/tiff_arm64-osx/share/tiff/copyright
+-- Performing post-build validation
+Starting submission of tiff[core,jpeg,zip]:arm64-osx@4.7.0 to 1 binary cache(s) in the background
+Elapsed time to handle tiff:arm64-osx: 8.3 s
+tiff:arm64-osx package ABI: 75e19333018b85cec95146375e06787c96a5577f2676a736ef0efc349b420cf7
+Completed submission of libjpeg-turbo:arm64-osx@3.1.0#1 to 1 binary cache(s) in 281 ms
+Installing 96/105 pcre2[core,jit,platform-default-features]:arm64-osx@10.45...
+Building pcre2[core,jit,platform-default-features]:arm64-osx@10.45...
+Downloading https://github.com/PCRE2Project/pcre2/archive/pcre2-10.45.tar.gz -> PCRE2Project-pcre2-pcre2-10.45.tar.gz
+Successfully downloaded PCRE2Project-pcre2-pcre2-10.45.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/PCRE2Project-pcre2-pcre2-10.45.tar.gz
+-- Applying patch pcre2-10.35_fix-uwp.patch
+-- Applying patch no-static-suffix.patch
+-- Applying patch fix-cmake.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/pcre2/src/cre2-10.45-3438cd5e6c.clean
+Downloading https://github.com/zherczeg/sljit/archive/8481dde366d0346ac5475aa03ae48ee44fa74ca4.tar.gz -> zherczeg-sljit-8481dde366d0346ac5475aa03ae48ee44fa74ca4.tar.gz
+Successfully downloaded zherczeg-sljit-8481dde366d0346ac5475aa03ae48ee44fa74ca4.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/zherczeg-sljit-8481dde366d0346ac5475aa03ae48ee44fa74ca4.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/pcre2/src/e44fa74ca4-bc7898d1f1.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/lib/pkgconfig/libpcre2-16.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/lib/pkgconfig/libpcre2-32.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/lib/pkgconfig/libpcre2-8.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/lib/pkgconfig/libpcre2-posix.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/debug/lib/pkgconfig/libpcre2-16.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/debug/lib/pkgconfig/libpcre2-32.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/debug/lib/pkgconfig/libpcre2-8.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/debug/lib/pkgconfig/libpcre2-posix.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/share/pcre2/usage
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/pcre2_arm64-osx/share/pcre2/copyright
+-- Performing post-build validation
+Starting submission of pcre2[core,jit,platform-default-features]:arm64-osx@10.45 to 1 binary cache(s) in the background
+Elapsed time to handle pcre2:arm64-osx: 19 s
+pcre2:arm64-osx package ABI: a45907bad2ed9ebf379684091333b90a86c29050cbc4b356b91f3e87a5514693
+Completed submission of tiff[core,jpeg,zip]:arm64-osx@4.7.0 to 1 binary cache(s) in 87.3 ms
+Installing 97/105 egl-registry:arm64-osx@2024-01-25...
+Building egl-registry:arm64-osx@2024-01-25...
+Downloading https://github.com/KhronosGroup/EGL-Registry/archive/7db3005d4c2cb439f129a0adc931f3274f9019e6.tar.gz -> KhronosGroup-EGL-Registry-7db3005d4c2cb439f129a0adc931f3274f9019e6.tar.gz
+Successfully downloaded KhronosGroup-EGL-Registry-7db3005d4c2cb439f129a0adc931f3274f9019e6.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/KhronosGroup-EGL-Registry-7db3005d4c2cb439f129a0adc931f3274f9019e6.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/egl-registry/src/274f9019e6-49d6bdb34a.clean
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/egl-registry_arm64-osx/share/egl-registry/copyright
+-- Performing post-build validation
+Starting submission of egl-registry:arm64-osx@2024-01-25 to 1 binary cache(s) in the background
+Elapsed time to handle egl-registry:arm64-osx: 5.6 s
+egl-registry:arm64-osx package ABI: a3a22aa95145006a88bd0ab47044b6a7220c48a33e33d1d2a93bdfe094816127
+Completed submission of pcre2[core,jit,platform-default-features]:arm64-osx@10.45 to 1 binary cache(s) in 381 ms
+Installing 98/105 opengl-registry:arm64-osx@2024-02-10#1...
+Building opengl-registry:arm64-osx@2024-02-10#1...
+Downloading https://github.com/KhronosGroup/OpenGL-Registry/archive/3530768138c5ba3dfbb2c43c830493f632f7ea33.tar.gz -> KhronosGroup-OpenGL-Registry-3530768138c5ba3dfbb2c43c830493f632f7ea33.tar.gz
+Successfully downloaded KhronosGroup-OpenGL-Registry-3530768138c5ba3dfbb2c43c830493f632f7ea33.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/KhronosGroup-OpenGL-Registry-3530768138c5ba3dfbb2c43c830493f632f7ea33.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/opengl-registry/src/f632f7ea33-4952f9ace9.clean
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/opengl-registry_arm64-osx/share/opengl-registry/copyright
+-- Performing post-build validation
+Starting submission of opengl-registry:arm64-osx@2024-02-10#1 to 1 binary cache(s) in the background
+Elapsed time to handle opengl-registry:arm64-osx: 1.2 min
+opengl-registry:arm64-osx package ABI: 444f69d5fce8c155d5c3dcda1aaba33de823c156aa3517636b6f384e1ccdbba8
+Completed submission of egl-registry:arm64-osx@2024-01-25 to 1 binary cache(s) in 16.5 ms
+Installing 99/105 opengl:arm64-osx@2022-12-04#3...
+Building opengl:arm64-osx@2022-12-04#3...
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/opengl_arm64-osx/share/opengl/usage
+-- Skipping post-build validation due to VCPKG_POLICY_EMPTY_PACKAGE
+Starting submission of opengl:arm64-osx@2022-12-04#3 to 1 binary cache(s) in the background
+Elapsed time to handle opengl:arm64-osx: 99.2 ms
+opengl:arm64-osx package ABI: 17f38ceea12c54df6c93b4d8265d2e108105d745dfd9f1901006de43570b5f28
+Completed submission of opengl-registry:arm64-osx@2024-02-10#1 to 1 binary cache(s) in 90.8 ms
+Installing 100/105 nanosvg:arm64-osx@2023-12-29...
+Building nanosvg:arm64-osx@2023-12-29...
+Downloading https://github.com/memononen/nanosvg/archive/93ce879dc4c04a3ef1758428ec80083c38610b1f.tar.gz -> memononen-nanosvg-93ce879dc4c04a3ef1758428ec80083c38610b1f.tar.gz
+Successfully downloaded memononen-nanosvg-93ce879dc4c04a3ef1758428ec80083c38610b1f.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/memononen-nanosvg-93ce879dc4c04a3ef1758428ec80083c38610b1f.tar.gz
+-- Applying patch fltk.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/nanosvg/src/3c38610b1f-dc4edc4939.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/nanosvg_arm64-osx/share/nanosvg/copyright
+-- Performing post-build validation
+Starting submission of nanosvg:arm64-osx@2023-12-29 to 1 binary cache(s) in the background
+Elapsed time to handle nanosvg:arm64-osx: 6.2 s
+nanosvg:arm64-osx package ABI: 1e616769eefea7b71a82d35897cb86d17b9ff5a77dc9aee729108f27f3b76387
+Completed submission of opengl:arm64-osx@2022-12-04#3 to 1 binary cache(s) in 10.9 ms
+Installing 101/105 libwebp[core,libwebpmux,nearlossless,simd]:arm64-osx@1.5.0#1...
+Building libwebp[core,libwebpmux,nearlossless,simd]:arm64-osx@1.5.0#1...
+Downloading https://github.com/webmproject/libwebp/archive/v1.5.0.tar.gz -> webmproject-libwebp-v1.5.0.tar.gz
+Successfully downloaded webmproject-libwebp-v1.5.0.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/webmproject-libwebp-v1.5.0.tar.gz
+-- Applying patch 0002-cmake-config.patch
+-- Applying patch 0003-simd.patch
+-- Applying patch 0008-sdl.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/libwebp/src/v1.5.0-9ee206ccc1.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/lib/pkgconfig/libsharpyuv.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/lib/pkgconfig/libwebp.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/lib/pkgconfig/libwebpdecoder.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/lib/pkgconfig/libwebpdemux.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/lib/pkgconfig/libwebpmux.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/debug/lib/pkgconfig/libsharpyuv.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/debug/lib/pkgconfig/libwebp.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/debug/lib/pkgconfig/libwebpdecoder.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/debug/lib/pkgconfig/libwebpdemux.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/debug/lib/pkgconfig/libwebpmux.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/libwebp_arm64-osx/share/libwebp/usage
+-- Performing post-build validation
+Starting submission of libwebp[core,libwebpmux,nearlossless,simd]:arm64-osx@1.5.0#1 to 1 binary cache(s) in the background
+Elapsed time to handle libwebp:arm64-osx: 13 s
+libwebp:arm64-osx package ABI: 1843d12d64a3e68e015910bc73c98d6ba976464595e9156ad75f1b96a0294a1d
+Completed submission of nanosvg:arm64-osx@2023-12-29 to 1 binary cache(s) in 27.9 ms
+Installing 102/105 libiconv:arm64-osx@1.18#1...
+Building libiconv:arm64-osx@1.18#1...
+-- Not building GNU libiconv.
+-- Skipping post-build validation due to VCPKG_POLICY_EMPTY_PACKAGE
+Starting submission of libiconv:arm64-osx@1.18#1 to 1 binary cache(s) in the background
+Elapsed time to handle libiconv:arm64-osx: 78.7 ms
+libiconv:arm64-osx package ABI: aab09c7c1b24df9f5aa33c355064fdcc802f7fa716b1759d339b0dcf483721f6
+Installing 103/105 expat:arm64-osx@2.7.1...
+Building expat:arm64-osx@2.7.1...
+Downloading https://github.com/libexpat/libexpat/archive/R_2_7_1.tar.gz -> libexpat-libexpat-R_2_7_1.tar.gz
+Successfully downloaded libexpat-libexpat-R_2_7_1.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/libexpat-libexpat-R_2_7_1.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/expat/src/R_2_7_1-4bba8bb538.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/expat_arm64-osx/lib/pkgconfig/expat.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/expat_arm64-osx/debug/lib/pkgconfig/expat.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/expat_arm64-osx/share/expat/copyright
+-- Performing post-build validation
+Starting submission of expat:arm64-osx@2.7.1 to 1 binary cache(s) in the background
+Elapsed time to handle expat:arm64-osx: 14 s
+expat:arm64-osx package ABI: ea79ff6f70fc839061fd3c5aa5ff495b91f8441c4b8a82744b42b107a623c6eb
+Completed submission of libwebp[core,libwebpmux,nearlossless,simd]:arm64-osx@1.5.0#1 to 1 binary cache(s) in 167 ms
+Completed submission of libiconv:arm64-osx@1.18#1 to 1 binary cache(s) in 15.9 ms
+Installing 104/105 wxwidgets[core,debug-support,sound]:arm64-osx@3.3.2...
+Building wxwidgets[core,debug-support,sound]:arm64-osx@3.3.2...
+/Users/bytedance/workspace/cemu_android/dependencies/vcpkg_overlay_ports/wxwidgets: info: installing overlay port from here
+Downloading https://github.com/wxWidgets/wxWidgets/archive/v3.3.2.tar.gz -> wxWidgets-wxWidgets-v3.3.2.tar.gz
+Successfully downloaded wxWidgets-wxWidgets-v3.3.2.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/wxWidgets-wxWidgets-v3.3.2.tar.gz
+-- Applying patch install-layout.patch
+-- Applying patch relocatable-wx-config.patch
+-- Applying patch nanosvg-ext-depend.patch
+-- Applying patch fix-libs-export.patch
+-- Applying patch fix-pcre2.patch
+-- Applying patch gtk3-link-libraries.patch
+-- Applying patch sdl2.patch
+-- Applying patch fix-listctrl-layout.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/wxwidgets/src/v3.3.2-ca9c44e3a6.clean
+Downloading https://github.com/wxWidgets/lexilla/archive/0dbce0b418b8b3d2ef30304d0bf53ff58c07ed84.tar.gz -> wxWidgets-lexilla-0dbce0b418b8b3d2ef30304d0bf53ff58c07ed84.tar.gz
+Successfully downloaded wxWidgets-lexilla-0dbce0b418b8b3d2ef30304d0bf53ff58c07ed84.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/wxWidgets-lexilla-0dbce0b418b8b3d2ef30304d0bf53ff58c07ed84.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/wxwidgets/src/f58c07ed84-d2e855c336.clean
+Downloading https://github.com/wxWidgets/scintilla/archive/0b90f31ced23241054e8088abb50babe9a44ae67.tar.gz -> wxWidgets-scintilla-0b90f31ced23241054e8088abb50babe9a44ae67.tar.gz
+Successfully downloaded wxWidgets-scintilla-0b90f31ced23241054e8088abb50babe9a44ae67.tar.gz
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/wxWidgets-scintilla-0b90f31ced23241054e8088abb50babe9a44ae67.tar.gz
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/wxwidgets/src/be9a44ae67-1cb980c526.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/wxwidgets_arm64-osx/share/wxwidgets/usage
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/wxwidgets_arm64-osx/share/wxwidgets/copyright
+-- Adjusted RPATH of '/Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/wxwidgets_arm64-osx/tools/wxwidgets/wxrc' to '@loader_path/../../lib'
+-- Adjusted RPATH of '/Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/wxwidgets_arm64-osx/tools/wxwidgets/wxrc-3.3' to '@loader_path/../../lib'
+-- Performing post-build validation
+Starting submission of wxwidgets[core,debug-support,sound]:arm64-osx@3.3.2 to 1 binary cache(s) in the background
+Elapsed time to handle wxwidgets:arm64-osx: 2.1 min
+wxwidgets:arm64-osx package ABI: 3c57134b0e0ee20bb10d36d7c881cc13bdc5ec5163f9efa649606b4967073c3d
+Completed submission of expat:arm64-osx@2.7.1 to 1 binary cache(s) in 47.8 ms
+Installing 105/105 zstd:arm64-osx@1.5.7...
+Building zstd:arm64-osx@1.5.7...
+-- Using cached facebook-zstd-v1.5.7.tar.gz
+-- Cleaning sources at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/zstd/src/v1.5.7-bb6cae2b2e.clean. Use --editable to skip cleaning for the packages you specify.
+-- Extracting source /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/downloads/facebook-zstd-v1.5.7.tar.gz
+-- Applying patch no-static-suffix.patch
+-- Applying patch fix-emscripten-and-clang-cl.patch
+-- Applying patch fix-windows-rc-compile.patch
+-- Using source at /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/buildtrees/zstd/src/v1.5.7-bb6cae2b2e.clean
+-- Configuring arm64-osx
+-- Building arm64-osx-dbg
+-- Building arm64-osx-rel
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/zstd_arm64-osx/lib/pkgconfig/libzstd.pc
+-- Fixing pkgconfig file: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/zstd_arm64-osx/debug/lib/pkgconfig/libzstd.pc
+-- Installing: /Users/bytedance/workspace/cemu_android/dependencies/vcpkg/packages/zstd_arm64-osx/share/zstd/usage
+-- Performing post-build validation
+Starting submission of zstd:arm64-osx@1.5.7 to 1 binary cache(s) in the background
+Elapsed time to handle zstd:arm64-osx: 8 s
+zstd:arm64-osx package ABI: 44cc1d22126c2f03a51109414f361211a064cf1e1dfeb5ba4f5af91c650e6b51
+Installed contents are licensed to you by owners. Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+Some packages did not declare an SPDX license. Check the `copyright` file for each package for more information about their licensing.
+Packages installed in this vcpkg installation declare the following licenses:
+(BSD-3-Clause OR GPL-2.0-only)
+Apache-2.0
+BSD-3-Clause
+BSD-3-Clause-Clear
+BSL-1.0
+GPL-3.0-or-later
+ISC
+LGPL-2.0-or-later WITH WxWindows-exception-3.1
+LGPL-2.1-or-later
+MIT
+Zlib
+curl
+libpng-2.0
+libtiff
+The package boost-optional is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS optional)
+    target_link_libraries(main PRIVATE Boost::optional)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::optional)
+
+The package boost-functional is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS functional)
+    target_link_libraries(main PRIVATE Boost::functional)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::functional)
+
+The package boost-algorithm is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS algorithm)
+    target_link_libraries(main PRIVATE Boost::algorithm)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::algorithm)
+
+The package boost-tokenizer is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS tokenizer)
+    target_link_libraries(main PRIVATE Boost::tokenizer)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::tokenizer)
+
+The package boost-container is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS container)
+    target_link_libraries(main PRIVATE Boost::container)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::container)
+
+The package boost-asio is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS asio)
+    target_link_libraries(main PRIVATE Boost::asio)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::asio)
+
+The package boost-nowide is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS nowide)
+    target_link_libraries(main PRIVATE Boost::nowide)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::nowide)
+
+The package boost-program-options is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS program_options)
+    target_link_libraries(main PRIVATE Boost::program_options)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::program_options)
+
+The package boost-property-tree is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS property_tree)
+    target_link_libraries(main PRIVATE Boost::property_tree)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::property_tree)
+
+The package boost-ptr-container is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS ptr_container)
+    target_link_libraries(main PRIVATE Boost::ptr_container)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::ptr_container)
+
+The package boost-random is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS random)
+    target_link_libraries(main PRIVATE Boost::random)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::random)
+
+The package boost-signals2 is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS signals2)
+    target_link_libraries(main PRIVATE Boost::signals2)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::signals2)
+
+The package boost-static-string is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS static_string)
+    target_link_libraries(main PRIVATE Boost::static_string)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::static_string)
+
+openssl is compatible with built-in CMake targets:
+
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(main PRIVATE OpenSSL::SSL)
+  target_link_libraries(main PRIVATE OpenSSL::Crypto)
+
+The package zlib is compatible with built-in CMake targets:
+
+    find_package(ZLIB REQUIRED)
+    target_link_libraries(main PRIVATE ZLIB::ZLIB)
+
+curl is compatible with built-in CMake targets:
+
+    find_package(CURL REQUIRED)
+    target_link_libraries(main PRIVATE CURL::libcurl)
+
+The package fmt provides CMake targets:
+
+    find_package(fmt CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE fmt::fmt)
+
+    # Or use the header-only version
+    find_package(fmt CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE fmt::fmt-header-only)
+
+The package glm provides CMake targets:
+
+    find_package(glm CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE glm::glm)
+
+    # Or use the header-only version
+    find_package(glm CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE glm::glm-header-only)
+
+glslang provides CMake targets:
+
+    find_package(glslang CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV glslang::SPVRemapper)
+
+hidapi provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(hidapi CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE hidapi::darwin hidapi::hidapi hidapi::include)
+
+hidapi provides pkg-config modules:
+
+  # C Library for USB/Bluetooth HID device access from Linux, Mac OS X, FreeBSD, and Windows.
+  hidapi
+
+libpng provides CMake targets:
+
+  find_package(PNG REQUIRED)
+  target_link_libraries(main PRIVATE PNG::PNG)
+
+libusb can be imported via CMake FindPkgConfig module:
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(libusb REQUIRED IMPORTED_TARGET libusb-1.0)
+
+    target_link_libraries(main PRIVATE PkgConfig::libusb)
+
+libzip provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(libzip CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE libzip::zip)
+
+libzip provides pkg-config modules:
+
+  # library for handling zip archives
+  libzip
+
+pugixml provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(pugixml CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE pugixml::static pugixml::pugixml)
+
+pugixml provides pkg-config modules:
+
+  # Light-weight, simple and fast XML parser for C++ with XPath support.
+  pugixml
+
+rapidjson provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(RapidJSON CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE RapidJSON rapidjson)
+
+rapidjson provides pkg-config modules:
+
+  # A fast JSON parser/generator for C++ with both SAX/DOM style API
+  RapidJSON
+
+sdl2 provides CMake targets:
+
+    find_package(SDL2 CONFIG REQUIRED)
+    target_link_libraries(main
+        PRIVATE
+        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+    )
+
+tiff is compatible with built-in CMake targets:
+
+    find_package(TIFF REQUIRED)
+    target_link_libraries(main PRIVATE TIFF::TIFF)
+
+tiff provides pkg-config modules:
+
+    #  Tag Image File Format (TIFF) library.
+    libtiff-4
+
+The package wxwidgets provides CMake targets:
+
+    find_package(wxWidgets CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE wx::core wx::base)
+
+zstd provides CMake targets:
+
+  find_package(zstd CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE zstd::libzstd)
+
+Waiting for 2 remaining binary cache submissions...
+Completed submission of wxwidgets[core,debug-support,sound]:arm64-osx@3.3.2 to 1 binary cache(s) in 17 s (1/2)
+Completed submission of zstd:arm64-osx@1.5.7 to 1 binary cache(s) in 188 ms (2/2)
+All requested installations completed successfully in: 9.8 min
+-- Running vcpkg install - done
+-- The C compiler identification is AppleClang 17.0.0.17000013
+-- The CXX compiler identification is AppleClang 17.0.0.17000013
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- The OBJC compiler identification is AppleClang 17.0.0.17000013
+-- The OBJCXX compiler identification is AppleClang 17.0.0.17000013
+-- Detecting OBJC compiler ABI info
+-- Detecting OBJC compiler ABI info - done
+-- Check for working OBJC compiler: /usr/bin/clang - skipped
+-- Detecting OBJCXX compiler ABI info
+-- Detecting OBJCXX compiler ABI info - done
+-- Check for working OBJCXX compiler: /usr/bin/clang++ - skipped
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found OpenSSL: /Users/bytedance/workspace/cemu_android/build_baseline/vcpkg_installed/arm64-osx/lib/libcrypto.a (found suitable version "3.5.0", minimum required is "3")
+-- Found ZLIB: optimized;/Users/bytedance/workspace/cemu_android/build_baseline/vcpkg_installed/arm64-osx/lib/libz.a;debug;/Users/bytedance/workspace/cemu_android/build_baseline/vcpkg_installed/arm64-osx/debug/lib/libz.a (found suitable version "1.3.1", minimum required is "1")
+-- Found ZLIB: optimized;/Users/bytedance/workspace/cemu_android/build_baseline/vcpkg_installed/arm64-osx/lib/libz.a;debug;/Users/bytedance/workspace/cemu_android/build_baseline/vcpkg_installed/arm64-osx/debug/lib/libz.a (found suitable version "1.3.1", minimum required is "1.1.2")
+-- Found ZLIB: optimized;/Users/bytedance/workspace/cemu_android/build_baseline/vcpkg_installed/arm64-osx/lib/libz.a;debug;/Users/bytedance/workspace/cemu_android/build_baseline/vcpkg_installed/arm64-osx/debug/lib/libz.a (found version "1.3.1")
+-- Found zstd: /Users/bytedance/workspace/cemu_android/build_baseline/vcpkg_installed/arm64-osx/share/zstd/zstdConfig.cmake (found version "1.5.7")
+-- Found OpenGL: /Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/OpenGL.framework
+-- Performing Test COMPILER_HAS_HIDDEN_VISIBILITY
+-- Performing Test COMPILER_HAS_HIDDEN_VISIBILITY - Success
+-- Performing Test COMPILER_HAS_HIDDEN_INLINE_VISIBILITY
+-- Performing Test COMPILER_HAS_HIDDEN_INLINE_VISIBILITY - Success
+-- Performing Test COMPILER_HAS_DEPRECATED_ATTR
+-- Performing Test COMPILER_HAS_DEPRECATED_ATTR - Success
+-- Found PkgConfig: /opt/homebrew/bin/pkg-config (found version "3.0.2")
+-- Checking for module 'speexdsp'
+--   Package 'speexdsp' not found
+-- Looking for include file pulse/pulseaudio.h
+-- Looking for include file pulse/pulseaudio.h - not found
+-- Looking for include file alsa/asoundlib.h
+-- Looking for include file alsa/asoundlib.h - not found
+-- Looking for include file jack/jack.h
+-- Looking for include file jack/jack.h - not found
+-- Looking for include file sndio.h
+-- Looking for include file sndio.h - not found
+-- Looking for include file aaudio/AAudio.h
+-- Looking for include file aaudio/AAudio.h - not found
+-- Looking for include file AudioUnit/AudioUnit.h
+-- Looking for include file AudioUnit/AudioUnit.h - found
+-- Looking for include file audioclient.h
+-- Looking for include file audioclient.h - not found
+-- Looking for include file SLES/OpenSLES.h
+-- Looking for include file SLES/OpenSLES.h - not found
+-- Looking for include file sys/soundcard.h
+-- Looking for include file sys/soundcard.h - not found
+-- Looking for include file android/log.h
+-- Looking for include file android/log.h - not found
+-- Looking for include file sys/audioio.h
+-- Looking for include file sys/audioio.h - not found
+-- Looking for include file kai.h
+-- Looking for include file kai.h - not found
+-- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE)
+CMake Warning (deprecated) at dependencies/ih264d/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- The ASM compiler identification is AppleClang
+-- Found assembler: /usr/bin/cc
+CMake Warning (deprecated) at dependencies/xbyak_aarch64/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- Checking for one of the modules 'zarchive'
+-- Could NOT find ZArchive (missing: zarchive_LINK_LIBRARIES zarchive_FOUND) (found version "")
+-- Building standalone executable dynamically
+-- Checking for module 'libusb-1.0'
+--   Found libusb-1.0, version 1.0.26
+-- Found MoltenVK: /opt/homebrew/lib/libMoltenVK.dylib
+-- Configuring done (610.9s)
+-- Generating done (0.2s)
+-- Build files have been written to: /Users/bytedance/workspace/cemu_android/build_baseline
