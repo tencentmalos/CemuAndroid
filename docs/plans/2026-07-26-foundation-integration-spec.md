@@ -392,6 +392,10 @@ static_assert(SPATIAL_FOUNDATION_API_VERSION >= 1, "foundation submodule too old
 
 ### C3-T0 度量方法（每一刀都用它）
 
+> **已完成。** 依赖收敛后的起点为 648 条 Ninja 完成命令、
+> `real 77.38s`；详细热点和命令见
+> `docs/verification/20260726-C3/build-speedup-notes.md`。
+
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build --target clean && rm -f build/.ninja_log
@@ -405,6 +409,10 @@ cmake --build build --target clean && rm -f build/.ninja_log
 **退出标准：** C2 完成后的度量数据已记录，作为 C3 的起点基线。
 
 ### C3-T1 Dev 构建关闭 LTO（收益大、零风险，先做这个）
+
+> **已完成。** RelWithDebInfo 边数保持 648，最终链接由 18.649s 降到
+> 0.505s；全新 Release 目录确认默认 `ENABLE_LTO=ON` 并构建通过；Android
+> Debug 与单测通过。详细记录见 C3 验证文档。
 
 **现状：** `CMakeLists.txt:85-86` 对 `Release` 与 `RelWithDebInfo` 都开了 IPO/LTO。日常开发用 `RelWithDebInfo`，LTO 主要吃链接时间与内存。
 

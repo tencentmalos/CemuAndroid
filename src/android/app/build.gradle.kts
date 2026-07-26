@@ -114,6 +114,7 @@ android {
                     "-DENABLE_VCPKG=ON",
                     "-DVCPKG_TARGET_ANDROID=ON",
                     "-DCEMU_ENABLE_FOUNDATION=ON",
+                    "-DENABLE_LTO=OFF",
                     "-DENABLE_SDL=OFF",
                     "-DENABLE_WXWIDGETS=OFF",
                     "-DENABLE_OPENGL=OFF",

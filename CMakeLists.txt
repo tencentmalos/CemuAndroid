@@ -82,9 +82,15 @@ add_definitions(-DEMULATOR_VERSION_PATCH=${EMULATOR_VERSION_PATCH})
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# enable link time optimization for release builds
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
+# Link-time optimization is useful for shipping builds, but slows down the
+# RelWithDebInfo builds used during development.
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+	set(DEFAULT_ENABLE_LTO ON)
+else()
+	set(DEFAULT_ENABLE_LTO OFF)
+endif()
+option(ENABLE_LTO "Enable link-time optimization" ${DEFAULT_ENABLE_LTO})
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${ENABLE_LTO})
 
 if (MSVC)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT CemuBin)

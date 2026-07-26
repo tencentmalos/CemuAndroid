@@ -29,7 +29,7 @@
 2. **C2 foundation 正规化与依赖收敛已经完成。** 根 CMake 通过 `add_subdirectory(dependencies/foundation EXCLUDE_FROM_ALL)` 注册真实 target，已删除伪造 target；Android 当前只构建实际链接的 debugbus/dumpsys。core/network/profiler/XR 都是后续计划能力，必须保留，只是不进入当前默认构建闭包。C2 后续已参考 Azahar，把 fmt、glslang、zstd、libusb、Crypto++ 切到 `tencentmalos` 子模块，并复用 foundation 的 RapidJSON；Crypto++ 没有塞进 vcpkg。
 3. **mac 桌面构建基线已经建立并复验。** C1 证据在 `docs/verification/20260726-C1/`，C2 接入取舍、前后度量和负向测试在 `docs/verification/20260726-C2/`。这些只证明对应提交可验，不代表后续改动可以靠推断跳过复验。
 
-另外：编译加速一项没做（`RelWithDebInfo` 还开着 LTO、无 ccache 且本机未安装、Unity Build 完全未用），而 foundation 自带的编译加速手册从未被消费过。
+另外：C3-T1 已完成，`RelWithDebInfo` 默认关闭 LTO，Release 仍默认开启；clean build 边数保持 648，最终链接由 18.649s 降到 0.505s。ccache、Unity Build 和构建图裁剪尚未做。
 
 ---
 
@@ -42,7 +42,7 @@
 | **C1（已完成）** | 上游同步 | 官方 main 更新 59 个提交，并把完整 main 历史 merge 到 `basic_version` | 这些提交含 mac 构建修复和 C3 所需的 `ENABLE_OPENGL`/`ENABLE_VULKAN`/`ENABLE_LIBUSB`/SDL optional 开关 |
 | **C2（已完成）** | foundation 合入正规化 | 根 CMake 按需接入，去掉伪造 target，加 API 版本护栏 | 先建立真实 target 关系与度量基线；`EXCLUDE_FROM_ALL` 保证未使用组件不污染默认构建图 |
 | **C2-F（已完成）** | 依赖收敛 | 复用 Azahar / `tencentmalos` 子模块，先移出 6 个 vcpkg 直接依赖项 | 保留完整 foundation 能力，同时先消除已有可靠镜像、版本可钉住的重复包管理路径 |
-| **C3（下一步）** | 编译加速 | Dev 关 LTO → ccache → Unity Build → 裁剪 Cemu 构建图 | foundation 的未使用组件已按需排除，C3 聚焦 Cemu 自身的可量化热点 |
+| **C3（进行中）** | 编译加速 | Dev 关 LTO（已完成）→ ccache → Unity Build → 裁剪 Cemu 构建图 | foundation 的未使用组件已按需排除，C3 聚焦 Cemu 自身的可量化热点 |
 
 **验收面是 mac 桌面**，不是 Android 真机。选 mac 的理由：这三项工作的失败模式全在构建系统层面，桌面即可暴露，且不依赖设备、迭代快。Android 在阶段一**只要求不回归**（`assembleDebug` 仍通过）。
 
@@ -90,21 +90,22 @@ spec §3 列了 7 个决策点（D1–D7）。阶段一仍可能遇到的是这�
 
 ## 你的第一个动作
 
-**从 C3-T0 开始：记录 C2 完成后的度量基线，再逐项做编译加速。**
+**从 C3-T2 开始：接入并验证 ccache。**
 
-先确认交接点没有漂移，再阅读 C2 验证结果和编译加速指南：
+先确认交接点没有漂移，再阅读 C3 当前度量和编译加速指南：
 
 ```sh
 git status --short --branch
 git fetch upstream origin
 git rev-list --left-right --count upstream/main...origin/main
 git merge-base --is-ancestor main feature/malos/basic_version
-sed -n '1,260p' docs/verification/20260726-C2/integration.md
+sed -n '1,300p' docs/verification/20260726-C3/build-speedup-notes.md
 sed -n '1,260p' dependencies/foundation/docs/guides/build-acceleration.md
 ```
 
 镜像差异按 spec C1-T1/T2 处理；ancestor 检查必须返回 0。若 main 有更新，
-先按 C1-T6 merge 到 `basic_version`。随后执行 C3-T0，从 C2 基线开始逐刀验证。
+先按 C1-T6 merge 到 `basic_version`。随后执行 C3-T2，并继续保持每刀独立
+验证、提交。
 
 ---
 

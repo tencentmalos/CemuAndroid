@@ -63,13 +63,22 @@
   Android Debug/Release 和单测结果见 `docs/verification/20260726-C2/`。
 - `vcpkg.json` 的直接依赖项由 33 降到 27。Boost、SDL3、curl/OpenSSL 及
   GUI/平台依赖暂留 vcpkg，原因与版本差异见
-  `docs/verification/20260726-C2/dependency-convergence.md`。下一步从 C3 开始。
+  `docs/verification/20260726-C2/dependency-convergence.md`。
+
+### C3 进行中
+
+- C3-T0 已在依赖收敛后的真实构建图上重建基线：RelWithDebInfo + LTO 为
+  648 条 Ninja 完成命令、`real 77.38s`。
+- C3-T1 已完成：RelWithDebInfo/Debug 默认关闭 LTO，Release 默认保留 LTO，
+  Android 显式关闭。RelWithDebInfo 最终链接由 18.649s 降到 0.505s，边数保持
+  648；完整记录见 `docs/verification/20260726-C3/build-speedup-notes.md`。
+- 下一步是 C3-T2 ccache。
 
 ### 编译加速现状
 
 | 手法 | cemu 现状 | 依据 |
 | --- | --- | --- |
-| Dev 构建关 LTO | **未做**，`RelWithDebInfo` 也开着 LTO | `CMakeLists.txt:85-86` |
+| Dev 构建关 LTO | **已完成**，RelWithDebInfo/Debug 默认 OFF，Release 默认 ON | `ENABLE_LTO` + C3 验证记录 |
 | ccache | **未接入**，且本机未安装 | 无 `COMPILER_LAUNCHER` 相关代码；`which ccache` 空 |
 | Unity Build | **完全未用** | 全仓无 `UNITY_BUILD` |
 | 预编译头 | **已做** | `src/Common/CMakeLists.txt:69`、`src/CMakeLists.txt:47-49` |
