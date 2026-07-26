@@ -36,7 +36,7 @@ Crypto++ 和预编译头兼容，违背本阶段的内聚目标，因此全部�
 2. Android target 只声明当前真正消费的 debugbus/dumpsys 和 API 版本头。
 3. 后续 core/network/profiler/XR 有真实消费者时，再由对应 foundation target
    自洽带入依赖；若依赖闭包过大，推动 foundation 自身组件化。
-4. 不在 Cemu 侧伪造 target，不向 Cemu vcpkg 清单添加未使用组件的依赖。
+4. 不在 Cemu 侧伪造 target；该根接入提交不向 vcpkg 添加未使用组件的依赖。
 
 ## 环境
 
@@ -175,9 +175,17 @@ git submodule status --recursive
 `vcpkg.json` diff 为空；foundation 子模块无指针或内部内容改动。
 
 - [x] 根 CMake 注册 foundation，删除伪造 target。
-- [x] 未使用组件不进入默认构建，不新增 Crypto++/vcpkg 依赖。
+- [x] 未使用组件不进入默认构建，根接入提交不向 vcpkg 新增 Crypto++。
 - [x] macOS 配置、clean build 和 GUI smoke test 通过。
 - [x] Android Debug、Release 和单测通过。
 - [x] 子模块缺失明确失败，恢复后重新配置通过。
 - [x] API 版本不兼容明确失败，恢复后重新构建通过。
 - [x] C2 前后 edges、耗时和产物大小已记录。
+
+## 后续决策
+
+本文记录的是提交 `0374fc5d` 之前的 C2 根接入验证，因此“`vcpkg.json` 无改动”
+和“未新增 Crypto++”描述的是该提交的历史状态。维护者随后确认 foundation 的
+core、network、profiler、XR 都属于后续范围，并决定复用 Azahar /
+`tencentmalos` 现有依赖、尽量收敛 vcpkg。后续实现与重新验证见
+`dependency-convergence.md`；没有删除本文已验证的 foundation target 或能力。

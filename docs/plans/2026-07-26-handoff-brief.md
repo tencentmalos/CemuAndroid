@@ -26,7 +26,7 @@
 三件事你必须先知道，它们直接决定第一步做什么：
 
 1. **C1 上游同步已经完成。** 本地 `main`、`origin/main` 和官方 `upstream/main` 均为 `b8f2cf4b`；`fc884596` 已把完整 main 历史 merge 到 `feature/malos/basic_version`，main 现在是该分支的祖先。同步前 mac 构建失败是合法基线；同步和兼容修复后 mac 配置、编译、启动以及 Android `assembleDebug` / `testDebugUnitTest` 均已通过。
-2. **C2 foundation 正规化已经完成。** 根 CMake 通过 `add_subdirectory(dependencies/foundation EXCLUDE_FROM_ALL)` 注册真实 target，已删除伪造 target；Android 只构建当前实际链接的 debugbus/dumpsys。未使用的 core/network/profiler/XR 和第三方库不会进入默认构建，也没有为 foundation 向 Cemu 的 vcpkg 清单新增 Crypto++。
+2. **C2 foundation 正规化与依赖收敛已经完成。** 根 CMake 通过 `add_subdirectory(dependencies/foundation EXCLUDE_FROM_ALL)` 注册真实 target，已删除伪造 target；Android 当前只构建实际链接的 debugbus/dumpsys。core/network/profiler/XR 都是后续计划能力，必须保留，只是不进入当前默认构建闭包。C2 后续已参考 Azahar，把 fmt、glslang、zstd、libusb、Crypto++ 切到 `tencentmalos` 子模块，并复用 foundation 的 RapidJSON；Crypto++ 没有塞进 vcpkg。
 3. **mac 桌面构建基线已经建立并复验。** C1 证据在 `docs/verification/20260726-C1/`，C2 接入取舍、前后度量和负向测试在 `docs/verification/20260726-C2/`。这些只证明对应提交可验，不代表后续改动可以靠推断跳过复验。
 
 另外：编译加速一项没做（`RelWithDebInfo` 还开着 LTO、无 ccache 且本机未安装、Unity Build 完全未用），而 foundation 自带的编译加速手册从未被消费过。
@@ -41,6 +41,7 @@
 | --- | --- | --- | --- |
 | **C1（已完成）** | 上游同步 | 官方 main 更新 59 个提交，并把完整 main 历史 merge 到 `basic_version` | 这些提交含 mac 构建修复和 C3 所需的 `ENABLE_OPENGL`/`ENABLE_VULKAN`/`ENABLE_LIBUSB`/SDL optional 开关 |
 | **C2（已完成）** | foundation 合入正规化 | 根 CMake 按需接入，去掉伪造 target，加 API 版本护栏 | 先建立真实 target 关系与度量基线；`EXCLUDE_FROM_ALL` 保证未使用组件不污染默认构建图 |
+| **C2-F（已完成）** | 依赖收敛 | 复用 Azahar / `tencentmalos` 子模块，先移出 6 个 vcpkg 直接依赖项 | 保留完整 foundation 能力，同时先消除已有可靠镜像、版本可钉住的重复包管理路径 |
 | **C3（下一步）** | 编译加速 | Dev 关 LTO → ccache → Unity Build → 裁剪 Cemu 构建图 | foundation 的未使用组件已按需排除，C3 聚焦 Cemu 自身的可量化热点 |
 
 **验收面是 mac 桌面**，不是 Android 真机。选 mac 的理由：这三项工作的失败模式全在构建系统层面，桌面即可暴露，且不依赖设备、迭代快。Android 在阶段一**只要求不回归**（`assembleDebug` 仍通过）。
@@ -68,7 +69,7 @@
 2. **以 `basic_version` + 官方 main 为主线。** 官方更新先进入本地/内部镜像 `main`，再 merge 到 `feature/malos/basic_version`；不 rebase 已推送历史。`android-port` 只按需选择性 cherry-pick 或合并，不能成为同步前置或平行版本。
 3. **子模块 URL 必须指向 `git@github.com:tencentmalos/...`**，不能被上游改回官方 URL。改 `.gitmodules` 后必跑 `git submodule sync --recursive`。
 4. **不直接改 `dependencies/` 下的子模块内容。** 要改 foundation，在 foundation 仓单独提交。
-5. **不要在 cemu 侧继续伪造 foundation target。** 那正是 C2 要消灭的东西。
+5. **不要在 cemu 侧继续伪造或删除 foundation 能力。** core/network/profiler/XR 后续都会使用；当前应靠 `EXCLUDE_FROM_ALL` 控制构建闭包，而不是因暂时未链接就删代码或 target。
 6. **编译加速每一刀独立提交、独立验证**，以 ninja build edges + `.ninja_log` 为准，wall time 只作参考。
 7. **验证要真跑。** 退出标准里的命令必须实际执行并保留输出。跑不了就明说跑不了，**不要用推断替代验证结果**。
 

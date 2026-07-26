@@ -5,12 +5,10 @@
   "dependencies": [
     "pugixml",
     "zlib",
-    "zstd",
     {
       "name": "libzip",
       "default-features": false
     },
-    "rapidjson",
     {
       "name": "sdl3",
       "default-features": false,
@@ -41,17 +39,8 @@
       "platform": "android"
     },
     "boost-random",
-    {
-      "name": "fmt",
-      "version>=": "12.1.0"
-    },
     "libpng",
     "glm",
-    {
-      "name": "glslang",
-      "default-features": false
-    },
-    "zstd",
     {
       "name": "wxwidgets",
       "default-features": false,
@@ -80,18 +69,9 @@
         "jpeg",
         "zip"
       ]
-    },
-    "libusb"
+    }
   ],
   "overrides": [
-    {
-      "name": "fmt",
-      "version": "12.1.0"
-    },
-    {
-      "name": "glslang",
-      "version": "15.1.0"
-    },
     {
       "name": "sdl3",
       "version": "3.4.10"

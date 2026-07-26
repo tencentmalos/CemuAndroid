@@ -32,3 +32,27 @@
 [submodule "dependencies/foundation"]
 	path = dependencies/foundation
 	url = git@github.com:tencentmalos/foundation.git
+[submodule "dependencies/fmt"]
+	path = dependencies/fmt
+	url = git@github.com:tencentmalos/fmt.git
+	shallow = true
+[submodule "dependencies/glslang"]
+	path = dependencies/glslang
+	url = git@github.com:tencentmalos/glslang.git
+	shallow = true
+[submodule "dependencies/zstd"]
+	path = dependencies/zstd
+	url = git@github.com:tencentmalos/zstd.git
+	shallow = true
+[submodule "dependencies/libusb"]
+	path = dependencies/libusb
+	url = git@github.com:tencentmalos/libusb.git
+	shallow = true
+[submodule "dependencies/cryptopp"]
+	path = dependencies/cryptopp
+	url = git@github.com:tencentmalos/cryptopp.git
+	shallow = true
+[submodule "dependencies/cryptopp-cmake"]
+	path = dependencies/cryptopp-cmake
+	url = git@github.com:tencentmalos/cryptopp-cmake.git
+	shallow = true

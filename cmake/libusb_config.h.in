@@ -1,0 +1,40 @@
+/* Default visibility */
+#if defined(__GNUC__) || defined(__clang__)
+#define DEFAULT_VISIBILITY __attribute__((visibility("default")))
+#elif defined(_MSC_VER)
+#define DEFAULT_VISIBILITY __declspec(dllexport)
+#endif
+
+#undef ENABLE_DEBUG_LOGGING
+#undef ENABLE_LOGGING
+
+#cmakedefine HAVE_ASM_TYPES_H 1
+#cmakedefine HAVE_GETTIMEOFDAY 1
+#cmakedefine HAVE_LIBUDEV 1
+#cmakedefine HAVE_LINUX_FILTER_H 1
+#cmakedefine HAVE_LINUX_NETLINK_H 1
+#cmakedefine HAVE_EVENTFD 1
+#cmakedefine HAVE_TIMERFD 1
+#cmakedefine HAVE_SIGNAL_H 1
+#cmakedefine HAVE_STRINGS_H 1
+#cmakedefine HAVE_STRUCT_TIMESPEC 1
+#cmakedefine HAVE_SYSLOG_FUNC 1
+#cmakedefine HAVE_SYSLOG_H 1
+#cmakedefine HAVE_SYS_SOCKET_H 1
+#cmakedefine HAVE_SYS_TIME_H 1
+#cmakedefine HAVE_SYS_TYPES_H 1
+#cmakedefine HAVE_CLOCK_GETTIME 1
+
+#cmakedefine OS_DARWIN 1
+#cmakedefine OS_LINUX 1
+#cmakedefine OS_NETBSD 1
+#cmakedefine OS_OPENBSD 1
+#cmakedefine OS_WINDOWS 1
+
+#cmakedefine PLATFORM_POSIX
+#cmakedefine PLATFORM_WINDOWS
+
+#define USE_SYSTEM_LOGGING_FACILITY 1
+#cmakedefine USE_UDEV 1
+#define _GNU_SOURCE
+#define WINVER 0x0501

@@ -148,8 +148,6 @@ cemu_use_precompiled_header(CemuWxGui)
 
 
 target_include_directories(CemuWxGui PUBLIC "../")
-# PUBLIC because rapidjson/document.h is included in ChecksumTool.h
-target_include_directories(CemuWxGui PUBLIC ${RAPIDJSON_INCLUDE_DIRS})
 
 target_link_libraries(CemuWxGui PRIVATE
   CemuCommon
@@ -160,6 +158,7 @@ target_link_libraries(CemuWxGui PRIVATE
   pugixml::pugixml
   CemuCafe
   PUBLIC
+  Cemu::rapidjson
   CURL::libcurl
 )
 

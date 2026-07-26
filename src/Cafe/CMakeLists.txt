@@ -666,6 +666,7 @@ target_link_libraries(CemuCafe PRIVATE
   ih264d
   zstd::zstd
   ${glslang_target}
+  Cemu::rapidjson
   PUBLIC
   OpenSSL::SSL
 )
@@ -676,17 +677,7 @@ if (ENABLE_WAYLAND)
 endif()
 
 if (ENABLE_LIBUSB)
-  if (ENABLE_VCPKG)
-    if(WIN32)
-      set(PKG_CONFIG_EXECUTABLE "${VCPKG_INSTALLED_DIR}/x64-windows/tools/pkgconf/pkgconf.exe")
-    endif()
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(libusb REQUIRED IMPORTED_TARGET libusb-1.0)
-    target_link_libraries(CemuCafe PRIVATE PkgConfig::libusb)
-  else ()
-    find_package(libusb MODULE REQUIRED)
-    target_link_libraries(CemuCafe PRIVATE libusb::libusb)
-  endif ()
+  target_link_libraries(CemuCafe PRIVATE libusb::libusb)
 endif()
 
 if(WIN32)

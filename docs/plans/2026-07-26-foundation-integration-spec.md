@@ -299,9 +299,14 @@ git merge --no-ff main
 
 前置：C1 完成。**本阶段的验收面同样是 mac 桌面。**
 
-> **已完成。** 结果见 `docs/verification/20260726-C2/integration.md`。
+> **已完成。** 根接入结果见 `docs/verification/20260726-C2/integration.md`，
+> 后续依赖收敛见
+> `docs/verification/20260726-C2/dependency-convergence.md`。
 > Azahar 对照和 Cemu 双平台实测后，最终采用根 CMake
-> `EXCLUDE_FROM_ALL` 的按需构建方式；不向 Cemu vcpkg 清单新增 Crypto++。
+> `EXCLUDE_FROM_ALL` 的按需构建方式。C2 初始提交未向 vcpkg 新增 Crypto++；
+> 维护者随后确认 core/network/profiler/XR 都会使用，因此通过 Azahar 已验证的
+> `cryptopp` / `cryptopp-cmake` 子模块预备其真实依赖，仍不把 Crypto++ 加入
+> vcpkg。
 
 ### C2-T1 改为根 CMake 接入（修 S3）
 
@@ -318,8 +323,9 @@ git merge --no-ff main
   Cemu 明确链接的组件进入默认构建
 - 把 `if(EXISTS ...)` 改成显式选项 `CEMU_ENABLE_FOUNDATION`；开启但子模块缺失时 `message(FATAL_ERROR "foundation submodule missing, run: git submodule update --init --recursive")`
 - **mac 与 Android 都要能配过。** mac 当前不链接 foundation 组件，默认构建图
-  不应因此膨胀；Android 当前只链接 debugbus/dumpsys。不得为了未使用的
-  foundation core/network/profiler/XR 提前在 Cemu 中补 Crypto++ 或兼容 target
+  不应因此膨胀；Android 当前只链接 debugbus/dumpsys。core/network/profiler/XR
+  都是后续范围，不得因为当前没有消费者而删除；依赖可提前注册，但不得让它们
+  无条件进入默认构建闭包
 - foundation 里的 `CITRA_USE_UNITY_BUILD` 是从 azahar 带过来的变量名，cemu 侧此刻不定义（C3 再统一处理）
 - 后续组件一旦成为真实消费者，其依赖应由对应 foundation target 自洽带入；
   若依赖闭包不可接受再触发 D3，**不要在 Cemu 侧伪造 target 或引入第二套依赖层**
@@ -330,8 +336,9 @@ git merge --no-ff main
 - Android：`assembleDebug` + `assembleRelease` 通过
 - 故意重命名 `dependencies/foundation` 目录后配置报出上述 FATAL_ERROR（验证后改回）
 - **记录接入前后的 build edges 数、编译 wall time、产物体积对比**，写进 `docs/verification/<YYYYMMDD>-C2/`——这是 C3 的度量输入
-- Cemu `vcpkg.json` 不因未使用的 foundation 组件增加依赖；若出现第三方库
-  重复/冲突，处理方式记录在案
+- Cemu `vcpkg.json` 不因 foundation 后续组件增加依赖；若出现第三方库
+  重复/冲突，优先复用 Azahar 已验证或 `tencentmalos` 已镜像的子模块并记录
+  版本，不能靠删除 foundation 能力规避
 
 ### C2-T2 API 版本护栏（修 S6）
 
@@ -347,6 +354,33 @@ static_assert(SPATIAL_FOUNDATION_API_VERSION >= 1, "foundation submodule too old
 ### C2-T3 提交
 
 `build: link foundation through its root CMake`
+
+### C2-T4 依赖收敛（C2 后续，已完成）
+
+维护者确认 foundation 新增组件后续都会使用，并要求尽量移除 vcpkg。执行时：
+
+- 所有新增子模块继续使用 `git@github.com:tencentmalos/...`，版本钉在已验证
+  tag/commit。
+- fmt 12.1.0、glslang 15.1.0、zstd 1.5.7、libusb 1.0.26 由统一
+  `cmake/CemuBundledDependencies.cmake` 注册。
+- Cemu 的 RapidJSON 消费改为复用
+  `spatial::third_party_rapidjson`。
+- Crypto++ 采用 Azahar 已验证的 `cryptopp` / `cryptopp-cmake` 指针，为
+  foundation core 等后续真实消费者准备 target；未被链接时仍不构建。
+- 暂不迁移没有精确版本对齐或完整跨平台验证的依赖。尤其 Boost 当前 vcpkg 为
+  1.88、Azahar 镜像已到 1.90；Cemu 要求 SDL 3.4.10，而现有镜像 tag 只到
+  3.4.8。不得为了降低依赖数量而做无验证升级。
+
+**退出标准：**
+
+- vcpkg 直接依赖项减少，且未向 vcpkg 添加 Crypto++。
+- macOS 配置/编译通过；Android `assembleDebug`、`assembleRelease`、
+  `testDebugUnitTest` 通过。
+- `git submodule status --recursive` 无 `-` 或 `+`，所有 URL 指向
+  `tencentmalos`。
+- foundation core/network/profiler/XR target 和源码仍保留。
+
+**提交：** `build: migrate shared dependencies out of vcpkg`
 
 ---
 
@@ -438,8 +472,9 @@ C1 同步带来的上游开关是现成工具，**先用它们，不要自己造
 | `ENABLE_LIBUSB` | `1c2b7d78` | 按是否需要实体 USB 设备决定 |
 | SDL optional | `8e3e961b` | 按输入需求决定 |
 
-foundation 未使用的 `third_party` 已由 C2 的 `EXCLUDE_FROM_ALL` 排除，不再作为
-C3 的裁剪对象。后续若链接 core/network/profiler/XR 后出现过大的传递依赖，
+foundation 当前没有消费者的 `third_party` 已由 C2 的 `EXCLUDE_FROM_ALL`
+排除，但相关 target 和源码必须保留，不是 C3 的删除对象。后续链接
+core/network/profiler/XR 后若出现过大的传递依赖，
 再触发 D3；**若需要改 foundation，走 foundation 仓单独提交**，不要在 Cemu
 侧 hack。
 

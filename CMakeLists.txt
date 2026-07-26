@@ -158,23 +158,31 @@ endif()
 option(ENABLE_CUBEB "Enabled cubeb backend" ON)
 
 option(ENABLE_WXWIDGETS "Build with wxWidgets UI (Currently required)" ON)
+option(CEMU_USE_BUNDLED_DEPENDENCIES "Use repository-managed dependencies instead of vcpkg where available" ON)
 
 find_package(Threads REQUIRED)
+include(CemuBundledDependencies)
+
 find_package(CURL REQUIRED)
 find_package(pugixml REQUIRED)
-find_package(RapidJSON REQUIRED)
 find_package(Boost COMPONENTS program_options filesystem nowide REQUIRED)
 if(ANDROID)
 	find_package(Boost COMPONENTS context iostreams REQUIRED)
 endif()
 find_package(libzip REQUIRED)
-find_package(glslang REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(zstd MODULE REQUIRED) # MODULE so that zstd::zstd is available
 find_package(OpenSSL COMPONENTS Crypto SSL REQUIRED)
 find_package(glm REQUIRED)
-find_package(fmt 12.1 REQUIRED)
 find_package(PNG REQUIRED)
+
+if (NOT CEMU_USE_BUNDLED_DEPENDENCIES)
+	find_package(glslang REQUIRED)
+	find_package(zstd MODULE REQUIRED) # MODULE so that zstd::zstd is available
+	find_package(fmt 12.1 REQUIRED)
+	if (ENABLE_LIBUSB)
+		find_package(libusb MODULE REQUIRED)
+	endif()
+endif()
 
 if(ENABLE_SDL)
 	find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)

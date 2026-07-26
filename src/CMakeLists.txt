@@ -153,7 +153,7 @@ if (MACOS_BUNDLE)
 			message(FATAL_ERROR "failed to find libMoltenVK.dylib")
 		endif ()
   endif()
-	if (ENABLE_LIBUSB)
+	if (ENABLE_LIBUSB AND NOT CEMU_USE_BUNDLED_DEPENDENCIES)
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 		    set(LIBUSB_PATH "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/debug/lib/libusb-1.0.0.dylib")
 		else()
@@ -182,7 +182,7 @@ if (MACOS_BUNDLE)
 			"${RESOURCES_DIR}/update.sh"
 	)
 
-	if (ENABLE_LIBUSB)
+	if (ENABLE_LIBUSB AND NOT CEMU_USE_BUNDLED_DEPENDENCIES)
 		add_custom_command(TARGET CemuBin POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy
 				"${LIBUSB_PATH}"
@@ -195,7 +195,7 @@ if (MACOS_BUNDLE)
 		INSTALL_RPATH "@executable_path/../Frameworks"
 	)
 
-	if (ENABLE_LIBUSB)
+	if (ENABLE_LIBUSB AND NOT CEMU_USE_BUNDLED_DEPENDENCIES)
 		add_custom_command(TARGET CemuBin POST_BUILD
 		COMMAND install_name_tool
 			-change @rpath/libusb-1.0.0.dylib

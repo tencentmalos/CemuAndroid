@@ -19,7 +19,7 @@
   - 交接简报（新接手先读这个）：`docs/plans/2026-07-26-handoff-brief.md`
   - 计划（背景、review 结论、阶段划分）：`docs/plans/2026-07-26-foundation-integration-plan.md`
   - 实施 spec（任务级、可直接执行）：`docs/plans/2026-07-26-foundation-integration-spec.md`
-  - 当前状态：C1 已完成；本地/内部镜像 `main` 与官方 `upstream/main` 均为 `b8f2cf4b`，并已由 `fc884596` 完整 merge 到 `feature/malos/basic_version`。macOS 配置、编译、启动和 Android `assembleDebug` / `testDebugUnitTest` 已通过。下一步是 C2 foundation 合入正规化；foundation 仍钉在 `b01f41c`。
+  - 当前状态：C1、C2 已完成；本地/内部镜像 `main` 与官方 `upstream/main` 均为 `b8f2cf4b`，并已由 `fc884596` 完整 merge 到 `feature/malos/basic_version`。foundation 仍钉在 `b01f41c`，根 CMake 已正规化接入。C2 后续的依赖收敛已把 fmt、glslang、zstd、libusb、Crypto++ 改为 `tencentmalos` 子模块，并复用 foundation 的 RapidJSON；没有删除后续要用的 core、network、profiler、XR 能力。验证见 `docs/verification/20260726-C2/`，下一步是 C3 编译加速。
   - 改动构建系统、`dependencies/foundation` 相关代码、debugbus 或 XR 前先读它们，并按 `AGENTS.md` 的分支主线策略先确认官方 `main` 是否有新提交。
 
 ## 常用命令速查
