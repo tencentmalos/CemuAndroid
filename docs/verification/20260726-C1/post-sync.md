@@ -1,5 +1,9 @@
 # C1 官方同步与相关提交回填验证
 
+> 历史记录：本文记录的是完整合流前的“选择性回填”步骤。随后用户决定消除
+> 平行版本，完整 main 已由 `fc884596` 合入 `feature/malos/basic_version`；
+> 当前拓扑和长期分支策略以 `main-merge.md` 为准。
+
 - 日期：2026-07-26
 - 工作分支：`feature/malos/basic_version`
 - 已验证源码提交：`988a209dca0e49a6e5205b5a6ef0de5df7f9a1c7`

@@ -47,6 +47,8 @@ Android 测试位于 `src/android/app/src/test` 和 `src/android/app/src/android
 
 默认串行执行 agent 工作，除非用户明确要求并发或多 agent 拆分。修改前先阅读相关模块、脚本和历史提交；实现时优先沿用现有架构与命名。不要直接修改 `dependencies/` 内子模块内容，除非任务明确要求并且变更会提交到对应子仓。
 
+`feature/malos/basic_version` 是本仓库的 Android 产品主线，后续以官方 Cemu `main` 为主要跟踪来源：本地 `main` 先与 `upstream/main` 对齐并推送到 `origin/main`，再用 merge 汇入 `feature/malos/basic_version`，不得 rebase 已推送历史。`android-port` 只作为 Android 旧实现的可选来源；仅在逐项确认改动仍有价值后选择性 cherry-pick 或合并，不得让它成为官方 main 同步的前置或并行主线。
+
 本分支子模块 URL 应指向 `git@github.com:tencentmalos/...`。改动 `.gitmodules` 后必须运行 `git submodule sync --recursive`，并用 `git submodule status --recursive` 检查指针。涉及签名配置时使用环境变量 `ANDROID_STORE_FILE`、`ANDROID_KEY_STORE_PASSWORD`、`ANDROID_KEY_ALIAS`，不得提交密钥或本地配置。
 
 新增或沉淀本项目专用工作流时，优先放入 `skills/` 下的 repo-local skill，并在本文件中加入入口说明。文档、诊断和验证输出应足够具体，能让下一位维护者复现命令和判断依据。

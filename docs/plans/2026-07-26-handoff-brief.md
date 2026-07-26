@@ -13,7 +13,7 @@
 
 ## 你需要知道的项目背景
 
-**Cemu** 是 Wii U 模拟器（C++20，CMake + vcpkg）。本仓库是它的 **Android 移植分支 fork**，托管在内部镜像 `tencentmalos/CemuAndroid`，当前工作分支 `feature/malos/basic_version`。Android 工程在 `src/android`（Kotlin/Compose + JNI），核心 C++ 在 `src/`。
+**Cemu** 是 Wii U 模拟器（C++20，CMake + vcpkg）。本仓库是它的 **Android 移植分支 fork**，托管在内部镜像 `tencentmalos/CemuAndroid`，Android 产品主线是 `feature/malos/basic_version`。本地 `main` 跟踪官方 `upstream/main`，同步后推到内部镜像 `origin/main`，再 merge 到 `basic_version`。旧 `android-port` 只作为 Android 改动的可选来源，不再作为并列主线。Android 工程在 `src/android`（Kotlin/Compose + JNI），核心 C++ 在 `src/`。
 
 **foundation**（`spatial::*`）是一个内部私有库，从另一个模拟器项目 azahar 沉淀出来的通用设施：调试命令总线（debugbus）、OpenXR 框架、Android 平台工具等。它以 git submodule 形式挂在 `dependencies/foundation`。本项目是它的第二个消费方。
 
@@ -25,9 +25,9 @@
 
 三件事你必须先知道，它们直接决定第一步做什么：
 
-1. **上游落后约 3 个月。** `android-port` 落后官方 Cemu 镜像 `origin/main` **31 个提交**，merge-base 停在 2026-04-18。而且仓库**没有配置指向官方 `cemu-project/Cemu` 的 remote**，只有内部镜像。
+1. **C1 上游同步已经完成。** 本地 `main`、`origin/main` 和官方 `upstream/main` 均为 `b8f2cf4b`；`fc884596` 已把完整 main 历史 merge 到 `feature/malos/basic_version`，main 现在是该分支的祖先。同步前 mac 构建失败是合法基线；同步和兼容修复后 mac 配置、编译、启动以及 Android `assembleDebug` / `testDebugUnitTest` 均已通过。
 2. **foundation 是 hack 接入的。** 现在的 `CMakeLists.txt:219-229` 伪造了两个空的 INTERFACE target 顶替 foundation 的真实依赖，然后只 `add_subdirectory` 了它的一个子模块。这挡住了后续所有扩展。
-3. **mac 桌面构建没有基线。** 工作区里没有 `build/` 目录，没人验证过 mac 版当前能不能编译。**"mac 版可验"是待验证的目标，不是已知状态。**
+3. **mac 桌面构建基线已经建立。** 同步前失败、同步后成功的命令与结果在 `docs/verification/20260726-C1/`。这只证明 C1 的当前提交可验，不代表后续改动可以靠推断跳过复验。
 
 另外：编译加速一项没做（`RelWithDebInfo` 还开着 LTO、无 ccache 且本机未安装、Unity Build 完全未用），而 foundation 自带的编译加速手册从未被消费过。
 
@@ -39,7 +39,7 @@
 
 | | 阶段 | 做什么 | 为什么是这个顺序 |
 | --- | --- | --- | --- |
-| **C1** | 上游同步 | 追平 31 个提交，配置 upstream remote，转为常态前置 | 这批提交含 3 个 mac 构建修复（直接服务本阶段目标），且含 `ENABLE_OPENGL`/`ENABLE_VULKAN`/`ENABLE_LIBUSB`/SDL optional 四个开关——**它们就是 C3 裁剪构建图的现成工具，不用自己造** |
+| **C1（已完成）** | 上游同步 | 官方 main 更新 59 个提交，并把完整 main 历史 merge 到 `basic_version` | 这些提交含 mac 构建修复和 C3 所需的 `ENABLE_OPENGL`/`ENABLE_VULKAN`/`ENABLE_LIBUSB`/SDL optional 开关 |
 | **C2** | foundation 合入正规化 | 改用根 CMake 接入，去掉伪造 target，加 API 版本护栏 | 必须在 C3 前：C2 会把 foundation 全量第三方依赖拉进构建图，先合入再加速，度量基线才有意义 |
 | **C3** | 编译加速 | Dev 关 LTO → ccache → Unity Build → 裁剪构建图 | 同时是 C2 的兜底：如果全量接入把构建时长推爆，裁剪就是解法 |
 
@@ -64,8 +64,8 @@
 
 ## 硬约束（违反会导致返工）
 
-1. **不提交未跟踪的杂物。** 仓库现有未跟踪的 `AGENTS.md`、`skills/`、`_out/`。前次试点已因此中断过一次。每次提交前核对 `git status`。
-2. **不 rebase 已推送的分支。** `android-port` 被多分支共享，上游汇入一律 merge。
+1. **不提交未跟踪的杂物。** 当前未跟踪的 `_out/`、`build_baseline/` 不属于任务提交。每次提交前核对 `git status`。
+2. **以 `basic_version` + 官方 main 为主线。** 官方更新先进入本地/内部镜像 `main`，再 merge 到 `feature/malos/basic_version`；不 rebase 已推送历史。`android-port` 只按需选择性 cherry-pick 或合并，不能成为同步前置或平行版本。
 3. **子模块 URL 必须指向 `git@github.com:tencentmalos/...`**，不能被上游改回官方 URL。改 `.gitmodules` 后必跑 `git submodule sync --recursive`。
 4. **不直接改 `dependencies/` 下的子模块内容。** 要改 foundation，在 foundation 仓单独提交。
 5. **不要在 cemu 侧继续伪造 foundation target。** 那正是 C2 要消灭的东西。
@@ -76,9 +76,9 @@
 
 ## 什么时候必须停下来问人
 
-spec §3 列了 7 个决策点（D1–D7）。阶段一会遇到的是这三个：
+spec §3 列了 7 个决策点（D1–D7）。阶段一仍可能遇到的是这四个：
 
-- **D1** — 内部镜像 `origin/main` 落后于官方 `upstream/main` 时（需要镜像写权限，你没有）。
+- **D1** — 内部 `origin/main` 出现官方没有的提交，或更新镜像时 push 被权限拒绝。
 - **D2** — 上游 SDL3 迁移引入新子模块时，需要先在 tencentmalos 建镜像才能合。
 - **D3** — C2 后如果 foundation 全量依赖导致构建时长/体积不可接受，是否推动 foundation 侧加模块开关。
 - **D4** — C3 裁剪构建图时，哪些子系统必须保留默认开启。**这个不能凭代码猜，需要产品侧确认。**
@@ -89,20 +89,21 @@ spec §3 列了 7 个决策点（D1–D7）。阶段一会遇到的是这三个�
 
 ## 你的第一个动作
 
-**C1-T0：在同步之前，先建立 mac 构建基线。**
+**从 C2-T1 开始：把 foundation 改为根 CMake 接入。**
 
-这一步的目的是拿到对照组——没有它，同步后出问题分不清是上游带来的还是本来就坏的。
+先确认交接点没有漂移，再阅读现有 hack 和 foundation 接入指南：
 
 ```sh
-brew install git cmake ninja nasm automake libtool boost
-# 外加 MoltenVK privateapi，见 spec §1
-cmake -S . -B build_baseline -DCMAKE_BUILD_TYPE=RelWithDebInfo -G Ninja
-/usr/bin/time -p cmake --build build_baseline 2>&1 | tee /tmp/baseline_build.log
+git status --short --branch
+git fetch upstream origin
+git rev-list --left-right --count upstream/main...origin/main
+git merge-base --is-ancestor main feature/malos/basic_version
+sed -n '200,245p' CMakeLists.txt
+sed -n '1,240p' dependencies/foundation/docs/guides/integrating-emulator-host.md
 ```
 
-**基线构建失败也是合法结果** —— 记录下来即可，不要在这一步修它。上游那 3 个 mac 修复很可能正好修好它。
-
-记录到 `docs/verification/<YYYYMMDD>-C1/baseline.md`，然后进 spec 的 C1-T1。
+镜像差异按 spec C1-T1/T2 处理；ancestor 检查必须返回 0。若 main 有更新，
+先按 C1-T6 merge 到 `basic_version`。随后执行 C2-T1，不要跳到编译加速。
 
 ---
 

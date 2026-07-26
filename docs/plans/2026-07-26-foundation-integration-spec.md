@@ -34,17 +34,19 @@ C4–C7 见 §9，本文只给纲要，其中 C6/C7 含未决设计，**不要�
 | --- | --- |
 | 工作目录 | `/Users/bytedance/workspace/cemu_android` |
 | 当前分支 | `feature/malos/basic_version` |
-| 主分支 | `android-port` |
-| 唯一 remote | `origin = git@github.com:tencentmalos/CemuAndroid.git` |
-| 官方上游 | `https://github.com/cemu-project/Cemu.git` — **当前未配置为 remote** |
+| Android 产品主线 | `feature/malos/basic_version` |
+| Android 旧实现参考 | `android-port`（只按需选择性引入） |
+| 内部 remote | `origin = git@github.com:tencentmalos/CemuAndroid.git` |
+| 官方 remote | `upstream = https://github.com/cemu-project/Cemu.git` |
 | `origin/main` | 官方 Cemu main 的 tencentmalos 镜像 |
 | 平台 | macOS（Darwin 25.5.0），Apple Silicon 假定 |
 
-分支关系（2026-07-26）：
+分支关系（2026-07-26，C1 完成后）：
 
-- `feature/malos/basic_version` 领先 `android-port` 2 个提交（`38dc527d`、`914917ce`），落后 0 个
-- `android-port` 领先 `origin/main` 287 个提交，**落后 31 个**
-- 与 main 的 merge-base：`02383542`（2026-04-18）
+- 本地 `main`、`origin/main`、`upstream/main` 均为 `b8f2cf4b`
+- `fc884596` 的两个父提交为 `2588c674`（原 `basic_version`）和 `b8f2cf4b`（main）
+- `main...feature/malos/basic_version` 为 `0 311`，即 main 独有提交为 0，完整 main 已成为产品分支祖先
+- `android-port` 仍是产品分支祖先，但后续不再作为官方同步中转站
 
 ### mac 构建前置
 
@@ -63,9 +65,10 @@ sudo mkdir -p /opt/homebrew/lib
 sudo cp MoltenVK/lib/libMoltenVK.dylib /opt/homebrew/lib/
 ```
 
-需要 Xcode 15+ 或 brew LLVM（C++20）。上游同步会带入 `aa6e2c05`，其中提到 mac 还需 `pkgconf`——同步后以更新版 `BUILD.md` 为准。
+需要 Xcode 15+ 或 brew LLVM（C++20）。已同步的 `aa6e2c05` 提到 mac 还需 `pkgconf`，以后以当前 `BUILD.md` 为准。
 
-**工作区当前无 `build/` 目录，mac 构建无基线。**
+**mac 构建基线已经建立。** 同步前失败、同步后成功的记录见
+`docs/verification/20260726-C1/`。
 
 ### foundation 子模块
 
@@ -132,7 +135,7 @@ foundation 根 CMake 会拉入 `third_party` + `basic` + `modules` 全量。`thi
 2. **不直接修改 `dependencies/` 下的子模块内容。** foundation 需要改时，在 foundation 仓单独提交，再更新 cemu 侧指针。
 3. **子模块 URL 必须指向 `git@github.com:tencentmalos/...`。** 改 `.gitmodules` 后必跑 `git submodule sync --recursive`，并用 `git submodule status --recursive` 核对。
 4. **签名只走环境变量** `ANDROID_STORE_FILE` / `ANDROID_KEY_STORE_PASSWORD` / `ANDROID_KEY_ALIAS`，不得提交密钥或本地配置。
-5. **不 rebase 已推送的分支。** `android-port` 被多分支共享，上游汇入一律 merge。
+5. **不 rebase 已推送的分支。** 官方更新先快进本地 `main` 并推送 `origin/main`，再 merge 到 `feature/malos/basic_version`。`android-port` 只作为可选 Android 改动来源，不得成为同步前置。
 6. **编码风格**：C/C++ 遵循 `CODING_STYLE.md` 与 `.clang-format`（成员 `m_` 前缀、静态 `s_` 前缀、变量 lowerCamelCase、类/函数 UpperCamelCase、固定宽度类型 `uint32`/`sint64`、大括号单独成行）。**不要对整个文件跑格式化**，只格式化改动行。Kotlin 遵循官方 Conventions 并贴近现有风格。
 7. **提交粒度**：一个提交解决一个问题，标题短小祈使句带作用域（`build: ...`、`android: ...`）。**编译加速的每一刀独立提交、独立验证。**
 8. **验证要真跑。** 退出标准里的命令必须实际执行并保留输出。跑不了就明说，不要用推断替代。
@@ -143,7 +146,7 @@ foundation 根 CMake 会拉入 `third_party` + `basic` + `modules` 全量。`thi
 
 | 编号 | 决策点 | 出现在 |
 | --- | --- | --- |
-| D1 | `origin/main` 镜像落后于 `upstream/main` 时，谁来推镜像（需 tencentmalos 写权限） | C1-T1 |
+| D1 | `origin/main` 出现官方没有的提交，或更新镜像时 push 被权限拒绝 | C1-T1/T2 |
 | D2 | 上游 SDL3 迁移引入新子模块时，镜像到 tencentmalos 的操作由谁做 | C1-T4 |
 | D3 | C2 若 foundation 全量 `third_party` 导致构建时长/产物体积不可接受，是否推动 foundation 侧加模块开关（如 `SPATIAL_FOUNDATION_ENABLE_XR`） | C2-T1 |
 | D4 | C3 裁剪构建图时，哪些子系统必须保留默认开启（需要产品侧确认，不能凭代码猜） | C3-T4 |
@@ -155,7 +158,12 @@ foundation 根 CMake 会拉入 `third_party` + `basic` + `modules` 全量。`thi
 
 ## 4. C1：同步官方上游
 
-> **必须最先做。** 31 个待同步提交里含 3 个 mac 构建修复（直接影响阶段一目标）、SDL3 迁移、以及 C3 要用的构建选项开关。
+> **首轮已完成。** 2026-07-26 的结果见
+> `docs/verification/20260726-C1/post-sync.md` 与
+> `docs/verification/20260726-C1/main-merge.md`。以下步骤保留为后续常态同步流程。
+
+> **首轮当时必须最先做。** 当时待同步的 31 个提交含 mac 构建修复、SDL3
+> 迁移和 C3 所需开关；该风险现已消化。未来轮次仍在阶段边界先同步。
 
 ### C1-T0 建立 mac 构建基线（同步前）
 
@@ -172,31 +180,30 @@ cmake -S . -B build_baseline -DCMAKE_BUILD_TYPE=RelWithDebInfo -G Ninja
 
 **退出标准：** 基线状态已记录到 `docs/verification/<YYYYMMDD>-C1/baseline.md`。**基线构建失败也是合法结果**——记录下来即可，不要在此任务里修，上游同步可能自带修复。
 
-### C1-T1 恢复上游 remote 并核对镜像新鲜度
+### C1-T1 核对官方与内部镜像
 
 ```sh
-git remote add upstream https://github.com/cemu-project/Cemu.git
-git fetch upstream
+git remote get-url upstream
+git fetch upstream origin
 git rev-list --left-right --count upstream/main...origin/main
 ```
 
 - 输出格式 `A<TAB>B`：A 是 upstream 独有（镜像落后量），B 是 origin 独有。
-- **A 不为 0 → 触发 D1，停下来问。** 不要绕过镜像直接从 `upstream` 合入业务分支——那会让镜像永久偏离，后续无法用 `origin/main` 判断同步状态。
+- A 不为 0：正常进入 C1-T2，把官方更新快进到本地与内部镜像 main。
+- **B 不为 0 → 触发 D1，停下来问。** 内部 main 应是官方镜像，不能自行丢弃额外历史。
+- C1-T2 的 push 若因权限失败，同样触发 D1；不要绕过内部镜像直接长期合入业务分支。
 
-**退出标准：** A == 0，或差异已记录且经维护者确认可继续。不提交任何东西（remote 配置是本地的）。
+**退出标准：** B == 0；A == 0 时镜像已新鲜，A 不为 0 时继续 C1-T2。
 
-### C1-T2 汇入 android-port
+### C1-T2 更新内部 main 镜像
 
 ```sh
-git checkout android-port
-git merge origin/main
+git switch main
+git merge --ff-only upstream/main
+git push origin main
 ```
 
-解冲突时对照 C1-T3 清单，不要机械 `--theirs` / `--ours`。
-
-**退出标准：** `git log --oneline origin/android-port..origin/main` 为空。
-
-**提交：** merge commit 沿用现有风格 `Merge remote-tracking branch 'origin/main' into android-port`。冲突解法若有非平凡取舍，写进 merge commit body。
+**退出标准：** `main`、`upstream/main`、`origin/main` 指向同一提交。
 
 ### C1-T3 冲突高危清单
 
@@ -258,18 +265,22 @@ cd src/android && ./gradlew assembleDebug
 - 与 C1-T0 基线的对照结论已记录（哪些原本坏的被上游修好了 / 哪些是新引入的）
 - 证据（完整命令 + 输出 + 启动截图）归档 `docs/verification/<YYYYMMDD>-C1/`
 
-### C1-T6 同步 feature 分支
+### C1-T6 汇入 Android 产品主线
 
 ```sh
-git checkout feature/malos/basic_version
-git merge android-port
+git switch feature/malos/basic_version
+git merge --no-ff main
 ```
 
-**退出标准：** `git log --oneline feature/malos/basic_version..android-port` 为空；C1-T5 全套验收在 feature 分支上复跑一遍全绿。
+解冲突时对照 C1-T3 清单，不要机械 `--theirs` / `--ours`。保留 Android 平台接入，同时采用 main 已替换的新接口和已删除旧路径的决定。
+
+**退出标准：** `git merge-base --is-ancestor main feature/malos/basic_version` 返回 0；C1-T5 全套验收在产品分支上复跑一遍全绿。
+
+`android-port` 不参与这条必经路径。只有在维护者确认其中某项 Android 改动仍有价值时，才审阅后选择性 cherry-pick 或显式 merge；引入后仍必须复跑上述验收。
 
 ### C1-T7 转为常态节奏 + 更新基线记录
 
-- **每个阶段开工前**执行：`git fetch upstream origin && git log --oneline origin/android-port..origin/main | wc -l`，非零则先走 C1。
+- **每个阶段开工前**执行：`git fetch upstream origin`，先令本地/内部镜像 `main` 与 `upstream/main` 对齐，再执行 `git merge-base --is-ancestor main feature/malos/basic_version`。返回非 0 则先走 C1-T6。
 - **阶段进行中不同步。** 中途合入上游会让该阶段的验收基线漂移，无法判断问题来自本阶段改动还是上游。同步只在阶段边界做。
 - 若某阶段跨度超过两周，在阶段边界补一次同步。
 - 更新计划文档 §5 的「当前上游基线」与「mac 构建基线」两行。
@@ -434,7 +445,8 @@ foundation 侧的裁剪机会：`third_party` 里 cemu 用不到的（luascript�
 - [ ] mac：编译耗时与 build edges 相对 C2 完成时有可量化改善，数据归档
 - [ ] Android：`assembleDebug` 与 `assembleRelease` 均通过（不回归）
 - [ ] foundation 以根 CMake 方式接入，无伪造 target，有 API 版本护栏
-- [ ] 上游已追平，`origin/android-port..origin/main` 为空
+- [ ] `main = upstream/main = origin/main`，且 main 是
+      `feature/malos/basic_version` 的祖先
 - [ ] 全部证据归档在 `docs/verification/` 下
 
 ---

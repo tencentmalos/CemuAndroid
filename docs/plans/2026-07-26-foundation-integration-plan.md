@@ -29,19 +29,24 @@
 
 ### 未完成
 
-- **官方上游未同步**（见下）。
 - foundation 只以 hack 方式接入了 debugbus 一个模块（见 S3）。
 - **编译加速一项未做**，且 `dependencies/foundation/docs/guides/build-acceleration.md` 从未被消费。
-- **mac 桌面构建当前无基线**：工作区内无 `build/` 目录，本轮无法确认 mac 版是否可构建。
 - XR（原 Task 4）未开始，仓内无 XR 代码。
 
 ### 分支拓扑
 
-- 唯一 remote 是 `origin = git@github.com:tencentmalos/CemuAndroid.git`（fork 镜像）。**没有配置指向官方 `cemu-project/Cemu` 的 remote**，历史上曾用过名为 `public` 的 remote（`8c83d88d`）。
-- `origin/main` 是官方 Cemu main 的镜像；`origin/android-port` 领先 main 287 个提交、**落后 31 个**。
-- 与 main 的 merge-base 是 `02383542`（2026-04-18），即 **android-port 已落后官方约 3 个月**。
-- `feature/malos/basic_version` 领先 `android-port` 2 个提交（`38dc527d`、`914917ce`），落后 0 个。
+- `upstream = https://github.com/cemu-project/Cemu.git` 是官方来源；本地 `main` 跟踪它，`origin/main` 是内部镜像。
+- `feature/malos/basic_version` 是 Android 产品主线。`fc884596` 已把 `b8f2cf4b` 的完整 main 历史合入，main 是该分支祖先。
+- `android-port` 是旧 Android 实现参考，只按需选择性引入，不再作为官方同步的中转站或并列主线。
+- Android 最早从官方历史分出于 `8193ebf7`（2023-06-07，父提交 `ae4cb45c`）；本轮完整合流前最后一次 main merge 是 `0d6d0d47`（2026-04-19）。
 - 历史惯例是 **merge 而非 rebase**（`0d6d0d47`、`f99e5b93`、`0af39208` 均为 merge commit）。
+
+### C1 已完成
+
+- 官方 main 从内部镜像旧基线快进 59 个提交到 `b8f2cf4b`，并推送 `origin/main`。
+- `fc884596` 将 main 完整 merge 到 `feature/malos/basic_version`。
+- macOS 配置、编译和启动成功；Android `assembleDebug` 与 `testDebugUnitTest` 成功。
+- 详细证据见 `docs/verification/20260726-C1/`。下一步从 C2 开始。
 
 ### 编译加速现状
 
@@ -90,13 +95,13 @@
 
 | 阶段 | 内容 | 前置 | 风险 |
 | --- | --- | --- | --- |
-| C1 | 同步官方 Cemu 上游（追平 31 个提交，含 3 个 mac 构建修复），并转为每阶段前置 | 无 | 中–高 |
+| C1（已完成） | 同步官方 Cemu 上游，并把完整 main 历史 merge 到 `basic_version`，转为每阶段前置 | 无 | 中–高 |
 | C2 | foundation 合入正规化：改根 CMake 接入、去伪造 target、加 API 版本护栏（S3、S6） | C1 | 中 |
 | C3 | 编译加速：dev 关 LTO、ccache、unity build、裁剪构建图 | C2 | 低–中 |
 
 三者顺序不可换：
 
-- **C1 必须最先** —— 31 个待同步提交里含 `f8fb588b build: macOS CMake fixes`（直接影响 mac 可构建性）、`0fc74035 ENABLE_OPENGL/ENABLE_VULKAN`、`1c2b7d78 ENABLE_LIBUSB`、`8e3e961b SDL optional`。后三者是 C3 裁剪构建图的**现成工具**——上游已经把开关做好了，同步完直接用，不用自己造。
+- **C1 首轮必须最先且现已完成** —— 当时待同步的 31 个提交里含 `f8fb588b build: macOS CMake fixes`、`0fc74035 ENABLE_OPENGL/ENABLE_VULKAN`、`1c2b7d78 ENABLE_LIBUSB`、`8e3e961b SDL optional`。后三者是 C3 裁剪构建图的**现成工具**。
 - **C2 在 C3 之前** —— C2 会把 foundation 全量 `third_party`（imgui、mimalloc、libevent、openxr、yalantinglibs、msgpack-c、yaml-cpp 等）拉进构建图，构建时长会显著上升。先合入再加速，度量基线才有意义；反过来做，C3 的成果会被 C2 立刻抵消。
 - **C3 收尾** —— 同时也是对 C2 的兜底：如果 foundation 全量接入把构建时长推到不可接受，C3 的裁剪就是解法，实在不行再触发「推动 foundation 侧加模块开关」的决策。
 
@@ -153,17 +158,17 @@
 
 ## 5. 通用约束
 
-- **上游同步节奏：** 每阶段开工前跑 `git fetch upstream origin && git log --oneline origin/android-port..origin/main | wc -l`，非零先走 C1。阶段进行中不同步（见 C1-T6），否则该阶段的验收基线会漂移。
+- **分支主线与上游同步节奏：** `feature/malos/basic_version` + 官方 main 是唯一必经主线。每阶段开工前先让本地/内部镜像 `main` 与 `upstream/main` 对齐，再确认 `git merge-base --is-ancestor main feature/malos/basic_version`；返回非 0 先 merge main。`android-port` 只按需选择性引入。阶段进行中不同步，否则验收基线会漂移。
 - **验证矩阵：**
   - 阶段一（C1–C3）：**mac 桌面为主验收面**（配置 + 编译 + 运行 + 编译耗时度量）；Android 仅要求 `assembleDebug` 不回归。
   - C4 起：Android arm64-v8a debug **与** release 双变体都要验；只验 debug 是 S1 漏网的直接原因。涉及 native 行为改动时另跑 PC 侧构建确认未破坏桌面。
-- **提交纪律：** cemu 仓与 foundation 仓分开聚焦提交；不夹带 `_out/`、`AGENTS.md`、`skills/` 等未跟踪文件（前次试点已踩过）。
+- **提交纪律：** cemu 仓与 foundation 仓分开聚焦提交；不夹带 `_out/`、`build_baseline/` 等未跟踪文件。
 - **子模块：** 本分支子模块 URL 指向 `git@github.com:tencentmalos/...`；改 `.gitmodules` 后必须 `git submodule sync --recursive` + `git submodule status --recursive` 核对。
 - **验收证据落点：** 每阶段的命令与输出归档到 `docs/verification/<YYYYMMDD>-<阶段>/`，不再只留在未跟踪的 `_out/`。截图/manifest/日志以文件为准，文档内摘录标注为人工摘录。
 - **编译加速度量纪律：** wall time 受机器负载波动，按 foundation 手册 §7，以 **ninja build edges 数 + `.ninja_log`** 为准，每一刀独立提交独立验证。
 - **当前依赖版本：** foundation `b01f41c`，`SPATIAL_FOUNDATION_API_VERSION = 1`。升级子模块指针时更新此行并复跑已完成阶段的退出标准。
-- **当前上游基线：** 与 `origin/main` 的 merge-base `02383542`（2026-04-18），待同步 31 个提交。每次 C1 后更新此行。
-- **mac 构建基线：** 尚未建立。C1 完成时首次建立并记录。
+- **当前上游基线：** `main = upstream/main = origin/main = b8f2cf4b`；`fc884596` 已将其 merge 到 `feature/malos/basic_version`。
+- **mac 构建基线：** 已建立；同步前失败、同步后配置/编译/启动成功，见 `docs/verification/20260726-C1/`。
 
 ---
 
@@ -171,7 +176,7 @@
 
 | 原计划 | 本修订 | 原因 |
 | --- | --- | --- |
-| 无上游同步环节 | 新增 C1，并转为每阶段前置 | android-port 落后官方 31 个提交/约 3 个月；SDL3 迁移与构建选项重构直接压在后续要改的文件上 |
+| 无上游同步环节 | 新增 C1，并转为每阶段前置 | 制定 v2 时 android-port 落后官方 31 个提交/约 3 个月；SDL3 迁移与构建选项重构直接压在后续要改的文件上 |
 | Task 3 完成即进 Task 4 | 插入 debugbus 加固（C4）与构建正规化（C2） | Task 3 产物存在 S1–S7，带进 XR 会放大 |
 | 无编译加速环节 | 新增 C3，消费 foundation `build-acceleration.md` | 该手册从未被消费；C2 会显著增大构建图，不加速则后续每轮迭代都被拖慢 |
 | 第一步验收面是 Android 真机 | 阶段一改为 **mac 桌面可验** | 三项工作的失败模式全在构建系统层面，桌面即可暴露且不依赖设备；上游同步本身带来 3 个 mac 构建修复 |

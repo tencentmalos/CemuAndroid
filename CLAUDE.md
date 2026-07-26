@@ -19,8 +19,8 @@
   - 交接简报（新接手先读这个）：`docs/plans/2026-07-26-handoff-brief.md`
   - 计划（背景、review 结论、阶段划分）：`docs/plans/2026-07-26-foundation-integration-plan.md`
   - 实施 spec（任务级、可直接执行）：`docs/plans/2026-07-26-foundation-integration-spec.md`
-  - 当前状态：阶段一（C1 上游同步 → C2 foundation 合入 → C3 编译加速，目标 mac 版可验）未开始；foundation 钉在 `b01f41c`；上游落后官方 31 个提交。
-  - 改动构建系统、`dependencies/foundation` 相关代码、debugbus 或 XR 前先读它们。**动工前先确认上游是否需要同步。**
+  - 当前状态：C1 已完成；本地/内部镜像 `main` 与官方 `upstream/main` 均为 `b8f2cf4b`，并已由 `fc884596` 完整 merge 到 `feature/malos/basic_version`。macOS 配置、编译、启动和 Android `assembleDebug` / `testDebugUnitTest` 已通过。下一步是 C2 foundation 合入正规化；foundation 仍钉在 `b01f41c`。
+  - 改动构建系统、`dependencies/foundation` 相关代码、debugbus 或 XR 前先读它们，并按 `AGENTS.md` 的分支主线策略先确认官方 `main` 是否有新提交。
 
 ## 常用命令速查
 
