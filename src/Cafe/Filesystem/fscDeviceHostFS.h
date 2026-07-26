@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Cafe/Filesystem/fsc.h"
 #include "Common/FileStream.h"
 

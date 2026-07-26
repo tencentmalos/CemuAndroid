@@ -72,7 +72,10 @@
 - C3-T1 已完成：RelWithDebInfo/Debug 默认关闭 LTO，Release 默认保留 LTO，
   Android 显式关闭。RelWithDebInfo 最终链接由 18.649s 降到 0.505s，边数保持
   648；完整记录见 `docs/verification/20260726-C3/build-speedup-notes.md`。
-- 下一步是 C3-T2 ccache。
+- C3-T3 按维护者指示提前完成：`CEMU_USE_UNITY_BUILD` 默认 ON，统一控制整个
+  构建图与 foundation 的遗留开关；macOS clean build 降到 327 条命令、
+  `real 45.50s`，macOS GUI、Android Debug 与单测均通过。
+- 下一步回到尚未实施的 C3-T2 ccache。
 
 ### 编译加速现状
 
@@ -80,7 +83,7 @@
 | --- | --- | --- |
 | Dev 构建关 LTO | **已完成**，RelWithDebInfo/Debug 默认 OFF，Release 默认 ON | `ENABLE_LTO` + C3 验证记录 |
 | ccache | **未接入**，且本机未安装 | 无 `COMPILER_LAUNCHER` 相关代码；`which ccache` 空 |
-| Unity Build | **完全未用** | 全仓无 `UNITY_BUILD` |
+| Unity Build | **已完成**，全局默认 ON，保留明确排除清单 | `CEMU_USE_UNITY_BUILD` + C3 验证记录 |
 | 预编译头 | **已做** | `src/Common/CMakeLists.txt:69`、`src/CMakeLists.txt:47-49` |
 | 裁剪构建图 | 未系统做 | — |
 

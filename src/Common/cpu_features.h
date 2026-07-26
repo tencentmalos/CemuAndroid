@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef __GNUC__
 #define ATTRIBUTE_AVX2 __attribute__((target("avx2")))
 #define ATTRIBUTE_SSE41 __attribute__((target("sse4.1")))

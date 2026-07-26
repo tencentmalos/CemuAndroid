@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "../PPCRecompiler.h" // todo - get rid of dependency
 
 #include "x86Emitter.h"

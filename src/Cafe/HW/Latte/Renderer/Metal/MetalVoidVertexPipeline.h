@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Cafe/HW/Latte/Renderer/Metal/MetalCommon.h"
 #include "HW/Latte/Renderer/Metal/MetalRenderer.h"
 #include "Metal/MTLLibrary.hpp"

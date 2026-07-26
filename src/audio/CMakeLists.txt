@@ -27,6 +27,12 @@ if(ENABLE_CUBEB)
 		CubebInputAPI.cpp
 		CubebInputAPI.h
 	)
+	if (CEMU_USE_UNITY_BUILD)
+		# Both Cubeb implementations define a TU-local state_cb helper.
+		set_source_files_properties(CubebInputAPI.cpp PROPERTIES
+			SKIP_UNITY_BUILD_INCLUSION ON
+		)
+	endif()
 	#add_compile_definitions(HAS_CUBEB)
 endif()
 

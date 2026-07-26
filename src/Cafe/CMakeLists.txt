@@ -638,6 +638,38 @@ endif()
 
 set_property(TARGET CemuCafe PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
+if (CEMU_USE_UNITY_BUILD)
+  set_target_properties(CemuCafe PROPERTIES
+    UNITY_BUILD ON
+    UNITY_BUILD_BATCH_SIZE 8
+  )
+
+  # Defines local FFL compatibility types that also exist in CafeSystem.cpp.
+  set_source_files_properties(Account/Account.cpp PROPERTIES
+    SKIP_UNITY_BUILD_INCLUSION ON
+  )
+
+  # metal-cpp implementation macros must be evaluated before any Metal headers
+  # are included, so its implementation source must remain an isolated TU.
+  set_source_files_properties(
+    HW/Latte/Renderer/Metal/MetalCppImpl.cpp
+    PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+  )
+
+  # JIT backends contain translation-unit-local emit helpers with overlapping
+  # names and need to remain isolated from one another.
+  set_source_files_properties(
+    HW/Espresso/Recompiler/BackendX64/BackendX64AVX.cpp
+    HW/Espresso/Recompiler/BackendX64/BackendX64BMI.cpp
+    HW/Espresso/Recompiler/BackendX64/BackendX64.cpp
+    HW/Espresso/Recompiler/BackendX64/BackendX64FPU.cpp
+    HW/Espresso/Recompiler/BackendX64/BackendX64Gen.cpp
+    HW/Espresso/Recompiler/BackendX64/BackendX64GenFPU.cpp
+    HW/Espresso/Recompiler/BackendAArch64/BackendAArch64.cpp
+    PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+  )
+endif()
+
 cemu_use_precompiled_header(CemuCafe)
 
 if (ENABLE_LIBUSB)

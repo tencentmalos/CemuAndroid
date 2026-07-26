@@ -1,4 +1,6 @@
 
+#pragma once
+
 static uint32 ppc_cmp_and_mask[8] = {
 	0xfffffff0,
 	0xffffff0f,

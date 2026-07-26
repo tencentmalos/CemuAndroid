@@ -100,9 +100,9 @@ Android debugbus/dumpsys 不依赖这些组件。
 
 | 手法 | 现状 | 位置 |
 | --- | --- | --- |
-| Dev 构建关 LTO | **未做**，`RelWithDebInfo` 也开着 | `CMakeLists.txt:85-86` `CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE/RELWITHDEBINFO ON` |
+| Dev 构建关 LTO | **已完成**，RelWithDebInfo/Debug 默认 OFF，Release 默认 ON | `ENABLE_LTO` + C3 验证记录 |
 | ccache | **未接入**，本机也**未安装** | 无 `COMPILER_LAUNCHER`；`which ccache` 空 |
-| Unity Build | **完全未用** | 全仓无 `UNITY_BUILD` |
+| Unity Build | **已完成**，全局默认 ON，保留明确排除清单 | `CEMU_USE_UNITY_BUILD` + C3 验证记录 |
 | 预编译头 | **已做** | `src/Common/CMakeLists.txt:69`；`src/CMakeLists.txt:47-49` |
 | 裁剪构建图 | 未系统做 | — |
 
@@ -326,7 +326,8 @@ git merge --no-ff main
   不应因此膨胀；Android 当前只链接 debugbus/dumpsys。core/network/profiler/XR
   都是后续范围，不得因为当前没有消费者而删除；依赖可提前注册，但不得让它们
   无条件进入默认构建闭包
-- foundation 里的 `CITRA_USE_UNITY_BUILD` 是从 azahar 带过来的变量名，cemu 侧此刻不定义（C3 再统一处理）
+- foundation 里的 `CITRA_USE_UNITY_BUILD` 是从 azahar 带过来的变量名；C2
+  当时不定义，已在 C3 统一到全局宿主开关
 - 后续组件一旦成为真实消费者，其依赖应由对应 foundation target 自洽带入；
   若依赖闭包不可接受再触发 D3，**不要在 Cemu 侧伪造 target 或引入第二套依赖层**
 
@@ -455,14 +456,20 @@ brew install ccache
 
 ### C3-T3 Unity Build（clean build 收益大，需排除名单）
 
-**现状：** 完全未用。
+> **已完成。** 按维护者指示先于 C3-T2 实施。全局
+> `CEMU_USE_UNITY_BUILD` 默认 ON，并同步控制 foundation 的
+> `CITRA_USE_UNITY_BUILD`；macOS clean build 从 648 条命令、69.72s 降到
+> 327 条、45.50s。目标/源文件排除原因、关闭回退、macOS GUI 和 Android
+> 实测见 C3 验证文档。
+
+**原现状：** 完全未用。
 
 按手册 §3，对大目标开 `UNITY_BUILD`，选项名建议 `CEMU_USE_UNITY_BUILD`。候选目标按 `.ninja_log` 热点排序，`CemuCafe`（Latte/PPC）大概率最重。
 
 **要点：**
 
 - **排除名单从空开始，编译报错（符号重定义/宏串扰）一个加一个。** JIT 编译器源（PPCRec 相关）、`*_platform.cpp` 这类平台分支文件基本必进名单，用 `SKIP_UNITY_BUILD_INCLUSION`。
-- foundation 各模块已带 `if (CITRA_USE_UNITY_BUILD) set_target_properties(... UNITY_BUILD ON)`。**决定 cemu 侧是否定义该变量以顺带打开 foundation 的 unity**，并把决定写进记录（变量名是 azahar 遗留，容易误配）。
+- foundation 各模块已带 `if (CITRA_USE_UNITY_BUILD) set_target_properties(... UNITY_BUILD ON)`。最终决定由全局 `CEMU_USE_UNITY_BUILD` 强制同步该遗留变量，确保宿主与 foundation 不会静默使用不同模式。
 
 **退出标准：** clean build edges 与 wall time 对比；**排除名单及每一项的原因记录在案**；mac GUI 可启动；Android `assembleDebug` 通过。
 

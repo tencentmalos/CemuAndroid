@@ -92,6 +92,15 @@ endif()
 option(ENABLE_LTO "Enable link-time optimization" ${DEFAULT_ENABLE_LTO})
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${ENABLE_LTO})
 
+option(CEMU_USE_UNITY_BUILD "Enable Unity Build across the complete build graph" ON)
+set(CMAKE_UNITY_BUILD ${CEMU_USE_UNITY_BUILD})
+
+# foundation still uses this legacy Azahar-facing switch. Keep one host-level
+# source of truth so Cemu and foundation cannot silently select different modes.
+set(CITRA_USE_UNITY_BUILD ${CEMU_USE_UNITY_BUILD}
+	CACHE BOOL "Enable Unity Build for foundation targets" FORCE)
+mark_as_advanced(CITRA_USE_UNITY_BUILD)
+
 if (MSVC)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT CemuBin)
 	# floating point model: precise, fiber safe optimizations
@@ -313,3 +322,20 @@ if(ANDROID)
 endif()
 
 add_subdirectory(src)
+
+if (CEMU_USE_UNITY_BUILD)
+	# These targets rely heavily on translation-unit isolation. Keep them on
+	# their supported build path without modifying bundled dependency sources.
+	foreach(target IN ITEMS
+		CemuWxGui
+		cubeb
+		glslang
+		ih264d
+		imguiImpl
+		libzstd_static
+	)
+		if (TARGET ${target})
+			set_target_properties(${target} PROPERTIES UNITY_BUILD OFF)
+		endif()
+	endforeach()
+endif()

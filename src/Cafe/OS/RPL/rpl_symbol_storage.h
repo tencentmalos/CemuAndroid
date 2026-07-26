@@ -1,3 +1,5 @@
+#pragma once
+
 enum RPLStoredSymbolType : uint32
 {
 	RPL_STORED_SYMBOL_NONE = 0,

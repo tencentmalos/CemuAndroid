@@ -121,4 +121,111 @@ warning，没有新增错误。
 - [x] Android 显式关闭 LTO，`assembleDebug` 通过。
 - [x] Android 单测和 macOS GUI smoke test 通过。
 
-下一步：C3-T2 ccache。
+## T3：全局 Unity Build
+
+> 按维护者指示，Unity Build 先于尚未实施的 C3-T2 ccache 落地。
+
+实现：
+
+- 增加全局 `CEMU_USE_UNITY_BUILD`，默认 ON，并用它初始化
+  `CMAKE_UNITY_BUILD`。
+- 将 foundation 遗留的 `CITRA_USE_UNITY_BUILD` 强制同步为同一值，避免
+  Cemu 与 foundation 静默使用不同模式。
+- `CemuCafe` 使用 batch size 8；由实际编译错误逐项收敛源文件和目标排除
+  清单。
+- 为 10 个原本缺少完整重复包含保护的头文件补充 `#pragma once`。
+
+### 排除清单
+
+整目标关闭 Unity：
+
+| 目标 | 原因 |
+| --- | --- |
+| `CemuWxGui` | 多个窗口实现重复使用 TU-local enum、列名和输入面板常量 |
+| `cubeb` | 各平台后端分别定义私有 `cubeb` / `cubeb_stream` 结构；Android 实测冲突 |
+| `glslang` | `SpvBuilder` 等内部实现依赖独立编译单元和声明顺序 |
+| `ih264d` | C 源文件之间存在内部宏/枚举串扰 |
+| `imguiImpl` | Dear ImGui 各源文件依赖 `IMGUI_DEFINE_MATH_OPERATORS` 的独立 include 顺序 |
+| `libzstd_static` | dictBuilder 内部 `cover.h` 不支持同一 TU 重复包含 |
+
+只排除单个源文件：
+
+| 目标 | 源文件 | 原因 |
+| --- | --- | --- |
+| `CemuAudio` | `CubebInputAPI.cpp` | 与 `CubebAPI.cpp` 都定义 TU-local `state_cb` |
+| `CemuCafe` | `Account/Account.cpp` | 与 `CafeSystem.cpp` 定义同名本地 FFL 兼容类型 |
+| `CemuCafe` | `MetalCppImpl.cpp` | metal-cpp 实现宏必须在任何 Metal 头之前求值 |
+| `CemuCafe` | 6 个 `BackendX64*.cpp` | JIT 后端含同名 TU-local emit helper |
+| `CemuCafe` | `BackendAArch64.cpp` | 架构相关 JIT 后端保持独立，Android 已验证 |
+
+头文件保护补齐：
+
+```text
+src/Cafe/Filesystem/fscDeviceHostFS.h
+src/Cafe/HW/Espresso/Interpreter/PPCInterpreterHelper.h
+src/Cafe/HW/Espresso/Recompiler/BackendX64/BackendX64.h
+src/Cafe/HW/Espresso/Recompiler/PPCRecompilerIml.h
+src/Cafe/HW/Latte/Renderer/Metal/MetalVoidVertexPipeline.h
+src/Cafe/IOSU/legacy/iosu_mcp.h
+src/Cafe/OS/RPL/rpl_symbol_storage.h
+src/Cafe/OS/libs/nsyshid/Dimensions.h
+src/Common/cpu_features.h
+src/util/crypto/md5.h
+```
+
+### clean build 对比
+
+最终状态重新配置、clean，并清空本轮 `.ninja_log` 后执行：
+
+```sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build --target clean
+/usr/bin/time -p cmake --build build --target CemuBin -- -d stats
+```
+
+| 指标 | T1：Unity OFF | T3：全局 Unity ON | 变化 |
+| --- | ---: | ---: | ---: |
+| Ninja `FinishCommand` | 648 | 327 | -321（-49.5%） |
+| wall time | 69.72s | 45.50s | -24.22s（-34.7%，仅参考） |
+| user time | 711.39s | 431.96s | -279.43s |
+| sys time | 69.64s | 42.05s | -27.59s |
+
+中间的 `CemuCafe` 单目标方案为 401 条命令、`real 56.33s`。扩大到全局后，
+最终构建图进一步降到 327 条命令。最终 `.ninja_log` 含 58 个 Unity 对象；
+`CemuCafe` 自身为 36 个 Unity 对象、9 个独立源文件对象和 2 个 PCH。
+
+wall time 受负载影响，只作参考；边数从 648 降到 327 是构建图的确定性变化。
+
+### 关闭回退、运行与 Android
+
+执行：
+
+```sh
+cmake -S . -B /tmp/cemu-c3-t3-global-unity-off -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCEMU_USE_UNITY_BUILD=OFF
+cd src/android
+./gradlew assembleDebug
+./gradlew testDebugUnitTest
+ctest --test-dir ../../build --output-on-failure
+```
+
+结果：
+
+- 全局关闭时 `CEMU_USE_UNITY_BUILD=OFF` 且
+  `CITRA_USE_UNITY_BUILD=OFF`，构建目录没有生成 Unity 文件。
+- macOS GUI 在最终构建产物上保持运行 8 秒，再由验证脚本主动终止。
+- Android cache 中两个 Unity 变量均为 ON，`assembleDebug` 通过；实际生成
+  `foundation_debugbus`、`foundation_debugbus_dumpsys` 和 foundation
+  RapidJSON 的 Unity 对象。
+- `testDebugUnitTest` 通过。
+- 桌面 `ctest` 返回成功，但当前构建图报告 `No tests were found`。
+
+## T3 退出标准
+
+- [x] clean build edges 与 wall time 已和 T1 对比。
+- [x] 排除目标、排除源文件及原因已记录。
+- [x] 全局开关默认 ON，OFF 回退不生成 Unity 文件。
+- [x] foundation 与宿主使用同一开关，Android 中实际构建 Unity 对象。
+- [x] macOS GUI、Android `assembleDebug` 和 Android 单测通过。
+
+下一步：回到尚未实施的 C3-T2 ccache。
