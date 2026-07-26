@@ -1,0 +1,387 @@
+-- Running vcpkg install
+Detecting compiler hash for triplet arm64-osx...
+Compiler found: /usr/bin/c++
+The following packages are already installed:
+    boost-algorithm:arm64-osx@1.88.0
+  * boost-align:arm64-osx@1.88.0
+  * boost-any:arm64-osx@1.88.0
+  * boost-array:arm64-osx@1.88.0
+    boost-asio:arm64-osx@1.88.0
+  * boost-assert:arm64-osx@1.88.0
+  * boost-atomic:arm64-osx@1.88.0
+  * boost-bind:arm64-osx@1.88.0
+  * boost-chrono:arm64-osx@1.88.0
+  * boost-circular-buffer:arm64-osx@1.88.0
+  * boost-cmake:arm64-osx@1.88.0
+  * boost-concept-check:arm64-osx@1.88.0
+  * boost-config:arm64-osx@1.88.0
+    boost-container:arm64-osx@1.88.0
+  * boost-container-hash:arm64-osx@1.88.0
+  * boost-context:arm64-osx@1.88.0
+  * boost-conversion:arm64-osx@1.88.0
+  * boost-core:arm64-osx@1.88.0
+  * boost-date-time:arm64-osx@1.88.0
+  * boost-describe:arm64-osx@1.88.0
+  * boost-detail:arm64-osx@1.88.0
+  * boost-dynamic-bitset:arm64-osx@1.88.0
+  * boost-endian:arm64-osx@1.88.0
+  * boost-exception:arm64-osx@1.88.0
+  * boost-filesystem:arm64-osx@1.88.0
+  * boost-function:arm64-osx@1.88.0
+  * boost-function-types:arm64-osx@1.88.0
+    boost-functional:arm64-osx@1.88.0
+  * boost-fusion:arm64-osx@1.88.0
+  * boost-headers:arm64-osx@1.88.0
+  * boost-integer:arm64-osx@1.88.0
+  * boost-intrusive:arm64-osx@1.88.0
+  * boost-io:arm64-osx@1.88.0
+  * boost-iterator:arm64-osx@1.88.0
+  * boost-lexical-cast:arm64-osx@1.88.0
+  * boost-move:arm64-osx@1.88.0
+  * boost-mp11:arm64-osx@1.88.0
+  * boost-mpl:arm64-osx@1.88.0
+  * boost-multi-index:arm64-osx@1.88.0
+    boost-nowide:arm64-osx@1.88.0
+  * boost-numeric-conversion:arm64-osx@1.88.0
+    boost-optional:arm64-osx@1.88.0
+  * boost-parameter:arm64-osx@1.88.0
+  * boost-phoenix:arm64-osx@1.88.0
+  * boost-pool:arm64-osx@1.88.0
+  * boost-predef:arm64-osx@1.88.0
+  * boost-preprocessor:arm64-osx@1.88.0
+    boost-program-options:arm64-osx@1.88.0
+    boost-property-tree:arm64-osx@1.88.0
+  * boost-proto:arm64-osx@1.88.0
+    boost-ptr-container:arm64-osx@1.88.0
+    boost-random:arm64-osx@1.88.0
+  * boost-range:arm64-osx@1.88.0
+  * boost-ratio:arm64-osx@1.88.0
+  * boost-regex:arm64-osx@1.88.0
+  * boost-scope:arm64-osx@1.88.0
+  * boost-serialization:arm64-osx@1.88.0
+    boost-signals2:arm64-osx@1.88.0
+  * boost-smart-ptr:arm64-osx@1.88.0
+  * boost-spirit:arm64-osx@1.88.0
+  * boost-static-assert:arm64-osx@1.88.0
+    boost-static-string:arm64-osx@1.88.0
+  * boost-system:arm64-osx@1.88.0
+  * boost-thread:arm64-osx@1.88.0
+  * boost-throw-exception:arm64-osx@1.88.0
+    boost-tokenizer:arm64-osx@1.88.0
+  * boost-tuple:arm64-osx@1.88.0
+  * boost-type-index:arm64-osx@1.88.0
+  * boost-type-traits:arm64-osx@1.88.0
+  * boost-typeof:arm64-osx@1.88.0
+  * boost-uninstall:arm64-osx@1.88.0
+  * boost-unordered:arm64-osx@1.88.0
+  * boost-utility:arm64-osx@1.88.0
+  * boost-variant:arm64-osx@1.88.0
+  * boost-variant2:arm64-osx@1.88.0
+  * boost-winapi:arm64-osx@1.88.0
+    curl[core,openssl]:arm64-osx@8.14.1
+  * egl-registry:arm64-osx@2024-01-25
+  * expat:arm64-osx@2.7.1
+    fmt:arm64-osx@12.1.0
+    glm:arm64-osx@1.0.1#3
+    glslang:arm64-osx@15.1.0
+  * libiconv:arm64-osx@1.18#1
+  * libjpeg-turbo:arm64-osx@3.1.0#1
+    libpng:arm64-osx@1.6.48
+    libusb:arm64-osx@1.0.26.11791#7 -- /Users/bytedance/workspace/cemu_android/dependencies/vcpkg_overlay_ports_mac/libusb
+  * libwebp[core,libwebpmux,nearlossless,simd]:arm64-osx@1.5.0#1
+    libzip:arm64-osx@1.11.4
+  * nanosvg:arm64-osx@2023-12-29
+  * opengl:arm64-osx@2022-12-04#3
+  * opengl-registry:arm64-osx@2024-02-10#1
+    openssl:arm64-osx@3.5.0#1
+  * pcre2[core,jit,platform-default-features]:arm64-osx@10.45
+    pugixml:arm64-osx@1.15
+    rapidjson:arm64-osx@2025-02-26
+    sdl3:arm64-osx@3.4.10
+    tiff[core,jpeg,zip]:arm64-osx@4.7.0
+  * vcpkg-boost:arm64-osx@2025-03-29
+  * vcpkg-cmake:arm64-osx@2024-04-23
+  * vcpkg-cmake-config:arm64-osx@2024-05-23
+  * vcpkg-cmake-get-vars:arm64-osx@2025-05-29
+    wxwidgets[core,debug-support]:arm64-osx@3.3.3 -- /Users/bytedance/workspace/cemu_android/dependencies/vcpkg_overlay_ports/wxwidgets
+    zlib:arm64-osx@1.3.1
+    zstd:arm64-osx@1.5.7
+The following packages will be removed:
+    hidapi:arm64-osx
+Removing 1/1 hidapi:arm64-osx
+Elapsed time to handle hidapi:arm64-osx: 23.2 ms
+The package boost-optional is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS optional)
+    target_link_libraries(main PRIVATE Boost::optional)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::optional)
+
+The package boost-functional is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS functional)
+    target_link_libraries(main PRIVATE Boost::functional)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::functional)
+
+The package boost-algorithm is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS algorithm)
+    target_link_libraries(main PRIVATE Boost::algorithm)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::algorithm)
+
+The package boost-tokenizer is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS tokenizer)
+    target_link_libraries(main PRIVATE Boost::tokenizer)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::tokenizer)
+
+The package boost-container is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS container)
+    target_link_libraries(main PRIVATE Boost::container)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::container)
+
+The package boost-asio is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS asio)
+    target_link_libraries(main PRIVATE Boost::asio)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::asio)
+
+The package boost-nowide is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS nowide)
+    target_link_libraries(main PRIVATE Boost::nowide)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::nowide)
+
+The package boost-program-options is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS program_options)
+    target_link_libraries(main PRIVATE Boost::program_options)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::program_options)
+
+The package boost-property-tree is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS property_tree)
+    target_link_libraries(main PRIVATE Boost::property_tree)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::property_tree)
+
+The package boost-ptr-container is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS ptr_container)
+    target_link_libraries(main PRIVATE Boost::ptr_container)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::ptr_container)
+
+The package boost-random is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS random)
+    target_link_libraries(main PRIVATE Boost::random)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::random)
+
+The package boost-signals2 is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS signals2)
+    target_link_libraries(main PRIVATE Boost::signals2)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::signals2)
+
+The package boost-static-string is compatible with built-in CMake targets of FindBoost.cmake:
+
+    find_package(Boost REQUIRED COMPONENTS static_string)
+    target_link_libraries(main PRIVATE Boost::static_string)
+
+or the generated cmake configs via:
+
+    find_package( REQUIRED CONFIG)
+    target_link_libraries(main PRIVATE Boost::static_string)
+
+openssl is compatible with built-in CMake targets:
+
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(main PRIVATE OpenSSL::SSL)
+  target_link_libraries(main PRIVATE OpenSSL::Crypto)
+
+The package zlib is compatible with built-in CMake targets:
+
+    find_package(ZLIB REQUIRED)
+    target_link_libraries(main PRIVATE ZLIB::ZLIB)
+
+curl is compatible with built-in CMake targets:
+
+    find_package(CURL REQUIRED)
+    target_link_libraries(main PRIVATE CURL::libcurl)
+
+The package fmt provides CMake targets:
+
+    find_package(fmt CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE fmt::fmt)
+
+    # Or use the header-only version
+    find_package(fmt CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE fmt::fmt-header-only)
+
+The package glm provides CMake targets:
+
+    find_package(glm CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE glm::glm)
+
+    # Or use the header-only version
+    find_package(glm CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE glm::glm-header-only)
+
+glslang provides CMake targets:
+
+    find_package(glslang CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV glslang::SPVRemapper)
+
+libpng provides CMake targets:
+
+  find_package(PNG REQUIRED)
+  target_link_libraries(main PRIVATE PNG::PNG)
+
+libusb can be imported via CMake FindPkgConfig module:
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(libusb REQUIRED IMPORTED_TARGET libusb-1.0)
+
+    target_link_libraries(main PRIVATE PkgConfig::libusb)
+
+libzip provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(libzip CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE libzip::zip)
+
+libzip provides pkg-config modules:
+
+  # library for handling zip archives
+  libzip
+
+pugixml provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(pugixml CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE pugixml::static pugixml::pugixml)
+
+pugixml provides pkg-config modules:
+
+  # Light-weight, simple and fast XML parser for C++ with XPath support.
+  pugixml
+
+rapidjson provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(RapidJSON CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE RapidJSON rapidjson)
+
+rapidjson provides pkg-config modules:
+
+  # A fast JSON parser/generator for C++ with both SAX/DOM style API
+  RapidJSON
+
+sdl3 provides CMake targets:
+
+  find_package(SDL3 CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE SDL3::SDL3)
+
+tiff is compatible with built-in CMake targets:
+
+    find_package(TIFF REQUIRED)
+    target_link_libraries(main PRIVATE TIFF::TIFF)
+
+tiff provides pkg-config modules:
+
+    #  Tag Image File Format (TIFF) library.
+    libtiff-4
+
+The package wxwidgets provides CMake targets:
+
+    find_package(wxWidgets CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE wx::core wx::base)
+
+zstd provides CMake targets:
+
+  find_package(zstd CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE zstd::libzstd)
+
+All requested installations completed successfully in: 30.4 ms
+-- Running vcpkg install - done
+-- Found ZLIB: optimized;/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/lib/libz.a;debug;/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/debug/lib/libz.a (found suitable version "1.3.1", minimum required is "1")
+-- Found ZLIB: optimized;/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/lib/libz.a;debug;/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/debug/lib/libz.a (found suitable version "1.3.1", minimum required is "1.1.2")
+-- Found ZLIB: optimized;/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/lib/libz.a;debug;/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/debug/lib/libz.a (found version "1.3.1")
+-- Checking for module 'speexdsp'
+--   Package 'speexdsp' not found
+-- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE)
+CMake Warning (deprecated) at dependencies/ih264d/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+CMake Warning (deprecated) at dependencies/xbyak_aarch64/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- Checking for one of the modules 'zarchive'
+-- Building standalone executable dynamically
+-- Found MoltenVK: /opt/homebrew/lib/libMoltenVK.dylib
+-- Configuring done (6.1s)
+-- Generating done (0.1s)
+-- Build files have been written to: /Users/bytedance/workspace/cemu_android/build
+real 6.21
+user 0.74
+sys 1.37

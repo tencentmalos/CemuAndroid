@@ -1,0 +1,405 @@
+[1/441] Linking CXX static library lib/libxbyak_aarch64.a
+[2/441] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/unix/platform.cpp.o
+[3/441] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/SysAllocator.cpp.o
+[4/441] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/precompiled.cpp.o
+[5/441] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/cpu_features.cpp.o
+[6/441] Building CXX object src/imgui/CMakeFiles/imguiImpl.dir/__/__/dependencies/imgui/imgui_tables.cpp.o
+[7/441] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/unix/FileStream_unix.cpp.o
+[8/441] Building CXX object src/imgui/CMakeFiles/imguiImpl.dir/__/__/dependencies/imgui/imgui_widgets.cpp.o
+[9/441] Building CXX object src/imgui/CMakeFiles/imguiImpl.dir/__/__/dependencies/imgui/imgui_draw.cpp.o
+[10/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/FileCache/FileCache.cpp.o
+[11/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/napi/napi.cpp.o
+[12/441] Building CXX object src/imgui/CMakeFiles/imguiImpl.dir/__/__/dependencies/imgui/imgui.cpp.o
+[13/441] Building CXX object src/imgui/CMakeFiles/imguiImpl.dir/imgui_impl_vulkan.cpp.o
+[14/441] Building CXX object src/Common/CMakeFiles/CemuCommon.dir/ExceptionHandler/ExceptionHandler_posix.cpp.o
+[15/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/ExpressionParser/ExpressionParser.cpp.o
+[16/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/nex/nexThread.cpp.o
+[17/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/Logging/CemuLogging.cpp.o
+/Users/bytedance/workspace/cemu_android/src/Cemu/Logging/CemuLogging.cpp:234:3: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  234 |                 sprintf(hexLine.data(), "%04X: ", (int)i);
+      |                 ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/Logging/CemuLogging.cpp:237:4: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  237 |                         sprintf(hexLine.data() + 6 + j * 3, "%02X ", dataU8[j]);
+      |                         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+2 warnings generated.
+[18/441] Building OBJCXX object src/imgui/CMakeFiles/imguiImpl.dir/imgui_impl_metal.mm.o
+[19/441] Linking CXX static library src/Common/libCemuCommon.a
+[20/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/napi/napi_idbe.cpp.o
+[21/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/napi/napi_version.cpp.o
+[22/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/nex/nex.cpp.o
+/Users/bytedance/workspace/cemu_android/src/Cemu/nex/nex.cpp:641:2: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  641 |         sprintf(clientStationUrl, "prudp:/port=%u;natf=0;natm=0;pmp=0;sid=15;type=2;upnp=0", (uint32)nex->getPRUDPConnection()->GetSourcePort());
+      |         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/nex/nex.cpp:690:2: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  690 |         sprintf(pidStr, "%u", pid);
+      |         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+2 warnings generated.
+[23/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/napi/napi_act.cpp.o
+/Users/bytedance/workspace/cemu_android/src/Cemu/napi/napi_act.cpp:176:4: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  176 |                         sprintf(passwordHashString + i * 2, "%02x", authInfo.passwordHash[i]);
+      |                         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+1 warning generated.
+[24/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/DiscordPresence/DiscordPresence.cpp.o
+[25/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/napi/napi_ec.cpp.o
+[26/441] Building CXX object src/imgui/CMakeFiles/imguiImpl.dir/imgui_extension.cpp.o
+FAILED: [code=1] src/imgui/CMakeFiles/imguiImpl.dir/imgui_extension.cpp.o
+/usr/bin/c++ -DBOOST_NOWIDE_NO_LIB -DCURL_STATICLIB -DEMULATOR_HASH=4fd4a746 -DEMULATOR_VERSION_MAJOR=0 -DEMULATOR_VERSION_MINOR=0 -DEMULATOR_VERSION_PATCH=0 -DENABLE_DISCORD_RPC -DENABLE_METAL -DENABLE_VULKAN -DHAS_CUBEB=1 -DHAS_HIDAPI -DHAS_LIBUSB -DHAS_SDL -DIMGUI_IMPL_METAL_CPP -DVK_NO_PROTOTYPES -DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxUSE_GUI=1 -I/Users/bytedance/workspace/cemu_android/build/src/imgui -I/Users/bytedance/workspace/cemu_android/src/imgui -I/Users/bytedance/workspace/cemu_android/dependencies/Vulkan-Headers/include -I/Users/bytedance/workspace/cemu_android/dependencies/metal-cpp -I/Users/bytedance/workspace/cemu_android/src/imgui/.. -I/Users/bytedance/workspace/cemu_android/src/imgui/../../dependencies/imgui -I/Users/bytedance/workspace/cemu_android/src/Common/.. -I/Users/bytedance/workspace/cemu_android/src/gui/interface -I/Users/bytedance/workspace/cemu_android/src/gui/wxgui/.. -isystem /Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include -isystem /Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/lib/wx/include/osx_cocoa-unicode-static-3.3 -isystem /Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/wx-3.3 -iframework /Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks -O2 -g -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -mmacosx-version-min=13.4 -Wno-multichar -Wno-invalid-offsetof -Wno-switch -Wno-ignored-attributes -Wno-deprecated-enum-enum-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/bytedance/workspace/cemu_android/build/src/imgui/CMakeFiles/imguiImpl.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/bytedance/workspace/cemu_android/build/src/imgui/CMakeFiles/imguiImpl.dir/cmake_pch.hxx -MD -MT src/imgui/CMakeFiles/imguiImpl.dir/imgui_extension.cpp.o -MF src/imgui/CMakeFiles/imguiImpl.dir/imgui_extension.cpp.o.d -o src/imgui/CMakeFiles/imguiImpl.dir/imgui_extension.cpp.o -c /Users/bytedance/workspace/cemu_android/src/imgui/imgui_extension.cpp
+In file included from /Users/bytedance/workspace/cemu_android/src/imgui/imgui_extension.cpp:12:
+In file included from /Users/bytedance/workspace/cemu_android/src/imgui/../input/InputManager.h:13:
+/Users/bytedance/workspace/cemu_android/src/imgui/../input/api/SDL/SDLControllerProvider.h:73:2: error: #endif without #if
+   73 | #endif // HAS_SDL
+      |  ^
+1 error generated.
+[27/441] Linking CXX static library src/resource/libCemuResource.a
+[28/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/napi/napi_helper.cpp.o
+[29/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/ncrypto/ncrypto.cpp.o
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:366:22: warning: 'ECDH_compute_key' is deprecated [-Wdeprecated-declarations]
+  366 |                 int sharedKeyLen = ECDH_compute_key(sharedKey, sizeof(sharedKey), ec_publicKey, ec_privKey, nullptr);
+      |                                    ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1315:1: note: 'ECDH_compute_key' has been explicitly marked deprecated here
+ 1315 | OSSL_DEPRECATEDIN_3_0 int ECDH_compute_key(void *out, size_t outlen,
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:368:3: warning: 'EC_KEY_free' is deprecated [-Wdeprecated-declarations]
+  368 |                 EC_KEY_free(ec_privKey);
+      |                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1022:1: note: 'EC_KEY_free' has been explicitly marked deprecated here
+ 1022 | OSSL_DEPRECATEDIN_3_0 void EC_KEY_free(EC_KEY *key);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:487:29: warning: 'EC_KEY_get0_private_key' is deprecated [-Wdeprecated-declarations]
+  487 |                 const BIGNUM* bnPrivKey = EC_KEY_get0_private_key(key);
+      |                                           ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1067:1: note: 'EC_KEY_get0_private_key' has been explicitly marked deprecated here
+ 1067 | OSSL_DEPRECATEDIN_3_0 const BIGNUM *EC_KEY_get0_private_key(const EC_KEY *key);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:496:24: warning: 'EC_KEY_new_by_curve_name' is deprecated [-Wdeprecated-declarations]
+  496 |                 EC_KEY* ec_privKey = EC_KEY_new_by_curve_name(NID_sect233r1);
+      |                                      ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1017:1: note: 'EC_KEY_new_by_curve_name' has been explicitly marked deprecated here
+ 1017 | OSSL_DEPRECATEDIN_3_0 EC_KEY *EC_KEY_new_by_curve_name(int nid);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:497:3: warning: 'EC_KEY_set_private_key' is deprecated [-Wdeprecated-declarations]
+  497 |                 EC_KEY_set_private_key(ec_privKey, bn_privKey);
+      |                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1075:1: note: 'EC_KEY_set_private_key' has been explicitly marked deprecated here
+ 1075 | OSSL_DEPRECATEDIN_3_0 int EC_KEY_set_private_key(EC_KEY *key, const BIGNUM *prv);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:518:23: warning: 'EC_KEY_new_by_curve_name' is deprecated [-Wdeprecated-declarations]
+  518 |                 EC_KEY* ec_pubKey = EC_KEY_new_by_curve_name(NID_sect233r1);
+      |                                     ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1017:1: note: 'EC_KEY_new_by_curve_name' has been explicitly marked deprecated here
+ 1017 | OSSL_DEPRECATEDIN_3_0 EC_KEY *EC_KEY_new_by_curve_name(int nid);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:519:11: warning: 'EC_KEY_set_public_key_affine_coordinates' is deprecated [-Wdeprecated-declarations]
+  519 |                 int r = EC_KEY_set_public_key_affine_coordinates(ec_pubKey, bn_x, bn_y);
+      |                         ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1141:1: note: 'EC_KEY_set_public_key_affine_coordinates' has been explicitly marked deprecated here
+ 1141 | OSSL_DEPRECATEDIN_3_0 int EC_KEY_set_public_key_affine_coordinates(EC_KEY *key,
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:626:11: warning: 'ECDSA_do_verify' is deprecated [-Wdeprecated-declarations]
+  626 |                 int r = ECDSA_do_verify(hash, sizeof(hash), ecSig, ecPubKey);
+      |                         ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1410:1: note: 'ECDSA_do_verify' has been explicitly marked deprecated here
+ 1410 | OSSL_DEPRECATEDIN_3_0 int ECDSA_do_verify(const unsigned char *dgst, int dgst_len,
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:629:3: warning: 'EC_KEY_free' is deprecated [-Wdeprecated-declarations]
+  629 |                 EC_KEY_free(ecPubKey);
+      |                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1022:1: note: 'EC_KEY_free' has been explicitly marked deprecated here
+ 1022 | OSSL_DEPRECATEDIN_3_0 void EC_KEY_free(EC_KEY *key);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:641:20: warning: 'ECDSA_do_sign' is deprecated [-Wdeprecated-declarations]
+  641 |                 ECDSA_SIG* sig = ECDSA_do_sign(hash, sizeof(hash), ec_privKey);
+      |                                  ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1384:1: note: 'ECDSA_do_sign' has been explicitly marked deprecated here
+ 1384 | OSSL_DEPRECATEDIN_3_0 ECDSA_SIG *ECDSA_do_sign(const unsigned char *dgst,
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:642:3: warning: 'EC_KEY_free' is deprecated [-Wdeprecated-declarations]
+  642 |                 EC_KEY_free(ec_privKey);
+      |                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1022:1: note: 'EC_KEY_free' has been explicitly marked deprecated here
+ 1022 | OSSL_DEPRECATEDIN_3_0 void EC_KEY_free(EC_KEY *key);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:676:3: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  676 |                 sprintf(newCert.ngName, "AP%08x%08x", signerTitleIdHigh, signerTitleIdLow);
+      |                 ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:691:24: warning: 'EC_KEY_new_by_curve_name' is deprecated [-Wdeprecated-declarations]
+  691 |                 EC_KEY* ec_keyPair = EC_KEY_new_by_curve_name(NID_sect233r1);
+      |                                      ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1017:1: note: 'EC_KEY_new_by_curve_name' has been explicitly marked deprecated here
+ 1017 | OSSL_DEPRECATEDIN_3_0 EC_KEY *EC_KEY_new_by_curve_name(int nid);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:692:3: warning: 'EC_KEY_generate_key' is deprecated [-Wdeprecated-declarations]
+  692 |                 EC_KEY_generate_key(ec_keyPair);
+      |                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1120:1: note: 'EC_KEY_generate_key' has been explicitly marked deprecated here
+ 1120 | OSSL_DEPRECATEDIN_3_0 int EC_KEY_generate_key(EC_KEY *key);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:697:3: warning: 'EC_KEY_free' is deprecated [-Wdeprecated-declarations]
+  697 |                 EC_KEY_free(ec_keyPair);
+      |                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1022:1: note: 'EC_KEY_free' has been explicitly marked deprecated here
+ 1022 | OSSL_DEPRECATEDIN_3_0 void EC_KEY_free(EC_KEY *key);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:707:20: warning: 'ECDSA_do_sign' is deprecated [-Wdeprecated-declarations]
+  707 |                 ECDSA_SIG* sig = ECDSA_do_sign(hash, hashLen, ec_privKey);
+      |                                  ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1384:1: note: 'ECDSA_do_sign' has been explicitly marked deprecated here
+ 1384 | OSSL_DEPRECATEDIN_3_0 ECDSA_SIG *ECDSA_do_sign(const unsigned char *dgst,
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:708:3: warning: 'EC_KEY_free' is deprecated [-Wdeprecated-declarations]
+  708 |                 EC_KEY_free(ec_privKey);
+      |                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1022:1: note: 'EC_KEY_free' has been explicitly marked deprecated here
+ 1022 | OSSL_DEPRECATEDIN_3_0 void EC_KEY_free(EC_KEY *key);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:712:18: warning: 'ECDSA_do_verify' is deprecated [-Wdeprecated-declarations]
+  712 |                 bool isValid = ECDSA_do_verify(hash, hashLen, sig, ec_pubKey) == 1;
+      |                                ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1410:1: note: 'ECDSA_do_verify' has been explicitly marked deprecated here
+ 1410 | OSSL_DEPRECATEDIN_3_0 int ECDSA_do_verify(const unsigned char *dgst, int dgst_len,
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:713:3: warning: 'EC_KEY_free' is deprecated [-Wdeprecated-declarations]
+  713 |                 EC_KEY_free(ec_pubKey);
+      |                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1022:1: note: 'EC_KEY_free' has been explicitly marked deprecated here
+ 1022 | OSSL_DEPRECATEDIN_3_0 void EC_KEY_free(EC_KEY *key);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:734:12: warning: 'ECDSA_do_verify' is deprecated [-Wdeprecated-declarations]
+  734 |                 bool r = ECDSA_do_verify(hash, hashLen, ecdsa_sig, ec_pubKey) == 1;
+      |                          ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1410:1: note: 'ECDSA_do_verify' has been explicitly marked deprecated here
+ 1410 | OSSL_DEPRECATEDIN_3_0 int ECDSA_do_verify(const unsigned char *dgst, int dgst_len,
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/ncrypto/ncrypto.cpp:736:3: warning: 'EC_KEY_free' is deprecated [-Wdeprecated-declarations]
+  736 |                 EC_KEY_free(ec_pubKey);
+      |                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/ec.h:1022:1: note: 'EC_KEY_free' has been explicitly marked deprecated here
+ 1022 | OSSL_DEPRECATEDIN_3_0 void EC_KEY_free(EC_KEY *key);
+      | ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:217:49: note: expanded from macro 'OSSL_DEPRECATEDIN_3_0'
+  217 | #   define OSSL_DEPRECATEDIN_3_0                OSSL_DEPRECATED(3.0)
+      |                                                 ^
+/Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/openssl/macros.h:62:52: note: expanded from macro 'OSSL_DEPRECATED'
+   62 | #     define OSSL_DEPRECATED(since) __attribute__((deprecated))
+      |                                                    ^
+21 warnings generated.
+[30/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/nex/prudp.cpp.o
+[31/441] Building CXX object src/Cafe/CMakeFiles/CemuCafe.dir/Filesystem/fscDeviceWua.cpp.o
+[32/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/nex/nexFriends.cpp.o
+[33/441] Building CXX object src/Cafe/CMakeFiles/CemuCafe.dir/Filesystem/fscDeviceWud.cpp.o
+[34/441] Building CXX object src/Cafe/CMakeFiles/CemuCafe.dir/Filesystem/fscDeviceRedirect.cpp.o
+[35/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/DiscordPresence/DiscordRPCLite.cpp.o
+[36/441] Building CXX object src/Cafe/CMakeFiles/CemuCafe.dir/Filesystem/fscDeviceHostFS.cpp.o
+[37/441] Building CXX object src/Cafe/CMakeFiles/CemuCafe.dir/Filesystem/fsc.cpp.o
+[38/441] Building CXX object src/Cafe/CMakeFiles/CemuCafe.dir/CafeSystem.cpp.o
+FAILED: [code=1] src/Cafe/CMakeFiles/CemuCafe.dir/CafeSystem.cpp.o
+/usr/bin/c++ -DBOOST_NOWIDE_NO_LIB -DCURL_STATICLIB -DEMULATOR_HASH=4fd4a746 -DEMULATOR_VERSION_MAJOR=0 -DEMULATOR_VERSION_MINOR=0 -DEMULATOR_VERSION_PATCH=0 -DENABLE_DISCORD_RPC -DENABLE_METAL -DENABLE_VULKAN -DHAS_CUBEB=1 -DHAS_HIDAPI -DHAS_LIBUSB -DHAS_SDL -DVK_NO_PROTOTYPES -DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxUSE_GUI=1 -I/Users/bytedance/workspace/cemu_android/build/src/Cafe -I/Users/bytedance/workspace/cemu_android/src/Cafe -I/Users/bytedance/workspace/cemu_android/dependencies/Vulkan-Headers/include -I/Users/bytedance/workspace/cemu_android/dependencies/metal-cpp -I/Users/bytedance/workspace/cemu_android/src/Cafe/.. -I/Users/bytedance/workspace/cemu_android/dependencies/xbyak_aarch64 -I/Users/bytedance/workspace/cemu_android/dependencies/xbyak_aarch64/src -I/Users/bytedance/workspace/cemu_android/dependencies/xbyak_aarch64/xbyak_aarch64 -I/Users/bytedance/workspace/cemu_android/src/Common/.. -I/Users/bytedance/workspace/cemu_android/src/gui/interface -I/Users/bytedance/workspace/cemu_android/src/gui/wxgui/.. -I/Users/bytedance/workspace/cemu_android/dependencies/ZArchive/include -I/Users/bytedance/workspace/cemu_android/src/imgui/.. -I/Users/bytedance/workspace/cemu_android/src/imgui/../../dependencies/imgui -isystem /Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include -isystem /Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/lib/wx/include/osx_cocoa-unicode-static-3.3 -isystem /Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/include/wx-3.3 -iframework /Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks -isystem /Users/bytedance/workspace/cemu_android/build/vcpkg_installed/arm64-osx/lib/pkgconfig/../../include/libusb-1.0 -O2 -g -DNDEBUG -std=gnu++20 -flto=thin -arch arm64 -mmacosx-version-min=13.4 -Wno-multichar -Wno-invalid-offsetof -Wno-switch -Wno-ignored-attributes -Wno-deprecated-enum-enum-conversion -Winvalid-pch -Xclang -include-pch -Xclang /Users/bytedance/workspace/cemu_android/build/src/Cafe/CMakeFiles/CemuCafe.dir/cmake_pch.hxx.pch -Xclang -include -Xclang /Users/bytedance/workspace/cemu_android/build/src/Cafe/CMakeFiles/CemuCafe.dir/cmake_pch.hxx -MD -MT src/Cafe/CMakeFiles/CemuCafe.dir/CafeSystem.cpp.o -MF src/Cafe/CMakeFiles/CemuCafe.dir/CafeSystem.cpp.o.d -o src/Cafe/CMakeFiles/CemuCafe.dir/CafeSystem.cpp.o -c /Users/bytedance/workspace/cemu_android/src/Cafe/CafeSystem.cpp
+In file included from /Users/bytedance/workspace/cemu_android/src/Cafe/CafeSystem.cpp:6:
+In file included from /Users/bytedance/workspace/cemu_android/src/Cafe/../Cafe/HW/Espresso/Recompiler/PPCRecompiler.h:27:
+/Users/bytedance/workspace/cemu_android/src/Cafe/../Cafe/HW/Espresso/Recompiler/IML/IMLInstruction.h:761:21: warning: implicit conversion from 'int' to 'uint8' (aka 'unsigned char') changes value from -999 to 25 [-Wconstant-conversion]
+  761 |                 this->operation = -999;
+      |                                 ~ ^~~~
+/Users/bytedance/workspace/cemu_android/src/Cafe/../Cafe/HW/Espresso/Recompiler/IML/IMLInstruction.h:810:21: warning: implicit conversion from 'int' to 'uint8' (aka 'unsigned char') changes value from -999 to 25 [-Wconstant-conversion]
+  810 |                 this->operation = -999;
+      |                                 ~ ^~~~
+In file included from /Users/bytedance/workspace/cemu_android/src/Cafe/CafeSystem.cpp:17:
+In file included from /Users/bytedance/workspace/cemu_android/src/Cafe/../input/InputManager.h:13:
+/Users/bytedance/workspace/cemu_android/src/Cafe/../input/api/SDL/SDLControllerProvider.h:73:2: error: #endif without #if
+   73 | #endif // HAS_SDL
+      |  ^
+2 warnings and 1 error generated.
+[39/441] Building CXX object src/Cafe/CMakeFiles/CemuCafe.dir/Account/Account.cpp.o
+[40/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/PPCAssembler/ppcAssembler.cpp.o
+/Users/bytedance/workspace/cemu_android/src/Cemu/PPCAssembler/ppcAssembler.cpp:2053:3: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 2053 |                 sprintf(_assemblerErrorMessageDepr, "\'%s\' could not be evaluated. Error: %s", expressionString.c_str(), e->what());
+      |                 ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/PPCAssembler/ppcAssembler.cpp:2150:4: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 2150 |                         sprintf(_assemblerErrorMessageDepr, "Branch target out of range");
+      |                         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/bytedance/workspace/cemu_android/src/Cemu/PPCAssembler/ppcAssembler.cpp:2156:4: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 2156 |                         sprintf(_assemblerErrorMessageDepr, "Branch target must be aligned to 4");
+      |                         ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode-16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/cdefs.h:218:48: note: expanded from macro '__deprecated_msg'
+  218 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+3 warnings generated.
+[41/441] Building CXX object src/Cemu/CMakeFiles/CemuComponents.dir/Tools/DownloadManager/DownloadManager.cpp.o
+ninja: build stopped: subcommand failed.
+metric             	count 	avg (us) 	total (ms)
+.ninja parse       	1     	7048.0  	7.0
+.ninja_log load    	1     	522.0   	0.5
+.ninja_deps load   	1     	3802.0  	3.8
+node stat          	3854  	3.6     	14.0
+ComputeCriticalPath	1     	114.0   	0.1
+StartEdge          	41    	3790.9  	155.4
+FinishCommand      	41    	8522.4  	349.4
+
+path->node hash load 0.68 (5598 entries / 8192 buckets)
+real 4.04
+user 31.84
+sys 3.60
