@@ -147,7 +147,7 @@ if (MACOS_BUNDLE)
 			message(FATAL_ERROR "failed to find libMoltenVK.dylib")
 		endif ()
   endif()
-  
+
 	if (ENABLE_LIBUSB)
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 		    set(LIBUSB_PATH "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/debug/lib/libusb-1.0.0.dylib")
@@ -163,7 +163,7 @@ if (MACOS_BUNDLE)
 
 	if (ENABLE_VULKAN)
 		add_custom_command(TARGET CemuBin POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy 
+			COMMAND ${CMAKE_COMMAND} -E copy
 				"${MOLTENVK_PATH}"
 				"${FRAMEWORKS_DIR}/libMoltenVK.dylib"
 		)

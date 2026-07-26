@@ -533,19 +533,19 @@ void RendererOutputShader::InitializeStatic()
 #ifdef ENABLE_VULKAN
     case RendererAPI::Vulkan:
     {
-    	std::string vertex_source, vertex_source_ud;
-    	// vertex shader
+		std::string vertex_source, vertex_source_ud;
+		// vertex shader
 		vertex_source = GetVulkanVertexSource(false);
 		vertex_source_ud = GetVulkanVertexSource(true);
-			
-    	s_copy_shader = new RendererOutputShader(vertex_source, s_copy_shader_source);
-    	s_copy_shader_ud = new RendererOutputShader(vertex_source_ud, s_copy_shader_source);
 
-    	s_bicubic_shader = new RendererOutputShader(vertex_source, s_bicubic_shader_source);
-    	s_bicubic_shader_ud = new RendererOutputShader(vertex_source_ud, s_bicubic_shader_source);
+		s_copy_shader = new RendererOutputShader(vertex_source, s_copy_shader_source);
+		s_copy_shader_ud = new RendererOutputShader(vertex_source_ud, s_copy_shader_source);
 
-    	s_hermit_shader = new RendererOutputShader(vertex_source, s_hermite_shader_source);
-    	s_hermit_shader_ud = new RendererOutputShader(vertex_source_ud, s_hermite_shader_source);
+		s_bicubic_shader = new RendererOutputShader(vertex_source, s_bicubic_shader_source);
+		s_bicubic_shader_ud = new RendererOutputShader(vertex_source_ud, s_bicubic_shader_source);
+
+		s_hermit_shader = new RendererOutputShader(vertex_source, s_hermite_shader_source);
+		s_hermit_shader_ud = new RendererOutputShader(vertex_source_ud, s_hermite_shader_source);
 		break;
     }
 #endif

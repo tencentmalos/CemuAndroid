@@ -27,7 +27,7 @@ WiimoteControllerProvider::~WiimoteControllerProvider()
 		m_running = false;
 
 		{
-			std::scoped_lock lock(m_writer_mutex); 
+			std::scoped_lock lock(m_writer_mutex);
 			m_writer_cond.notify_all();
 		}
 
