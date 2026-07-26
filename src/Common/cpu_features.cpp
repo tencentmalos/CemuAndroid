@@ -118,8 +118,7 @@ CPUFeaturesImpl::CPUFeaturesImpl()
 		}
 	}
 
-	strncpy(m_cpuBrandName, cpuName.c_str(), sizeof(m_cpuBrandName) - 1);
-	m_cpuBrandName[sizeof(m_cpuBrandName) - 1] = '\0';
+	m_cpuBrandName = cpuName;
 #elif defined(ARCH_X86_64)
 	int cpuInfo[4];
 	cpuid(cpuInfo, 0x80000001);
