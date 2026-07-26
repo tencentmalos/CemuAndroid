@@ -65,8 +65,7 @@ if(ANDROID)
   )
 endif()
 
-# CemuCommon always builts the precompiled header
-target_precompile_headers(CemuCommon PRIVATE precompiled.h)
+cemu_use_precompiled_header(CemuCommon)
 target_include_directories(CemuCommon PUBLIC "../")
 
 target_link_libraries(CemuCommon PRIVATE

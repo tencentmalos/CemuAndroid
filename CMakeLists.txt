@@ -92,6 +92,13 @@ endif()
 option(ENABLE_LTO "Enable link-time optimization" ${DEFAULT_ENABLE_LTO})
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${ENABLE_LTO})
 
+option(CEMU_USE_PRECOMPILED_HEADERS "Use precompiled headers across the complete build graph" OFF)
+if (CEMU_USE_PRECOMPILED_HEADERS)
+	set(CMAKE_DISABLE_PRECOMPILE_HEADERS OFF)
+else()
+	set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
+endif()
+
 option(CEMU_USE_CCACHE "Use ccache as a compiler launcher when available" ON)
 if (CEMU_USE_CCACHE)
 	if (NOT "$ENV{NDK_CCACHE}" STREQUAL "")

@@ -48,12 +48,28 @@ endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# on msvc we can reuse the PCH from CemuCommon, on other platforms it's not straight forward to reuse the PCH so we opt out of it
+# Cemu source files rely on precompiled.h being implicitly included. Keep the
+# include contract when PCH is disabled, but parse it as a regular header.
 function(cemu_use_precompiled_header target_name)
-	if(MSVC)
-		target_precompile_headers(${target_name} REUSE_FROM CemuCommon)
+	if(CEMU_USE_PRECOMPILED_HEADERS)
+		if("${target_name}" STREQUAL "CemuCommon")
+			target_precompile_headers(${target_name} PRIVATE "${CMAKE_SOURCE_DIR}/src/Common/precompiled.h")
+		elseif(MSVC)
+			target_precompile_headers(${target_name} REUSE_FROM CemuCommon)
+		else()
+			target_precompile_headers(${target_name} PRIVATE "${CMAKE_SOURCE_DIR}/src/Common/precompiled.h")
+		endif()
 	else()
-		target_precompile_headers(${target_name} PRIVATE "${CMAKE_SOURCE_DIR}/src/Common/precompiled.h")
+		if(MSVC)
+			target_compile_options(${target_name} PRIVATE
+				"$<$<COMPILE_LANGUAGE:CXX>:/FI${CMAKE_SOURCE_DIR}/src/Common/precompiled.h>"
+			)
+		else()
+			target_compile_options(${target_name} PRIVATE
+				"$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-include>"
+				"$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${CMAKE_SOURCE_DIR}/src/Common/precompiled.h>"
+			)
+		endif()
 	endif()
 endfunction()
 
