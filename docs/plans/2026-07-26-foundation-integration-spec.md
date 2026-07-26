@@ -101,10 +101,10 @@ Android debugbus/dumpsys 不依赖这些组件。
 | 手法 | 现状 | 位置 |
 | --- | --- | --- |
 | Dev 构建关 LTO | **已完成**，RelWithDebInfo/Debug 默认 OFF，Release 默认 ON | `ENABLE_LTO` + C3 验证记录 |
-| ccache | **未接入**，本机也**未安装** | 无 `COMPILER_LAUNCHER`；`which ccache` 空 |
+| ccache | **已完成**，检测到时默认 ON | `CEMU_USE_CCACHE`；支持 `NDK_CCACHE` 与自动发现 |
 | Unity Build | **已完成**，全局默认 ON，保留明确排除清单 | `CEMU_USE_UNITY_BUILD` + C3 验证记录 |
-| 预编译头 | **已做** | `src/Common/CMakeLists.txt:69`；`src/CMakeLists.txt:47-49` |
-| 裁剪构建图 | 未系统做 | — |
+| 预编译头 | **默认 OFF**，可显式开启回退 | `CEMU_USE_PRECOMPILED_HEADERS` |
+| 裁剪构建图 | **按维护者决定暂缓** | 保留现有默认构建项 |
 
 主要 target：`CemuCommon`、`CemuCafe`、`CemuComponents`、`CemuConfig`、`CemuInput`、`CemuAudio`、`CemuUtil`、`CemuResource`、`CemuGui`(INTERFACE)、`CemuBin`。
 
@@ -436,7 +436,10 @@ Android 侧在 gradle 各 buildType 显式传 `-DENABLE_LTO=OFF`，防外部默�
 
 ### C3-T2 ccache 接入（增量/切分支收益大）
 
-**现状：** 未接入，且**本机未安装**。
+> **已完成，commit `02bf06b3`。** 本机安装 ccache 4.13.6；支持
+> `NDK_CCACHE` 和 `find_program` 两条路径，坏 launcher 会警告并安全降级，
+> `CEMU_USE_CCACHE=OFF` 可显式关闭。PCH 开启时第二轮只命中 100/278 次编译，
+> 促成后续独立的 PCH 调整。
 
 ```sh
 brew install ccache
@@ -444,7 +447,10 @@ brew install ccache
 
 按手册 §2 加 CMake 接入，统一 `NDK_CCACHE` 环境变量与本机 `find_program` 两条路径，并做可运行性校验（避免坏 launcher 卡死构建）。cemu 侧选项名建议 `CEMU_USE_CCACHE`。
 
-**注意：** cemu **已用 PCH**（`src/Common/precompiled.h`，多 target `REUSE_FROM`）。手册 §2 明确提示配 PCH 时注意 ccache sloppiness，且 **`pch_defines` 不能进 sloppiness**（azahar 上游 `19cc8e626` 的历史坑）。
+**实施时的基线注意项：** cemu 当时使用 PCH
+（`src/Common/precompiled.h`，多 target `REUSE_FROM`）。手册 §2 明确提示
+配 PCH 时注意 ccache sloppiness，且 **`pch_defines` 不能进 sloppiness**
+（azahar 上游 `19cc8e626` 的历史坑）。后续 T2A 已把 PCH 默认关闭。
 
 **退出标准：**
 
@@ -453,6 +459,23 @@ brew install ccache
 - **正确性验证**：ccache 命中的构建产物能正常启动 GUI（PCH + ccache 配错会产生诡异的运行期问题，不只是编译失败）
 
 **提交：** `build: use ccache as compiler launcher when available`
+
+### C3-T2A 默认关闭 PCH（维护者追加）
+
+> **已完成，commit `39a06b25`。**
+
+全局 `CEMU_USE_PRECOMPILED_HEADERS` 默认 OFF，并通过
+`CMAKE_DISABLE_PRECOMPILE_HEADERS` 覆盖完整构建图。Cemu 源文件仍依赖
+`precompiled.h` 的隐式包含契约，因此 PCH 关闭时使用编译器的普通强制包含，
+不生成预编译产物；第三方 target 不再生成 PCH。显式设为 ON 时恢复原 PCH
+路径，MSVC 上除 `CemuCommon` 外的 target 继续复用 `CemuCommon` PCH。
+
+结果：macOS/Android Ninja 命令均无 `cmake_pch`；macOS 第二次 clean build
+的 264 次编译中命中 262 次（99.24%），`real 10.17s`。PCH=ON 的独立全量
+回退构建也通过。关闭 PCH 会牺牲无缓存冷构建性能，取舍与完整数据见 C3
+验证文档。
+
+**提交：** `build: disable precompiled headers by default`
 
 ### C3-T3 Unity Build（clean build 收益大，需排除名单）
 
@@ -476,6 +499,10 @@ brew install ccache
 **提交：** 按目标分批提交，如 `build: enable unity build for CemuCafe`
 
 ### C3-T4 裁剪默认构建图（针对性强、需逐项验证）
+
+> **按维护者 2026-07-26 决定暂缓。** 本轮不裁剪 Vulkan、OpenGL、libusb、
+> SDL 或其他默认构建项，也不删除任何 foundation 能力。以后恢复该任务时
+> 仍必须先触发 D4，不能把“本轮暂缓”误写成产品侧保留/删除结论。
 
 **原则（手册 §5）：优先移除无用目标，而不是加一堆默认开关。**
 
@@ -504,19 +531,19 @@ core/network/profiler/XR 后若出现过大的传递依赖，
 - 各刀的 build edges / wall time / ccache hit rate 前后对比
 - 剩余热点清单（供后续继续优化）
 - unity 排除名单及原因
-- 裁剪的「必须保留」清单
+- 裁剪状态（本轮 T4 暂缓，现有默认项原样保留）
 
 **提交：** `docs: record build speedup measurements`
 
 ### 阶段一整体退出标准
 
-- [ ] mac：`cmake` 配置成功、编译成功、GUI 可启动
-- [ ] mac：编译耗时与 build edges 相对 C2 完成时有可量化改善，数据归档
-- [ ] Android：`assembleDebug` 与 `assembleRelease` 均通过（不回归）
+- [x] mac：`cmake` 配置成功、编译成功、GUI 可启动
+- [x] mac：编译耗时与 build edges 相对 C2 完成时有可量化改善，数据归档
+- [x] Android：`assembleDebug` 与 `assembleRelease` 均通过（不回归）
 - [x] foundation 以根 CMake + `EXCLUDE_FROM_ALL` 按需接入，无伪造 target，有 API 版本护栏
-- [ ] `main = upstream/main = origin/main`，且 main 是
+- [x] `main = upstream/main = origin/main`，且 main 是
       `feature/malos/basic_version` 的祖先
-- [ ] 全部证据归档在 `docs/verification/` 下
+- [x] 全部证据归档在 `docs/verification/` 下
 
 ---
 

@@ -29,9 +29,11 @@
 2. **C2 foundation 正规化与依赖收敛已经完成。** 根 CMake 通过 `add_subdirectory(dependencies/foundation EXCLUDE_FROM_ALL)` 注册真实 target，已删除伪造 target；Android 当前只构建实际链接的 debugbus/dumpsys。core/network/profiler/XR 都是后续计划能力，必须保留，只是不进入当前默认构建闭包。C2 后续已参考 Azahar，把 fmt、glslang、zstd、libusb、Crypto++ 切到 `tencentmalos` 子模块，并复用 foundation 的 RapidJSON；Crypto++ 没有塞进 vcpkg。
 3. **mac 桌面构建基线已经建立并复验。** C1 证据在 `docs/verification/20260726-C1/`，C2 接入取舍、前后度量和负向测试在 `docs/verification/20260726-C2/`。这些只证明对应提交可验，不代表后续改动可以靠推断跳过复验。
 
-另外：C3-T1 与 C3-T3 已完成。`RelWithDebInfo` 默认关闭 LTO，Release 仍默认
-开启；全局 Unity Build 默认开启，并统一控制 Cemu 与 foundation。macOS clean
-build 由 648 条命令、69.72s 降到 327 条、45.50s。ccache 和构建图裁剪尚未做。
+另外：C3 已在约定范围内完成。`RelWithDebInfo` 默认关闭 LTO，Release 仍默认
+开启；全局 Unity Build 默认开启，并统一控制 Cemu 与 foundation；ccache
+检测到时默认开启；PCH 默认关闭。PCH 关闭后 ccache 二次 clean build 的
+264 次编译中命中 262 次（99.24%），wall time 为 10.17s。C3-T4 按维护者决定
+暂缓，Vulkan、libusb、SDL 等现有默认构建项没有裁剪。
 
 ---
 
@@ -44,7 +46,7 @@ build 由 648 条命令、69.72s 降到 327 条、45.50s。ccache 和构建图�
 | **C1（已完成）** | 上游同步 | 官方 main 更新 59 个提交，并把完整 main 历史 merge 到 `basic_version` | 这些提交含 mac 构建修复和 C3 所需的 `ENABLE_OPENGL`/`ENABLE_VULKAN`/`ENABLE_LIBUSB`/SDL optional 开关 |
 | **C2（已完成）** | foundation 合入正规化 | 根 CMake 按需接入，去掉伪造 target，加 API 版本护栏 | 先建立真实 target 关系与度量基线；`EXCLUDE_FROM_ALL` 保证未使用组件不污染默认构建图 |
 | **C2-F（已完成）** | 依赖收敛 | 复用 Azahar / `tencentmalos` 子模块，先移出 6 个 vcpkg 直接依赖项 | 保留完整 foundation 能力，同时先消除已有可靠镜像、版本可钉住的重复包管理路径 |
-| **C3（进行中）** | 编译加速 | Dev 关 LTO（已完成）→ Unity Build（按维护者指示提前完成）→ ccache → 裁剪 Cemu 构建图 | foundation 的未使用组件已按需排除，C3 聚焦可量化热点 |
+| **C3（已完成约定范围）** | 编译加速 | Dev 关 LTO → Unity Build → ccache → 默认关 PCH；构建图裁剪暂缓 | foundation 的未使用组件已按需排除；保留现有产品能力默认值 |
 
 **验收面是 mac 桌面**，不是 Android 真机。选 mac 的理由：这三项工作的失败模式全在构建系统层面，桌面即可暴露，且不依赖设备、迭代快。Android 在阶段一**只要求不回归**（`assembleDebug` 仍通过）。
 
@@ -84,7 +86,8 @@ spec §3 列了 7 个决策点（D1–D7）。阶段一仍可能遇到的是这�
 - **D1** — 内部 `origin/main` 出现官方没有的提交，或更新镜像时 push 被权限拒绝。
 - **D2** — 上游 SDL3 迁移引入新子模块时，需要先在 tencentmalos 建镜像才能合。
 - **D3** — 后续启用 core/network/profiler/XR 等 foundation 组件时，如果其传递依赖导致构建时长/体积不可接受，是否推动 foundation 侧进一步组件化。
-- **D4** — C3 裁剪构建图时，哪些子系统必须保留默认开启。**这个不能凭代码猜，需要产品侧确认。**
+- **D4** — 以后恢复 C3-T4 构建图裁剪时，哪些子系统必须保留默认开启。当前
+  已决定暂缓裁剪；恢复前仍必须重新确认，不能凭代码猜。
 
 遇到这些：停下来说明情况并提问，**不要自行选择、不要降级验证标准**。
 
@@ -92,22 +95,23 @@ spec §3 列了 7 个决策点（D1–D7）。阶段一仍可能遇到的是这�
 
 ## 你的第一个动作
 
-**从 C3-T2 开始：接入并验证 ccache。**
+**从 C4 的 D5/D6 决策开始，不要直接写实现。**
 
-先确认交接点没有漂移，再阅读 C3 当前度量和编译加速指南：
+先确认交接点没有漂移，再阅读 C4 任务与 C3 最终验证：
 
 ```sh
 git status --short --branch
-git fetch upstream origin
+git fetch upstream main
+git fetch origin main feature/malos/basic_version
 git rev-list --left-right --count upstream/main...origin/main
 git merge-base --is-ancestor main feature/malos/basic_version
 sed -n '1,300p' docs/verification/20260726-C3/build-speedup-notes.md
-sed -n '1,260p' dependencies/foundation/docs/guides/build-acceleration.md
+sed -n '550,575p' docs/plans/2026-07-26-foundation-integration-spec.md
 ```
 
 镜像差异按 spec C1-T1/T2 处理；ancestor 检查必须返回 0。若 main 有更新，
-先按 C1-T6 merge 到 `basic_version`。随后执行 C3-T2，并继续保持每刀独立
-验证、提交。
+先按 C1-T6 merge 到 `basic_version`。随后先确认 D5（Service 进程归属）与
+D6（release 是否保留 debugbus），得到维护者决定后再实施 C4。
 
 ---
 

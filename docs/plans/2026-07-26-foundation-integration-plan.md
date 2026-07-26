@@ -65,7 +65,7 @@
   GUI/平台依赖暂留 vcpkg，原因与版本差异见
   `docs/verification/20260726-C2/dependency-convergence.md`。
 
-### C3 进行中
+### C3 已完成约定范围
 
 - C3-T0 已在依赖收敛后的真实构建图上重建基线：RelWithDebInfo + LTO 为
   648 条 Ninja 完成命令、`real 77.38s`。
@@ -75,17 +75,23 @@
 - C3-T3 按维护者指示提前完成：`CEMU_USE_UNITY_BUILD` 默认 ON，统一控制整个
   构建图与 foundation 的遗留开关；macOS clean build 降到 327 条命令、
   `real 45.50s`，macOS GUI、Android Debug 与单测均通过。
-- 下一步回到尚未实施的 C3-T2 ccache。
+- C3-T2 已完成：ccache 4.13.6 可通过 `NDK_CCACHE` 或自动发现接入，并拒绝
+  `pch_defines` sloppiness。PCH 开启时只有 101/278 次编译可缓存，因此后续
+  独立提交把全局 PCH 默认关闭，同时保留 `precompiled.h` 的普通强制包含契约。
+  最终二次 clean build 命中 262/264 次（99.24%），`real 10.17s`。
+- C3-T4 按维护者决定暂缓，不裁剪 Vulkan、libusb、SDL 等默认构建项。阶段一
+  最终 macOS GUI、Android Debug/Release 与单测均通过；下一阶段为 C4，开始
+  实施前先确认 D5/D6。
 
 ### 编译加速现状
 
 | 手法 | cemu 现状 | 依据 |
 | --- | --- | --- |
 | Dev 构建关 LTO | **已完成**，RelWithDebInfo/Debug 默认 OFF，Release 默认 ON | `ENABLE_LTO` + C3 验证记录 |
-| ccache | **未接入**，且本机未安装 | 无 `COMPILER_LAUNCHER` 相关代码；`which ccache` 空 |
+| ccache | **已完成**，检测到时默认 ON | `CEMU_USE_CCACHE`，支持 `NDK_CCACHE` 与自动发现 |
 | Unity Build | **已完成**，全局默认 ON，保留明确排除清单 | `CEMU_USE_UNITY_BUILD` + C3 验证记录 |
-| 预编译头 | **已做** | `src/Common/CMakeLists.txt:69`、`src/CMakeLists.txt:47-49` |
-| 裁剪构建图 | 未系统做 | — |
+| 预编译头 | **默认 OFF**，保留显式回退开关 | `CEMU_USE_PRECOMPILED_HEADERS` |
+| 裁剪构建图 | **按维护者决定暂缓** | 保留现有默认构建项 |
 
 主要 C++ target：`CemuCommon`、`CemuCafe`、`CemuComponents`、`CemuConfig`、`CemuInput`、`CemuAudio`、`CemuUtil`、`CemuResource`、`CemuGui`(INTERFACE)、`CemuBin`。
 
@@ -127,14 +133,14 @@
 | C1（已完成） | 同步官方 Cemu 上游，并把完整 main 历史 merge 到 `basic_version`，转为每阶段前置 | 无 | 中–高 |
 | C2（已完成） | foundation 合入正规化：根 CMake 按需接入、去伪造 target、加 API 版本护栏（S3、S6） | C1 | 中 |
 | C2-F（已完成） | 依赖收敛：复用 Azahar / `tencentmalos` 子模块，减少 vcpkg 交叉构建面 | C2 | 中 |
-| C3 | 编译加速：dev 关 LTO、ccache、unity build、裁剪构建图 | C2 | 低–中 |
+| C3 | 编译加速：dev 关 LTO、ccache、unity build、默认关 PCH；构建图裁剪暂缓 | C2 | 低–中 |
 
 三者顺序不可换：
 
 - **C1 首轮必须最先且现已完成** —— 当时待同步的 31 个提交里含 `f8fb588b build: macOS CMake fixes`、`0fc74035 ENABLE_OPENGL/ENABLE_VULKAN`、`1c2b7d78 ENABLE_LIBUSB`、`8e3e961b SDL optional`。后三者是 C3 裁剪构建图的**现成工具**。
 - **C2 在 C3 之前** —— 先消除伪造 target，建立真实、可测的依赖关系，再优化才不会对错误的构建图调参。Azahar 对照和实测后采用 `EXCLUDE_FROM_ALL`：根 CMake 负责注册，只有宿主明确链接的组件进入构建。
 - **C2-F 收敛依赖但不裁功能** —— foundation 的后续组件全部保留；已有精确镜像和可验证版本的公共库先转为集中管理的子模块，版本或镜像尚不匹配的依赖继续留在 vcpkg，避免一次性替换导致平台漂移。
-- **C3 收尾** —— C2 已把当前没有消费者的 foundation 组件排除出默认构建，C3 聚焦 Cemu 自身的 LTO、ccache、Unity Build 和平台子系统裁剪；每一刀都以最新验证记录为基线。
+- **C3 收尾** —— C2 已把当前没有消费者的 foundation 组件排除出默认构建，C3 聚焦 Cemu 自身的 LTO、ccache、Unity Build 和 PCH 协同；平台子系统裁剪按维护者决定暂缓。每一刀都以最新验证记录为基线。
 
 ### 阶段二及以后
 
@@ -191,7 +197,7 @@
 
 - **分支主线与上游同步节奏：** `feature/malos/basic_version` + 官方 main 是唯一必经主线。每阶段开工前先让本地/内部镜像 `main` 与 `upstream/main` 对齐，再确认 `git merge-base --is-ancestor main feature/malos/basic_version`；返回非 0 先 merge main。`android-port` 只按需选择性引入。阶段进行中不同步，否则验收基线会漂移。
 - **验证矩阵：**
-  - 阶段一（C1–C3）：**mac 桌面为主验收面**（配置 + 编译 + 运行 + 编译耗时度量）；Android 仅要求 `assembleDebug` 不回归。
+  - 阶段一（C1–C3）：**mac 桌面为主验收面**（配置 + 编译 + 运行 + 编译耗时度量）；Android 至少要求 `assembleDebug` 不回归，最终收尾已额外通过 `assembleRelease` 与单测。
   - C4 起：Android arm64-v8a debug **与** release 双变体都要验；只验 debug 是 S1 漏网的直接原因。涉及 native 行为改动时另跑 PC 侧构建确认未破坏桌面。
 - **提交纪律：** cemu 仓与 foundation 仓分开聚焦提交；不夹带 `_out/`、`build_baseline/` 等未跟踪文件。
 - **子模块：** 本分支子模块 URL 指向 `git@github.com:tencentmalos/...`；改 `.gitmodules` 后必须 `git submodule sync --recursive` + `git submodule status --recursive` 核对。

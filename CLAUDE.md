@@ -19,7 +19,7 @@
   - 交接简报（新接手先读这个）：`docs/plans/2026-07-26-handoff-brief.md`
   - 计划（背景、review 结论、阶段划分）：`docs/plans/2026-07-26-foundation-integration-plan.md`
   - 实施 spec（任务级、可直接执行）：`docs/plans/2026-07-26-foundation-integration-spec.md`
-  - 当前状态：C1、C2 已完成；本地/内部镜像 `main` 与官方 `upstream/main` 均为 `b8f2cf4b`，并已由 `fc884596` 完整 merge 到 `feature/malos/basic_version`。foundation 仍钉在 `b01f41c`，根 CMake 已正规化接入。C2 后续的依赖收敛已把 fmt、glslang、zstd、libusb、Crypto++ 改为 `tencentmalos` 子模块，并复用 foundation 的 RapidJSON；没有删除后续要用的 core、network、profiler、XR 能力。C3-T1 与 C3-T3 已完成：RelWithDebInfo 默认关闭 LTO、Release 保留 LTO；全局 Unity Build 默认开启并统一控制 Cemu 与 foundation，macOS clean build 为 327 条命令、45.50s。验证见 `docs/verification/20260726-C3/build-speedup-notes.md`，下一步回到尚未实施的 C3-T2 ccache。
+  - 当前状态：C1、C2、C3 已在约定范围内完成；本地/内部镜像 `main` 与官方 `upstream/main` 均为 `b8f2cf4b`，并已由 `fc884596` 完整 merge 到 `feature/malos/basic_version`。foundation 仍钉在 `b01f41c`，根 CMake 已正规化接入。C2 后续的依赖收敛已把 fmt、glslang、zstd、libusb、Crypto++ 改为 `tencentmalos` 子模块，并复用 foundation 的 RapidJSON；没有删除后续要用的 core、network、profiler、XR 能力。C3 最终默认组合为 RelWithDebInfo/Debug 关闭 LTO、全局 Unity Build 开启、ccache 可用时开启、PCH 关闭；PCH 关闭后 ccache 的二次 clean build 命中 262/264（99.24%），10.17s。C3-T4 按维护者决定暂缓，Vulkan、libusb、SDL 等默认构建项未裁剪。macOS GUI、Android Debug/Release 和单测均通过，验证见 `docs/verification/20260726-C3/build-speedup-notes.md`。下一阶段是 C4，但实施前必须先确认 spec 的 D5/D6。
   - 改动构建系统、`dependencies/foundation` 相关代码、debugbus 或 XR 前先读它们，并按 `AGENTS.md` 的分支主线策略先确认官方 `main` 是否有新提交。
 
 ## 常用命令速查

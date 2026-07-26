@@ -228,4 +228,129 @@ ctest --test-dir ../../build --output-on-failure
 - [x] foundation 与宿主使用同一开关，Android 中实际构建 Unity 对象。
 - [x] macOS GUI、Android `assembleDebug` 和 Android 单测通过。
 
-下一步：回到尚未实施的 C3-T2 ccache。
+## T2：ccache
+
+实现提交：`02bf06b3 build: use ccache as compiler launcher when available`。
+
+- 本机安装 ccache 4.13.6，默认 cache 上限 5 GiB。
+- `CEMU_USE_CCACHE` 默认 ON，优先使用 `NDK_CCACHE`，否则自动发现 ccache。
+- 配置阶段执行 `ccache --version`；不可运行的显式路径会警告并不用 launcher，
+  不会把坏 launcher 留到编译阶段。
+- 配置拒绝包含 `pch_defines` 的 sloppiness，没有用不安全模式强行缓存 PCH。
+- `CEMU_USE_CCACHE=OFF`、`NDK_CCACHE=/opt/homebrew/bin/ccache` 和不存在的
+  `NDK_CCACHE` 三条路径均做过实际 CMake 配置检查。
+
+### 保留 PCH 时的两轮 clean build
+
+| 指标 | 第一轮 | 第二轮 |
+| --- | ---: | ---: |
+| Ninja `FinishCommand` | 327 | 327 |
+| wall time | 47.89s | 42.40s |
+| user time | 440.79s | 413.92s |
+| sys time | 48.47s | 37.74s |
+| 可缓存编译 | 101/278（36.33%） | 101/278（36.33%） |
+| cache hit | 0/101 | 100/101（可缓存项 99.01%） |
+| 总编译命中 | 0/278 | 100/278（36.0%） |
+
+177 次不可缓存编译全部归因为 `Could not use precompiled header`。这证明 ccache
+本身工作正常，也证明 PCH 把命中覆盖率限制在约 36%。第二轮命中产物的 macOS
+GUI 保持运行 8 秒；Android `assembleDebug` 和 `testDebugUnitTest` 通过。
+
+## T2A：默认关闭 PCH
+
+实现提交：`39a06b25 build: disable precompiled headers by default`。
+
+实现选择：
+
+- `CEMU_USE_PRECOMPILED_HEADERS` 全局默认 OFF。
+- Cemu 自身仍把 `src/Common/precompiled.h` 当普通头强制包含，保持旧源码的
+  隐式 include 契约，但不生成 `.pch`。
+- `CMAKE_DISABLE_PRECOMPILE_HEADERS=ON` 使 glslang 等第三方 target 也不生成
+  PCH。
+- 显式 `-DCEMU_USE_PRECOMPILED_HEADERS=ON` 可恢复原路径；该模式独立全量
+  构建通过（327 条命令，`real 52.67s`、`user 438.72s`、`sys 48.06s`）。
+
+### no-PCH 独立冷缓存与二次 clean build
+
+使用新的 `/tmp/cemu-c3-t2-no-pch-cache-final-20260726`，第一轮前缓存为空：
+
+| 指标 | 第一轮（空缓存） | 第二轮 |
+| --- | ---: | ---: |
+| Ninja `FinishCommand` | 313 | 313 |
+| wall time | 69.88s | 10.17s |
+| user time | 561.15s | 9.19s |
+| sys time | 116.38s | 9.28s |
+| 可缓存编译 | 264/264（100%） | 264/264（100%） |
+| cache hit | 0/264 | 262/264（99.24%） |
+
+关闭 PCH 移除了 14 条 PCH 相关命令，但空缓存构建比 T3 的 PCH+Unity
+45.50s 慢；它不是无条件加速，而是用冷构建性能换取完整 ccache 覆盖率。
+以 `CCACHE_DISABLE=1` 在最终提交上复测的真冷构建为 313 条命令、
+`real 55.38s`、`user 505.84s`、`sys 65.26s`。wall time 会受系统负载和文件
+缓存影响，因此决策依据同时保留确定性的命令数与 cacheability。
+
+最终 no-PCH 产物的 macOS GUI 保持运行 8 秒。Android Debug 与 Release 的
+CMake cache 均为 PCH OFF、Unity ON、LTO OFF，Ninja 命令无 `cmake_pch` 且
+包含普通 `-include .../src/Common/precompiled.h`。
+
+## T4：默认构建图裁剪
+
+维护者决定本轮暂缓 C3-T4。不修改 Vulkan、OpenGL、libusb、SDL 等默认值，
+也不删除 foundation 的 core、network、profiler、XR 或未链接 target。以后
+恢复裁剪前仍需触发 D4，重新确认产品必须保留的子系统。
+
+## T5：阶段一最终验收
+
+最终提交状态执行：
+
+```sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build --target clean
+CCACHE_DISABLE=1 /usr/bin/time -p \
+  cmake --build build --target CemuBin -- -d stats
+./bin/Cemu_relwithdebinfo
+ctest --test-dir build --output-on-failure
+cd src/android
+./gradlew assembleDebug assembleRelease testDebugUnitTest
+```
+
+结果：
+
+- macOS：313 条完成命令，真冷 `real 55.38s`；GUI 运行 8 秒未退出。
+- `ctest` 返回成功，但当前构建图报告 `No tests were found`。
+- Android：debug、release 和 JVM 单测同轮
+  `BUILD SUCCESSFUL in 2m 55s`，102 个任务中 51 executed。
+- `app-debug.apk`：104,264,050 bytes，SHA-256
+  `be29895c70d7ecf4d2f532afccce04d6d171bd68a8a52584aafe1cddc26fa4e0`。
+- `app-release.apk`：58,340,721 bytes，SHA-256
+  `4527969309ef178d3eeca3763b36cd165e686cc41f535c3ba78985766bb44928`。
+- `main = upstream/main = origin/main = b8f2cf4b`，
+  `main` 是 `feature/malos/basic_version` 的祖先。
+- 递归子模块全部已初始化且与记录指针一致。
+
+### 剩余热点
+
+最终无缓存 `.ninja_log` 的聚合编译耗时（并行重叠，只用于排序）：
+
+| 组 | 输出数 | 聚合耗时 |
+| --- | ---: | ---: |
+| CemuCafe | 46 | 324.787s |
+| CemuWxGui | 56 | 285.486s |
+| 其他 Cemu target | 31 | 102.469s |
+| glslang | 42 | 73.654s |
+| 其他依赖与链接 | 107 | 32.381s |
+| zstd | 31 | 13.020s |
+
+最慢单项是 `CemuComponents` 的 `unity_1`（14.184s），随后是多个 CemuCafe
+Unity batch（约 7–13s）和 wx GUI 独立编译单元。后续若继续优化，应先调整
+Unity batch 划分或减少公共头重量；本轮不通过裁剪产品能力处理这些热点。
+
+## C3 最终结论
+
+- [x] RelWithDebInfo/Debug 默认关闭 LTO，Release 默认保留 LTO。
+- [x] Unity Build 全局默认 ON，排除清单与关闭回退已验证。
+- [x] ccache 可用时默认 ON，显式/自动/失败降级路径已验证。
+- [x] PCH 默认 OFF，ccache 二次 clean build 命中率 99.24%，PCH=ON 可回退。
+- [x] macOS 配置、冷构建、GUI smoke test 通过。
+- [x] Android Debug、Release 与 JVM 单测通过。
+- [x] C3-T4 按维护者决定暂缓，现有默认构建项保持不变。
