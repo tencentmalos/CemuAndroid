@@ -1,0 +1,7 @@
+[Definition]
+titleIds = 00050000101C9300,00050000101C9400,00050000101C9500
+name = BotW v208 Guest Profiler
+path = "The Legend of Zelda: Breath of the Wild/Guest Profiler"
+description = Guest-side frame/actor phase profiler bridge for BotW v208. Derived from BetterVR's MIT-licensed PPC profiling patch; requires Cemu's hook_ProfileSectionBegin/End HLE bridge.
+version = 7
+default = 1

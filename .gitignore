@@ -16,6 +16,12 @@
 .vscode
 .idea/
 
+# Local IDA work database sidecars; finalized databases live in a private submodule.
+games/reverse/**/*.id0
+games/reverse/**/*.id1
+games/reverse/**/*.nam
+games/reverse/**/*.til
+
 build/
 build_arm
 cmake-build-*/

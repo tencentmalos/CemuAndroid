@@ -1,5 +1,8 @@
 #include "Cafe/Diagnostics/CemuDiagnostics.h"
 #include "Cafe/Diagnostics/CemuWarmup.h"
+#include "Cafe/Diagnostics/GuestExecutableDump.h"
+#include "Cafe/Diagnostics/GuestDebugger.h"
+#include "Cafe/Diagnostics/GuestProfiler.h"
 
 #include "Cafe/CafeSystem.h"
 
@@ -49,6 +52,9 @@ namespace
 		static const bool initialized = [] {
 			spatial::debugbus::profiler::RegisterProfilerCommands(registry);
 			CemuWarmup::RegisterDebugCommands(registry);
+			GuestExecutableDump::RegisterDebugCommands(registry);
+			GuestDebugger::RegisterDebugCommands(registry);
+			GuestProfiler::RegisterDebugCommands(registry);
 			registry.Register("open_last_game", "Open the most recently launched game", [](const std::vector<std::string>& args) {
 				if (!args.empty())
 					return std::string{"usage: open_last_game\n"};
@@ -148,6 +154,7 @@ void CemuDiagnostics::Initialize()
 {
 	std::scoped_lock lock{s_lifecycleMutex};
 	InitializeProfiler();
+	GuestProfiler::Initialize();
 	auto& registry = GetDebugCommandRegistry();
 
 #if BOOST_PLAT_ANDROID
@@ -178,6 +185,7 @@ void CemuDiagnostics::Initialize()
 void CemuDiagnostics::Shutdown()
 {
 	CemuWarmup::Shutdown();
+	GuestProfiler::Shutdown();
 	std::scoped_lock lock{s_lifecycleMutex};
 #if BOOST_PLAT_ANDROID
 	spatial::debugbus::SetDumpsysRegistry(nullptr);

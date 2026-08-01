@@ -12,9 +12,18 @@ public:
 	~GDBServer();
 
 	bool Initialize();
+	void Stop();
+	bool IsInitialized() const
+	{
+		return m_initialized.load(std::memory_order_relaxed);
+	}
 	bool IsConnected()
 	{
 		return m_client_connected;
+	}
+	uint16 GetPort() const
+	{
+		return m_port;
 	}
 
 	void HandleEntryStop(uint32 entryAddress);
@@ -197,7 +206,10 @@ private:
 	static constexpr std::string_view RESPONSE_ERROR = "E01";
 
 	void ThreadFunc();
-	std::atomic_bool m_stopRequested;
+	bool ResetClientState();
+	std::atomic_bool m_stopRequested{false};
+	std::atomic_bool m_initialized{false};
+	std::atomic_bool m_guestPausedByClient{false};
 	void HandleCommand(const std::string& command_str);
 	void HandleQuery(std::unique_ptr<CommandContext>& context) const;
 	void HandleVCont(std::unique_ptr<CommandContext>& context);
@@ -225,7 +237,7 @@ private:
 	MPTR m_entry_point{};
 	std::unique_ptr<CommandContext> m_resumed_context;
 
-	std::atomic_bool m_client_connected;
+	std::atomic_bool m_client_connected{false};
 	SOCKET m_server_socket = INVALID_SOCKET;
 	sockaddr_in m_server_addr{};
 	SOCKET m_client_socket = INVALID_SOCKET;

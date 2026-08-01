@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cemu Guest 与 IDA 联合分析"
+  short_description: "将真机 Guest 地址与状态绑定到静态 IDA 数据库"
+  default_prompt: "使用 $cemu-guest-ida-correlation 校验身份并关联 Guest 运行地址、断点证据与 IDA 静态分析。"

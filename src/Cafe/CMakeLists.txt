@@ -6,6 +6,12 @@ add_library(CemuCafe
   CafeSystem.h
   Diagnostics/CemuDiagnostics.cpp
   Diagnostics/CemuDiagnostics.h
+  Diagnostics/GuestExecutableDump.cpp
+  Diagnostics/GuestExecutableDump.h
+  Diagnostics/GuestDebugger.cpp
+  Diagnostics/GuestDebugger.h
+  Diagnostics/GuestProfiler.cpp
+  Diagnostics/GuestProfiler.h
   Filesystem/fsc.cpp
   Filesystem/fscDeviceHostFS.cpp
   Filesystem/fscDeviceHostFS.h

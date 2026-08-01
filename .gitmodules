@@ -99,3 +99,7 @@
 	url = git@github.com:tencentmalos/botw.git
 	branch = master
 	shallow = true
+[submodule "games/reverse/botw/wiiu-v208/ida-database"]
+	path = games/reverse/botw/wiiu-v208/ida-database
+	url = git@github.com:tencentmalos/cemu-botw-v208-reverse.git
+	branch = main

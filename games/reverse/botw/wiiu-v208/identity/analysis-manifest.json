@@ -1,0 +1,62 @@
+{
+  "schema": "cemu.reverse-database.v1",
+  "game": "The Legend of Zelda: Breath of the Wild",
+  "platform": "Wii U",
+  "region": "JP",
+  "title_id": "00050000101C9300",
+  "title_version": 208,
+  "dlc_version": 80,
+  "module": "u-king",
+  "module_matches": "0x6267BFD0",
+  "address_model": "guest-effective-address",
+  "source_rpx": {
+    "committed": false,
+    "size_bytes": 23268032,
+    "sha256": "ba58da5b95ce929e005d058ceb08b9b2788d1ab2bbc8a6c189bbadca0bb34d30"
+  },
+  "ida_database": {
+    "path": "ida-database/botw-jp-v208-u-king-ba58da5b95ce.i64",
+    "size_bytes": 502423978,
+    "sha256": "eb760b807a92dc688b80a22a228ed5cb292ca0d9094e1472f9ffadb5b4c97b69",
+    "ida_version": "9.1",
+    "segments": 8,
+    "functions": 109352,
+    "strings": 55991
+  },
+  "loader": {
+    "repository": "https://github.com/decaf-emu/ida_rpl_loader",
+    "commit": "c70dfdde9a98a0bce842e1f28cc551c3021cd5fc",
+    "build_sdk": "HexRaysSA/ida-sdk v9.2",
+    "build_sdk_commit": "7acfc0f417a116775012f0f154deb43b62d5a43d"
+  },
+  "optional_decompressor": {
+    "repository": "https://github.com/0CBH0/wiiurpxtool",
+    "commit": "6ff41a43201dcfa126b4b00379db39e94de64037"
+  },
+  "symbol_source": {
+    "repository_path": "references/BotW-BetterVR",
+    "commit": "0e1053d58cdfbd592522dc892b1770418a1af009",
+    "file": "resources/BreathOfTheWild_BetterVR/patch_debug_PPC_Profiling.asm"
+  },
+  "annotations": {
+    "reference_functions": 20,
+    "hook_and_continuation_comments": 40,
+    "runtime_executed_hooks": 18,
+    "not_executed_in_scene": [34, 38]
+  },
+  "runtime_verification": {
+    "date": "2026-08-01",
+    "device": "AYANEO Pocket DS",
+    "android_variant": "relWithDebInfo",
+    "scene": "BotW initial shrine gameplay",
+    "warmup": {
+      "a_press_count": 6,
+      "initial_delay_ms": 35000,
+      "interval_ms": 10000,
+      "press_ms": 250,
+      "settle_ms": 60000,
+      "completed": true
+    },
+    "evidence": ["matched", "applied", "executed", "runtime"]
+  }
+}

@@ -185,6 +185,15 @@ CPU timeline 至少检查：
 - `vulkan.pipeline_cache.create`
 - `vulkan.shader.compile`、`vulkan.pipeline.compile`
 
+启用了 Guest profiler Mod 时，还要检查：
+
+- `guest_profiler_status` 的 `timeline_tag_begin_count - timeline_tag_end_count`
+  等于查询瞬间的 `active_spans`；
+- `invalid_section_count`、`unmatched_end_count`、`span_overflow_count` 全为 0；
+- Tracy 中出现 `Cemu Guest 0xXXXXXXXX` 虚拟线程；
+- `PPCSystemTaskPostCalc`、`PPCActorJob0_1` 等 Guest scope 能通过
+  `find_top_slices` 查到，而不只是 `cemu.guest.mod.*` counter。
+
 Vulkan GPU timeline 至少检查：
 
 - `vulkan.draw`
@@ -211,10 +220,12 @@ debugbus 是否报告 `profiler_connected=true`。OpenGL/Metal 当前只有共�
 采集，没有 Vulkan GPU timeline。
 
 不要在 Guest fiber 内用普通 RAII CPU zone 包住 quantum、JIT 或可调度等待：fiber 会
-迁移 Host 线程，live trace 会产生跨线程嵌套和异常巨大时长。Guest JIT/interpreter
-先使用每帧语义 counters；需要 wall time 时使用可符号化 hardware samples / Perfetto，
-或先在 Foundation 增加并验证 fiber-aware Tracy 生命周期。长期 command-ring wait 也
-只在等待完成后提交 counter，避免采集结束时留下开放 zone。
+迁移 Host 线程，live trace 会产生跨线程嵌套和异常巨大时长。Guest Mod 的显式 begin/end
+应使用 Foundation `ProfilerTagBegin/End`，按 Guest `OSThread` 写入外部虚拟 lane；普通
+JIT/interpreter 指标仍优先使用每帧语义 counters。长期 command-ring wait 也只在等待完成
+后提交 counter，避免采集结束时留下开放 zone。设计与真机证据见
+`docs/architecture/guest-profiler-tags.md` 和
+`docs/verification/guest-profiler-tags-android.md`。
 
 ## 报告要求
 

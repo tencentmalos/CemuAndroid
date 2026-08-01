@@ -1197,7 +1197,7 @@ void MainWindow::OnGDBStubToggle(wxCommandEvent& event)
 {
 	if (g_gdbstub)
 	{
-		g_gdbstub.release();
+		g_gdbstub.reset();
 		return;
 	}
 

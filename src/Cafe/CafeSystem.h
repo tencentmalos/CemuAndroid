@@ -71,6 +71,17 @@ namespace CafeSystem
 	uint32 GetRPXHashBase();
 	uint32 GetRPXHashUpdated();
 
+	struct ForegroundExecutableData
+	{
+		std::string virtualPath;
+		std::vector<uint8> bytes;
+		bool isBaseVersion{};
+	};
+
+	// Re-reads the already decrypted executable from Cemu's mounted title filesystem.
+	// The caller owns the returned bytes and must not persist them in the source tree.
+	std::optional<ForegroundExecutableData> ExtractForegroundExecutable(bool baseVersion);
+
 	void RequestRecreateCanvas();
 	void NotifyPPCProcessExit(sint32 status);
 

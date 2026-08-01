@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cemu Guest 真机调试"
+  short_description: "通过 Guest GDB 与 MCP 安全采集真机运行证据"
+  default_prompt: "使用 $cemu-guest-runtime-debug 在完成 warmup 的设备上安全执行 Guest 断点、寄存器与内存采集。"

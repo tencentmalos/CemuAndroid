@@ -233,27 +233,18 @@ GDBServer::GDBServer(uint16 port)
 
 GDBServer::~GDBServer()
 {
-	if (m_client_socket != INVALID_SOCKET)
-	{
-		// close socket from other thread to forcefully stop accept() call
-		closesocket(m_client_socket);
-		m_client_socket = INVALID_SOCKET;
-	}
-
-	if (m_server_socket != INVALID_SOCKET)
-	{
-		closesocket(m_server_socket);
-	}
+	Stop();
 #if BOOST_OS_WINDOWS
 	WSACleanup();
 #endif
-
-	m_stopRequested = false;
-	m_thread.join();
 }
 
 bool GDBServer::Initialize()
 {
+	if (m_initialized.load(std::memory_order_acquire))
+		return true;
+	m_stopRequested.store(false, std::memory_order_relaxed);
+	m_client_connected.store(false, std::memory_order_relaxed);
 	cemuLog_createLogFile(false);
 
 	if (m_server_socket = socket(PF_INET, SOCK_STREAM, 0); m_server_socket == SOCKET_ERROR)
@@ -295,13 +286,57 @@ bool GDBServer::Initialize()
 	}
 
 	m_thread = std::thread(std::bind(&GDBServer::ThreadFunc, this));
+	m_initialized.store(true, std::memory_order_release);
 
 	return true;
+}
+
+void GDBServer::Stop()
+{
+	if (!m_initialized.exchange(false, std::memory_order_acq_rel) && !m_thread.joinable())
+		return;
+
+	m_stopRequested.store(true, std::memory_order_release);
+	if (m_client_socket != INVALID_SOCKET)
+	{
+#if BOOST_OS_WINDOWS
+		shutdown(m_client_socket, SD_BOTH);
+#else
+		shutdown(m_client_socket, SHUT_RDWR);
+#endif
+		closesocket(m_client_socket);
+		m_client_socket = INVALID_SOCKET;
+	}
+	if (m_server_socket != INVALID_SOCKET)
+	{
+#if BOOST_OS_WINDOWS
+		shutdown(m_server_socket, SD_BOTH);
+#else
+		shutdown(m_server_socket, SHUT_RDWR);
+#endif
+		closesocket(m_server_socket);
+		m_server_socket = INVALID_SOCKET;
+	}
+	if (m_thread.joinable())
+		m_thread.join();
+	m_client_connected.store(false, std::memory_order_relaxed);
 }
 
 void GDBServer::ThreadFunc()
 {
 	SetThreadName("GDBServer");
+	auto disconnectClient = [this]() {
+		const bool resumeGuest = ResetClientState();
+		if (m_client_socket != INVALID_SOCKET)
+		{
+			closesocket(m_client_socket);
+			m_client_socket = INVALID_SOCKET;
+		}
+		m_resumed_context.reset();
+		if (resumeGuest)
+			selectAndResumeThread(-1);
+		m_client_connected.store(false, std::memory_order_release);
+	};
 
 	while (!m_stopRequested)
 	{
@@ -314,19 +349,25 @@ void GDBServer::ThreadFunc()
 		}
 		else
 		{
-			auto receiveMessage = [&](char* buffer, const int32_t length) -> bool {
-				if (recv(m_client_socket, buffer, length, 0) != SOCKET_ERROR)
-					return false;
+			auto receiveExact = [&](char* buffer, size_t length) -> bool {
+				size_t receivedBytes = 0;
+				while (receivedBytes < length)
+				{
+					const int received = recv(m_client_socket, buffer + receivedBytes,
+						static_cast<int>(length - receivedBytes), 0);
+					if (received <= 0)
+						return false;
+					receivedBytes += static_cast<size_t>(received);
+				}
 				return true;
 			};
 
-			auto readChar = [&]() -> char {
-				char ret = 0;
-				recv(m_client_socket, &ret, 1, 0);
-				return ret;
-			};
-
-			char packetPrefix = readChar();
+			char packetPrefix = 0;
+			if (!receiveExact(&packetPrefix, 1))
+			{
+				disconnectClient();
+				continue;
+			}
 
 			switch (packetPrefix)
 			{
@@ -338,6 +379,7 @@ void GDBServer::ThreadFunc()
 				cemuLog_logDebug(LogType::Force, "[GDBStub] Received interrupt (pressed CTRL+C?) from client!");
 				selectAndBreakThread(-1, [](OSThread_t* thread) {
 				});
+				m_guestPausedByClient.store(true, std::memory_order_release);
 				auto thread_status = fmt::format("T05thread:{:08X};", GET_THREAD_ID(coreinit::OSGetDefaultThread(1)));
 				if (this->m_resumed_context)
 				{
@@ -355,21 +397,44 @@ void GDBServer::ThreadFunc()
 			{
 				std::string message;
 				uint8 checkedSum = 0;
+				bool completePacket = false;
 				for (uint32_t i = 1;; i++)
 				{
-					char c = readChar();
-					if (c == '#')
+					char c = 0;
+					if (!receiveExact(&c, 1))
 						break;
+					if (c == '#')
+					{
+						completePacket = true;
+						break;
+					}
 					checkedSum += static_cast<uint8>(c);
 					message.push_back(c);
 
 					if (i >= s_maxPacketSize)
+					{
 						cemuLog_logDebug(LogType::Force, "[GDBStub] Received too big of a buffer: {}", message);
+						break;
+					}
+				}
+				if (!completePacket)
+				{
+					disconnectClient();
+					break;
 				}
 				char checkSumStr[2];
-				receiveMessage(checkSumStr, 2);
-				uint32_t checkSum = std::stoi(std::string(checkSumStr, sizeof(checkSumStr)), nullptr, 16);
-				assert((checkedSum & 0xFF) == checkSum);
+				if (!receiveExact(checkSumStr, sizeof(checkSumStr)))
+				{
+					disconnectClient();
+					break;
+				}
+				uint32 checkSum = 0;
+				const auto parseResult = std::from_chars(std::begin(checkSumStr), std::end(checkSumStr), checkSum, 16);
+				if (parseResult.ec != std::errc{} || parseResult.ptr != std::end(checkSumStr) || checkedSum != checkSum)
+				{
+					send(m_client_socket, RESPONSE_NACK.data(), static_cast<int>(RESPONSE_NACK.size()), 0);
+					break;
+				}
 
 				HandleCommand(message);
 				break;
@@ -381,8 +446,23 @@ void GDBServer::ThreadFunc()
 		}
 	}
 
-	if (m_client_socket != INVALID_SOCKET)
-		closesocket(m_client_socket);
+	disconnectClient();
+}
+
+bool GDBServer::ResetClientState()
+{
+	bool resumeGuest = m_guestPausedByClient.exchange(false, std::memory_order_acq_rel);
+	const bool hasOwnedBreakpoints = !m_patchedInstructions.empty() || m_watch_point != nullptr;
+	if (hasOwnedBreakpoints && !resumeGuest && activeThreadCount > 0)
+	{
+		selectAndBreakThread(-1, [](OSThread_t* thread) {
+		});
+		resumeGuest = true;
+	}
+
+	m_patchedInstructions.clear();
+	m_watch_point.reset();
+	return resumeGuest && activeThreadCount > 0;
 }
 
 void GDBServer::HandleCommand(const std::string& command_str)
@@ -597,6 +677,7 @@ void GDBServer::HandleVCont(std::unique_ptr<CommandContext>& context)
 		return context->QueueResponse(RESPONSE_EMPTY);
 
 	m_resumed_context = std::move(context);
+	m_guestPausedByClient.store(false, std::memory_order_release);
 
 	bool resumedNoThreads = true;
 	for (const auto operation : TokenizeView(m_resumed_context->GetArgs()[1], ';'))
@@ -637,6 +718,7 @@ void GDBServer::HandleVCont(std::unique_ptr<CommandContext>& context)
 void GDBServer::CMDContinue(std::unique_ptr<CommandContext>& context)
 {
 	m_resumed_context = std::move(context);
+	m_guestPausedByClient.store(false, std::memory_order_release);
 	selectAndResumeThread(m_activeThreadContinueSelector);
 }
 
@@ -951,7 +1033,9 @@ void GDBServer::HandleTrapInstruction(PPCInterpreter_t* hCPU)
 			ThreadPool::FireAndForget(&waitForBrokenThreads, std::move(m_resumed_context), pauseReason);
 		}
 
+		m_guestPausedByClient.store(true, std::memory_order_release);
 		breakThreads(GET_THREAD_ID(coreinit::OSGetCurrentThread()));
+		m_guestPausedByClient.store(false, std::memory_order_release);
 		cemuLog_logDebug(LogType::Force, "[GDBStub] Resumed from a breakpoint!");
 	}
 }

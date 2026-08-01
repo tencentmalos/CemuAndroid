@@ -13,11 +13,15 @@
 - Android/桌面 CPU + Vulkan GPU Tracy 采集、FPS 概要面板和 debugbus 验证：`skills/cemu-android-performance/SKILL.md`
 - Wii U 标题版本检查、汉化资源烘焙和 WUA 打包：`skills/cemu-wua-packaging/SKILL.md`
 - Guest 游戏逆向、graphic-pack `patch_*.asm`、codecave/HLE hook 制作与真机 A/B 验证：`skills/cemu-guest-game-patching/SKILL.md`
+- 从运行中的 Cemu 提取 RPX、校验身份、加载/转换并建立 IDA 数据库：`skills/cemu-guest-executable-ida/SKILL.md`
+- 通过 PowerPC GDB Remote 与 `guest_debug.*` MCP 做 Guest 真机断点/寄存器/内存采集：`skills/cemu-guest-runtime-debug/SKILL.md`
+- 用 RPX/IDB/manifest 哈希和地址 proof 联合 Guest runtime 与 IDA 静态分析：`skills/cemu-guest-ida-correlation/SKILL.md`
 
 BotW/BetterVR 工作还应直接使用仓库内固定的 reference 子模块和文档入口：
 
 - BetterVR graphic-pack、PPC patch、HLE hook、输入和 Vulkan/OpenXR 实现：`references/BotW-BetterVR`
 - BotW C/C++ 逆向符号、类型和引擎语义：`references/botw`（Switch v1.5.0，不得直接套用 Wii U v208 地址、ABI 或偏移）
+- BotW Wii U JP v208 identity、运行时符号证据与 private IDA 子模块：`games/reverse/botw/wiiu-v208`（`.i64` 在 `ida-database` 子模块内由 Git LFS 管理；只适用于绑定的 RPX SHA/module checksum）
 - BetterVR 文档快照、Android 迁移分析与真机证据索引：`docs/bettervr/README.md`
 
 新增本项目专用工作流时，仍按 `AGENTS.md` 的约定放入 `skills/`，并在上面的列表中补一条入口。

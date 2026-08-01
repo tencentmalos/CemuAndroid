@@ -8,6 +8,7 @@
 
 - `references/BotW-BetterVR`：BotW v208 的 VR graphic-pack、PPC patch、Cemu HLE hook、输入与 Vulkan/OpenXR 实现参考。
 - `references/botw`：BotW C/C++ 逆向结果，供符号、类型和引擎语义参考；其目标是 **Switch v1.5.0**，不能直接套用到 Wii U v208 的地址、ABI、结构偏移或指令。
+- `games/reverse/botw/wiiu-v208`：绑定 JP v208 RPX SHA/module checksum 的 Wii U identity manifest、运行时符号证据与逆向入口；最终 `.i64` 位于 private 子模块 `ida-database`，子模块内由 Git LFS 管理。原始 RPX 不提交，其他版本不得复用其中硬编码地址。
 - `docs/bettervr/README.md`：上述仓库、BetterVR 文档快照、Android 迁移分析和真机验证证据的统一入口。
 
 `references/` 默认只读。需要吸收实现时，在 Cemu 主仓中重写并验证；如确需修改参考仓库，应在对应子仓单独提交，不得把 detached HEAD 中的未提交改动留作依赖。BetterVR 应按 Guest patch、Host/HLE、renderer/XR 三层分别审计，不能用“补丁已应用”替代运行时功能验证。
@@ -43,7 +44,7 @@ ARM 目标可使用仓库脚本：
 BUILD_TYPE=release ./build_arm.sh
 ```
 
-更完整的构建、验证和故障排查流程放在 repo-local skills：`skills/cemu-android-build-validation/SKILL.md` 与 `skills/cemu-android-analysis/SKILL.md`。CPU/GPU Tracy 采集、FPS 概要面板和跨平台 debugbus 验证使用 `skills/cemu-android-performance/SKILL.md`。Wii U 标题版本检查、汉化资源烘焙和 WUA 打包使用 `skills/cemu-wua-packaging/SKILL.md`。Guest 游戏逆向、graphic-pack `patch_*.asm`、codecave/HLE hook 制作与真机 A/B 验证使用 `skills/cemu-guest-game-patching/SKILL.md`。
+更完整的构建、验证和故障排查流程放在 repo-local skills：`skills/cemu-android-build-validation/SKILL.md` 与 `skills/cemu-android-analysis/SKILL.md`。CPU/GPU Tracy 采集、FPS 概要面板和跨平台 debugbus 验证使用 `skills/cemu-android-performance/SKILL.md`。Wii U 标题版本检查、汉化资源烘焙和 WUA 打包使用 `skills/cemu-wua-packaging/SKILL.md`。Guest 游戏逆向与 Mod 使用 `skills/cemu-guest-game-patching/SKILL.md`；运行中 RPX 提取/IDA 建库、Guest 真机断点、IDA 静态/动态联合校准分别使用 `skills/cemu-guest-executable-ida/SKILL.md`、`skills/cemu-guest-runtime-debug/SKILL.md`、`skills/cemu-guest-ida-correlation/SKILL.md`。
 
 ## 编码风格与命名约定
 
@@ -66,5 +67,7 @@ Android 测试位于 `src/android/app/src/test` 和 `src/android/app/src/android
 foundation 是 Cemu 的跨平台硬依赖，不得重新增加启用宏、CMake 关闭选项或无 Foundation fallback。foundation 的 core、network、profiler、ImGui、XR 等组件属于后续计划能力，即使当前未被产品 target 链接，也不得仅以“暂时未使用”为由删除。Cemu 的 ImGui core 只由 `spatial::foundation_imgui` 提供，不得恢复 `dependencies/imgui`；renderer status 与未来 XR 必须复用 foundation 的 layer、共享 font atlas 和 backend 生命周期，不得再维护平台专用的第二套 UI 栈。依赖收敛优先复用 Azahar 已验证或 `tencentmalos` 已镜像的子模块，并集中放在 CMake 依赖适配层；不得重新引入 vcpkg，也不得通过裁剪功能来减少依赖数量。
 
 本分支子模块 URL 应指向 `git@github.com:tencentmalos/...`。改动 `.gitmodules` 后必须运行 `git submodule sync --recursive`，并用 `git submodule status --recursive` 检查指针。涉及签名配置时使用环境变量 `ANDROID_STORE_FILE`、`ANDROID_KEY_STORE_PASSWORD`、`ANDROID_KEY_ALIAS`，不得提交密钥或本地配置。
+
+当前 AYANEO Pocket DS 开发机提供厂商固件内置的部分 Root 通道：先用 `adb shell xsu id` 复核返回 `uid=0(root)` 与 `u:r:xsud:s0`，再以 `adb shell xsu <单条命令>` 执行确有必要的文件部署或系统诊断。它不是 Magisk，也不提供普通应用的 `su` 授权、Magisk Module 或 Zygisk；不得据此假设设备具备完整应用级 Root。复杂 root 操作必须先把逐行审核过的脚本放入 `/data/local/tmp`，再显式通过 `xsu` 执行，不得把网络下载内容直接管道到 root shell。不要为调试用途刷写或锁定 `boot`、`init_boot`、`vbmeta`、Bootloader，也不要执行宽范围删除；操作前确认设备序列号和精确目标，完成后清理临时文件并报告改动。完整评估目前位于 `~/workspace/ayaneo_device/docs/AYANEO_Pocket_DS_Root_Assessment.md`。
 
 新增或沉淀本项目专用工作流时，优先放入 `skills/` 下的 repo-local skill，并在本文件中加入入口说明。文档、诊断和验证输出应足够具体，能让下一位维护者复现命令和判断依据。

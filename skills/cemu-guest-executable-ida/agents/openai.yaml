@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cemu Guest 可执行文件与 IDA"
+  short_description: "导出并校验 Guest RPX，建立可复用 IDA 数据库"
+  default_prompt: "使用 $cemu-guest-executable-ida 从运行中的 Cemu 导出 Guest 主程序并建立经过身份校验的 IDA 数据库。"

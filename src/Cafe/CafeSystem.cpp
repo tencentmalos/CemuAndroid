@@ -1236,6 +1236,25 @@ namespace CafeSystem
 		return currentUpdatedApplicationHash;
 	}
 
+	std::optional<ForegroundExecutableData> ExtractForegroundExecutable(bool baseVersion)
+	{
+		if (_pathToExecutable.empty())
+			return std::nullopt;
+
+		const std::string& virtualPath = baseVersion && !_pathToBaseExecutable.empty()
+			? _pathToBaseExecutable
+			: _pathToExecutable;
+		auto bytes = fsc_extractFile(virtualPath.c_str(), baseVersion ? FSC_PRIORITY_BASE : FSC_PRIORITY_MAX);
+		if (!bytes)
+			return std::nullopt;
+
+		return ForegroundExecutableData{
+			.virtualPath = virtualPath,
+			.bytes = std::move(*bytes),
+			.isBaseVersion = baseVersion,
+		};
+	}
+
 	void RequestRecreateCanvas()
 	{
 		s_implementation->CafeRecreateCanvas();
