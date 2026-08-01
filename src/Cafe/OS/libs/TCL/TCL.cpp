@@ -3,6 +3,11 @@
 
 #include "HW/Latte/Core/LattePM4.h"
 
+#include <atomic>
+#include <chrono>
+
+#include "spatial/profiler/Profiler.h"
+
 namespace TCL
 {
 	SysAllocator<coreinit::OSEvent> s_updateRetirementEvent;
@@ -83,16 +88,26 @@ namespace TCL
 	void TCLWaitForRBSpace(uint32be numU32s)
 	{
 		uint32 writeIndex = tclRingBufferA_writeIndex.load(std::memory_order::relaxed);
-		while (true)
+		auto hasSpace = [writeIndex, numU32s](uint32 readIndex)
 		{
-			uint32 readIndex = tclRingBufferA_readIndex.load(std::memory_order::acquire);
 			uint32 distance = (readIndex + TCL_RING_BUFFER_SIZE - writeIndex) & (TCL_RING_BUFFER_SIZE - 1);
 			if (writeIndex == readIndex) // buffer completely empty
 				distance = TCL_RING_BUFFER_SIZE;
-			if (distance >= numU32s + 1) // assume distance minus one, because we are never allowed to completely wrap around
-				break;
+			return distance >= numU32s + 1;
+		};
+
+		if (hasSpace(tclRingBufferA_readIndex.load(std::memory_order_acquire)))
+			return;
+		const auto waitStart = std::chrono::steady_clock::now();
+		while (!hasSpace(tclRingBufferA_readIndex.load(std::memory_order_acquire)))
+		{
 			_mm_pause();
 		}
+		static std::atomic<sint64> waitCount{};
+		const auto waitUs = std::chrono::duration_cast<std::chrono::microseconds>(
+			std::chrono::steady_clock::now() - waitStart).count();
+		SPATIAL_PROFILER_COUNTER_SET("cemu.tcl_ring_wait_count", waitCount.fetch_add(1, std::memory_order_relaxed) + 1, "Cemu Guest Wait", "waits");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.tcl_ring_last_wait_us", waitUs, "Cemu Guest Wait", "us");
 	}
 
 	// this function assumes that TCLWaitForRBSpace was called and that there is enough space

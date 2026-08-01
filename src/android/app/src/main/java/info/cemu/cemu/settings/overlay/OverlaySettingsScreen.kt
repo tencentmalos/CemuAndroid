@@ -74,8 +74,14 @@ private fun OverlaySettings() {
         labelFormatter = { "${it}%" }
     )
     Toggle(
+        label = tr("Performance summary"),
+        description = tr("Shows FPS, frame time, CPU, RAM, and draw calls in a compact panel"),
+        initialCheckedState = NativeSettings::isOverlaySummaryEnabled,
+        onCheckedChanged = NativeSettings::setOverlaySummaryEnabled,
+    )
+    Toggle(
         label = tr("FPS"),
-        description = tr("The number of frames per second. Average over last 5 seconds"),
+        description = tr("The number of frames per second, smoothed over recent frames"),
         initialCheckedState = NativeSettings::isOverlayFPSEnabled,
         onCheckedChanged = NativeSettings::setOverlayFPSEnabled,
     )

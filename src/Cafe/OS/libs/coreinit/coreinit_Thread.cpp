@@ -15,6 +15,8 @@
 
 #include "util/helpers/helpers.h"
 
+#include "spatial/profiler/Profiler.h"
+
 #ifdef __arm64__
 #if defined(__clang__)
 #include <arm_acle.h>
@@ -67,6 +69,9 @@ namespace coreinit
 	std::atomic<bool> sSchedulerActive;
 	std::vector<std::thread> sSchedulerThreads;
 	std::mutex sSchedulerStateMtx;
+	std::atomic<uint64> s_guestProfilerQuanta{};
+	std::atomic<uint64> s_guestProfilerJitEntries{};
+	std::atomic<uint64> s_guestProfilerInterpreterInstructions{};
 
 	SysAllocator<OSThreadQueue> g_activeThreadQueue; // list of all threads (can include non-detached inactive threads)
 
@@ -77,6 +82,15 @@ namespace coreinit
 
 	thread_local uint32 t_assignedCoreIndex;
 	thread_local Fiber* t_schedulerFiber;
+
+	GuestExecutionProfilerCounters ConsumeGuestExecutionProfilerCounters()
+	{
+		return {
+			s_guestProfilerQuanta.exchange(0, std::memory_order_relaxed),
+			s_guestProfilerJitEntries.exchange(0, std::memory_order_relaxed),
+			s_guestProfilerInterpreterInstructions.exchange(0, std::memory_order_relaxed),
+		};
+	}
 
 	struct OSHostThread
 	{
@@ -1394,11 +1408,17 @@ namespace coreinit
 		{
 			if (hCPU->remainingCycles > 0)
 			{
-				// try to enter recompiler immediately
-				PPCRecompiler_attemptEnterWithoutRecompile(hCPU, hCPU->instructionPointer);
+				s_guestProfilerQuanta.fetch_add(1, std::memory_order_relaxed);
+				if (PPCRecompiler_attemptEnterWithoutRecompile(hCPU, hCPU->instructionPointer))
+					s_guestProfilerJitEntries.fetch_add(1, std::memory_order_relaxed);
 				// keep executing as long as there are cycles left
+				uint64 interpreterInstructions = 0;
 				while ((--hCPU->remainingCycles) >= 0)
+				{
 					PPCInterpreterSlim_executeInstruction(hCPU);
+					interpreterInstructions++;
+				}
+				s_guestProfilerInterpreterInstructions.fetch_add(interpreterInstructions, std::memory_order_relaxed);
 			}
 
 			// reset reservation
@@ -1428,7 +1448,10 @@ namespace coreinit
 
 	void OSSchedulerCoreEmulationThread(void* _assignedCoreIndex)
 	{
-		SetThreadName(fmt::format("OSSched[core={}]", (uintptr_t)_assignedCoreIndex).c_str());
+		const std::string threadName = fmt::format("PPC Core {}", (uintptr_t)_assignedCoreIndex);
+		SetThreadName(threadName.c_str());
+		spatial::profiler::ProfilerSetCurrentThreadName(threadName.c_str());
+		spatial::profiler::ProfilerNotifyThisThreadName();
 		t_assignedCoreIndex = (sint32)(uintptr_t)_assignedCoreIndex;
 
 		enableFlushDenormalsToZero();

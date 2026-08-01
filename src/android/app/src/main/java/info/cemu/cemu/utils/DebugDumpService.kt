@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import info.cemu.cemu.common.gamelaunch.LastGameStore
 import info.cemu.cemu.nativeinterface.NativeDebugDump
 import java.io.FileDescriptor
 import java.io.PrintWriter
@@ -16,6 +17,32 @@ class DebugDumpService : Service() {
         postToTarget = targetHandler::post,
         isTargetThread = { Looper.myLooper() == targetHandler.looper },
     )
+    private lateinit var openLastGameCommand: OpenLastGameCommand
+
+    override fun onCreate() {
+        super.onCreate()
+        openLastGameCommand = OpenLastGameCommand(
+            getLastGamePath = { LastGameStore.get(this) },
+            isTitleRunning = {
+                NativeDebugDump.getDebugDump("status", emptyArray())
+                    .lineSequence()
+                    .any { it == "title_running=true" }
+            },
+            launchGame = { path ->
+                startActivity(
+                    Intent().apply {
+                        setClassName(
+                            this@DebugDumpService,
+                            "${this@DebugDumpService.packageName}.emulation.EmulationActivity",
+                        )
+                        action = Intent.ACTION_VIEW
+                        putExtra("${this@DebugDumpService.packageName}.LaunchPath", path)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                )
+            },
+        )
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -26,7 +53,11 @@ class DebugDumpService : Service() {
         val request = dumpArgs.firstOrNull() ?: "help"
         writer.print(
             requestExecutor.execute {
-                NativeDebugDump.getDebugDump(request, dumpArgs.drop(1).toTypedArray())
+                if (request == "open_last_game") {
+                    openLastGameCommand.execute(dumpArgs.drop(1))
+                } else {
+                    NativeDebugDump.getDebugDump(request, dumpArgs.drop(1).toTypedArray())
+                }
             }
         )
     }

@@ -182,7 +182,11 @@ bool OpenGLRenderer::ImguiBegin(bool mainWindow)
 void OpenGLRenderer::ImguiEnd()
 {
 	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	ImDrawData* mainDrawData = ImGui::GetDrawData();
+	ImDrawData* statusDrawData = ImguiRenderStatusLayer();
+	ImGui_ImplOpenGL3_RenderDrawData(mainDrawData);
+	if (statusDrawData)
+		ImGui_ImplOpenGL3_RenderDrawData(statusDrawData);
 
 	if (m_isPadViewContext)
 	{

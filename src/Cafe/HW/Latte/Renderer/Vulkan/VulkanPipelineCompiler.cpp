@@ -10,6 +10,7 @@
 #include "util/helpers/Serializer.h"
 #include "Cafe/HW/Latte/Common/RegisterSerializer.h"
 #include "HW/Latte/Renderer/RendererCore.h"
+#include "spatial/profiler/Profiler.h"
 
 RendererShaderVk* rectsEmulationGS_generate(LatteDecompilerShader* vertexShader, const LatteContextRegister& latteRegister)
 {
@@ -1080,6 +1081,8 @@ static ConcurrentQueue<PipelineCompiler*> s_pipelineCompileRequests;
 static void compilePipeline_thread(sint32 threadIndex)
 {
 	SetThreadName("compilePl");
+	spatial::profiler::ProfilerSetCurrentThreadName("compilePl");
+	spatial::profiler::ProfilerNotifyThisThreadName();
 #ifdef _WIN32
 	// to avoid starving the main cpu and render threads the pipeline compile threads run at lower priority
 	// except for one thread which we always run at normal priority to prevent the opposite scenario where all compile threads are starved
@@ -1091,7 +1094,10 @@ static void compilePipeline_thread(sint32 threadIndex)
 		PipelineCompiler* request = s_pipelineCompileRequests.pop();
 		if (!request)
 			continue;
-		request->Compile(true, false, true);
+		{
+			SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.pipeline.compile");
+			request->Compile(true, false, true);
+		}
 		delete request;
 	}
 }

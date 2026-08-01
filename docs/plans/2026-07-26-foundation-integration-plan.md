@@ -6,7 +6,7 @@
 - 前身执行记录：azahar 仓 `docs/manual/self/p4-pilot-notes.md`
 - 接入指南：`dependencies/foundation/docs/guides/integrating-emulator-host.md`
 - 编译加速手册：`dependencies/foundation/docs/guides/build-acceleration.md`
-- 外部参考实现：`~/workspace/BotW-BetterVR`（塞尔达 BotW 的 PC-VR mod，见 §4）
+- Reference 子模块：`references/BotW-BetterVR`（塞尔达 BotW 的 PC-VR mod，见 §4）
 - 实施 spec：`docs/plans/2026-07-26-foundation-integration-spec.md`
 - 本文覆盖范围：cemu_android 仓内的接入与调整。foundation 侧改动仍在 foundation 仓单独提交。
 
@@ -55,15 +55,18 @@
 - Android 当前只链接并构建 debugbus/dumpsys；foundation core、network、
   profiler、XR 均为后续计划能力，完整保留，但在出现真实消费者前不进入默认
   构建图。
-- C2 初始提交没有向 vcpkg 添加 Crypto++。后续依赖收敛按维护者决定复用
-  Azahar 已验证的 `cryptopp` / `cryptopp-cmake` 子模块，并与 fmt、glslang、
-  zstd、libusb 一起集中在 Cemu 的单一依赖适配层；RapidJSON 直接复用
-  foundation target。
+- C2 初始提交没有为 Crypto++ 增加新的包管理路径。后续依赖收敛按维护者决定
+  复用 Azahar 已验证或 `tencentmalos` 已镜像的子模块，并集中在 Cemu 的单一
+  依赖适配层；RapidJSON 直接复用 foundation target。
 - API 版本与子模块缺失负向护栏均已实际验证；macOS RelWithDebInfo、
   Android Debug/Release 和单测结果见 `docs/verification/20260726-C2/`。
-- `vcpkg.json` 的直接依赖项由 33 降到 27。Boost、SDL3、curl/OpenSSL 及
-  GUI/平台依赖暂留 vcpkg，原因与版本差异见
-  `docs/verification/20260726-C2/dependency-convergence.md`。
+- 2026-08-01 完成第二轮收敛：Boost 使用 `tencentmalos/ext-boost` 的
+  `cemu-1.90` 分支，SDL3、wxWidgets、curl/LibreSSL、libzip、zlib-ng 等也改为
+  钉住的 `tencentmalos` 子模块；旧包管理子模块、manifest、overlay 与 CI
+  cache action 已删除。macOS 与 Android RelWithDebInfo 均已复验通过。
+- Cemu 自带 `dependencies/imgui` 已删除，ImGui core 统一由
+  `spatial::foundation_imgui` 提供。现有状态层在 Vulkan 真机可见，Metal、OpenGL、
+  Vulkan 构建路径均通过；未来 XR 直接复用相同的 foundation layer 生命周期。
 
 ### C3 已完成约定范围
 
@@ -147,14 +150,14 @@
 | --- | --- | --- | --- |
 | C1（已完成） | 同步官方 Cemu 上游，并把完整 main 历史 merge 到 `basic_version`，转为每阶段前置 | 无 | 中–高 |
 | C2（已完成） | foundation 合入正规化：根 CMake 按需接入、去伪造 target、加 API 版本护栏（S3、S6） | C1 | 中 |
-| C2-F（已完成） | 依赖收敛：复用 Azahar / `tencentmalos` 子模块，减少 vcpkg 交叉构建面 | C2 | 中 |
+| C2-F（已完成） | 依赖收敛：复用 Azahar / `tencentmalos` 子模块，移除旧包管理路径 | C2 | 中 |
 | C3（已完成约定范围） | 编译加速：dev 关 LTO、ccache、unity build、默认关 PCH；构建图裁剪暂缓 | C2 | 低–中 |
 
 三者顺序不可换：
 
 - **C1 首轮必须最先且现已完成** —— 当时待同步的 31 个提交里含 `f8fb588b build: macOS CMake fixes`、`0fc74035 ENABLE_OPENGL/ENABLE_VULKAN`、`1c2b7d78 ENABLE_LIBUSB`、`8e3e961b SDL optional`。后三者是 C3 裁剪构建图的**现成工具**。
 - **C2 在 C3 之前** —— 先消除伪造 target，建立真实、可测的依赖关系，再优化才不会对错误的构建图调参。Azahar 对照和实测后采用 `EXCLUDE_FROM_ALL`：根 CMake 负责注册，只有宿主明确链接的组件进入构建。
-- **C2-F 收敛依赖但不裁功能** —— foundation 的后续组件全部保留；已有精确镜像和可验证版本的公共库先转为集中管理的子模块，版本或镜像尚不匹配的依赖继续留在 vcpkg，避免一次性替换导致平台漂移。
+- **C2-F 收敛依赖但不裁功能** —— foundation 的后续组件全部保留；公共库统一转为集中管理、精确钉住的 `tencentmalos` 子模块。Boost 采用非同名镜像 `ext-boost`，wxWidgets 的缺失生成文件和 CMake 修复提交在其子仓，不在 Cemu 侧复制源码。
 - **C3 收尾** —— C2 已把当前没有消费者的 foundation 组件排除出默认构建，C3 聚焦 Cemu 自身的 LTO、ccache、Unity Build 和 PCH 协同；平台子系统裁剪按维护者决定暂缓。每一刀都以最新验证记录为基线。
 
 ### 阶段二及以后
@@ -162,7 +165,7 @@
 | 阶段 | 内容 | 前置 | 风险 |
 | --- | --- | --- | --- |
 | C4（已完成实现） | Android debugbus 单进程加固（S1、S2、S4、S5、S7）；Release 正式游戏运行态待设备有游戏后补验 | 阶段一 | 低 |
-| C5 | 命令面扩展：screenshot 实装、profiler、calibration | C4 | 低 |
+| C5（除 screenshot/calibration 外完成） | profiler、共享 CPU/Vulkan GPU Tracy、foundation FPS 状态层和桌面 TCP 已实现；Android 实采与面板可见性已验证，screenshot 未实现，calibration 继续推迟 | C4 | 低 |
 | C6 | XR 前置：loader 选型 + 构建 + Gradle manifest + 帧路径选型，纯色纹理跑通 session | C4 | 高 |
 | C7 | XR 输入 adapter + 游戏画面上屏（**平面画面，非立体 VR**，范围界定见 §4） | C6 | 高 |
 
@@ -172,7 +175,9 @@
 
 **本节为 2026-07-26 补充。此前的计划（含 azahar 侧原始 P4 计划）从未引用该项目。**
 
-位置：`~/workspace/BotW-BetterVR`（`git@github.com:Crementif/BotW-BetterVR.git`，v0.9.17）。
+位置：`references/BotW-BetterVR`（`git@github.com:tencentmalos/BotW-BetterVR.git`，
+GitHub fork 自 `Crementif/BotW-BetterVR`）。中文分析快照见 `docs/bettervr/README.md`；其中
+原始分析基线为 `27262df`（v0.9.17），与 reference 当前固定提交需分开看待。
 
 ### 它是什么
 
@@ -191,7 +196,9 @@
 1. **`src/rendering/`（最有价值）** — `vulkan.cpp` / `swapchain.cpp` / `texture.cpp` / `openxr.cpp` 解决的是 C6 帧路径选型的同一个问题：Cemu 的 Vulkan 输出 → OpenXR swapchain。纹理格式与布局转换、swapchain 与 Cemu 帧节奏的同步、时序处理可直接对照。
 2. **`src/utils/controller_bindings.h` + `src/hooking/controls.cpp`** — VR 手柄到 Wii U GamePad 的映射实践结论，供 C7 参考。
 3. **`src/hooking/rumble.cpp`** — 震动反馈映射。
-4. **`src/rendering/vulkan_imgui.cpp` + `src/hooking/imgui_menus.cpp`** — VR 内 ImGui overlay。
+4. **`src/rendering/vulkan_imgui.cpp` + `src/hooking/imgui_menus.cpp`** — 只参考 VR
+   内 overlay 的信息组织与交互，不复制其独立 ImGui backend；Cemu/XR 统一使用
+   foundation layer。
 5. **README 的 Known Issues** — 记录了黑屏、爬梯子等真实踩坑，是验收用例的现成来源。
 
 ### 不可借鉴 / 需明确区隔的部分
@@ -218,8 +225,13 @@
 - **子模块：** 本分支子模块 URL 指向 `git@github.com:tencentmalos/...`；改 `.gitmodules` 后必须 `git submodule sync --recursive` + `git submodule status --recursive` 核对。
 - **验收证据落点：** 每阶段的命令与输出归档到 `docs/verification/<YYYYMMDD>-<阶段>/`，不再只留在未跟踪的 `_out/`。截图/manifest/日志以文件为准，文档内摘录标注为人工摘录。
 - **编译加速度量纪律：** wall time 受机器负载波动，按 foundation 手册 §7，以 **ninja build edges 数 + `.ninja_log`** 为准，每一刀独立提交独立验证。
-- **当前依赖版本：** foundation `b01f41c`，`SPATIAL_FOUNDATION_API_VERSION = 1`。升级子模块指针时更新此行并复跑已完成阶段的退出标准。
-- **当前上游基线：** `main = upstream/main = origin/main = b8f2cf4b`；`fc884596` 已将其 merge 到 `feature/malos/basic_version`。
+- **当前依赖版本：** foundation `be67a11`，`SPATIAL_FOUNDATION_API_VERSION = 1`。升级子模块指针时更新此行并复跑已完成阶段的退出标准。
+- **统一 UI 栈：** Cemu renderer status 与未来 XR overlay 只使用 foundation
+  `LayerManager`/`Layer` 和它 vendored 的 ImGui；不得重新增加
+  `dependencies/imgui` 或平台专用的第二套 context 生命周期。当前 status layer 固定
+  显示，旧 Summary/Disabled 设置不再充当显隐开关；Disabled 仅表示使用左上角默认
+  位置，显隐控制后续在 foundation layer 体系内单独设计。
+- **当前上游基线：** `main = origin/main = b8f2cf4b`；`fc884596` 已将其 merge 到 `feature/malos/basic_version`。截至 2026-08-01，`upstream/main = 1706e5f3`，领先 1 个 UI 提交，留待当前依赖改造提交完成后的阶段边界同步。
 - **mac 构建基线：** 已建立；同步前失败、同步后配置/编译/启动成功，见 `docs/verification/20260726-C1/`。
 
 ---

@@ -20,6 +20,8 @@
 #endif
 #include "util/highresolutiontimer/HighResolutionTimer.h"
 
+#include "spatial/profiler/Profiler.h"
+
 #define PPCREC_FORCE_SYNCHRONOUS_COMPILATION	0 // if 1, then function recompilation will block and execute on the thread that called PPCRecompiler_visitAddressNoBlock
 #define PPCREC_LOG_RECOMPILATION_RESULTS		0
 
@@ -140,17 +142,19 @@ void PPCRecompiler_enter(PPCInterpreter_t* hCPU, PPCREC_JUMP_ENTRY funcPtr)
 	}
 }
 
-void PPCRecompiler_attemptEnterWithoutRecompile(PPCInterpreter_t* hCPU, uint32 enterAddress)
+bool PPCRecompiler_attemptEnterWithoutRecompile(PPCInterpreter_t* hCPU, uint32 enterAddress)
 {
 	cemu_assert_debug(hCPU->instructionPointer == enterAddress);
 	if (s_ppcRecompilerState.recompilerEnableCount <= 0)
-		return;
+		return false;
 	auto funcPtr = ppcRecompilerInstanceData->ppcRecompilerDirectJumpTable[enterAddress / 4];
 	if (funcPtr != PPCRecompiler_leaveRecompilerCode_unvisited && funcPtr != PPCRecompiler_leaveRecompilerCode_visited)
 	{
 		cemu_assert_debug(ppcRecompilerInstanceData != nullptr);
 		PPCRecompiler_enter(hCPU, funcPtr);
+		return true;
 	}
+	return false;
 }
 
 void PPCRecompiler_attemptEnter(PPCInterpreter_t* hCPU, uint32 enterAddress)
@@ -207,7 +211,11 @@ PPCRecFunction_t* PPCRecompiler_recompileFunction(PPCFunctionBoundaryTracker::PP
 	// generate intermediate code
 	ppcImlGenContext_t ppcImlGenContext = { 0 };
 	ppcImlGenContext.debug_entryPPCAddress = range.startAddress;
-	bool compiledSuccessfully = PPCRecompiler_generateIntermediateCode(ppcImlGenContext, ppcRecFunc, entryAddresses, boundaryTracker);
+	bool compiledSuccessfully;
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("espresso.recompiler.generate_iml");
+		compiledSuccessfully = PPCRecompiler_generateIntermediateCode(ppcImlGenContext, ppcRecFunc, entryAddresses, boundaryTracker);
+	}
 	if (compiledSuccessfully == false)
 	{
 		delete ppcRecFunc;
@@ -227,7 +235,12 @@ PPCRecFunction_t* PPCRecompiler_recompileFunction(PPCFunctionBoundaryTracker::PP
 	}
 
 	// apply passes
-	if (!PPCRecompiler_ApplyIMLPasses(ppcImlGenContext))
+	bool optimizationSucceeded;
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("espresso.recompiler.optimize_iml");
+		optimizationSucceeded = PPCRecompiler_ApplyIMLPasses(ppcImlGenContext);
+	}
+	if (!optimizationSucceeded)
 	{
 		delete ppcRecFunc;
 		return nullptr;
@@ -235,13 +248,21 @@ PPCRecFunction_t* PPCRecompiler_recompileFunction(PPCFunctionBoundaryTracker::PP
 
 #if defined(ARCH_X86_64)
 	// emit x64 code
-	bool x64GenerationSuccess = PPCRecompiler_generateX64Code(ppcRecFunc, &ppcImlGenContext);
+	bool x64GenerationSuccess;
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("espresso.recompiler.generate_host_code");
+		x64GenerationSuccess = PPCRecompiler_generateX64Code(ppcRecFunc, &ppcImlGenContext);
+	}
 	if (x64GenerationSuccess == false)
 	{
 		return nullptr;
 	}
 #elif defined(__aarch64__)
-	bool aarch64GenerationSuccess = PPCRecompiler_generateAArch64Code(ppcRecFunc, &ppcImlGenContext);
+	bool aarch64GenerationSuccess;
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("espresso.recompiler.generate_host_code");
+		aarch64GenerationSuccess = PPCRecompiler_generateAArch64Code(ppcRecFunc, &ppcImlGenContext);
+	}
 	if (aarch64GenerationSuccess == false)
 	{
 		return nullptr;
@@ -427,12 +448,15 @@ void PPCRecompiler_recompileAtAddress(uint32 address)
 
 	// get size
 	PPCFunctionBoundaryTracker funcBoundaries;
-	funcBoundaries.trackStartPoint(address);
-	// get range that encompasses address
 	PPCFunctionBoundaryTracker::PPCRange_t range;
-	if (funcBoundaries.getRangeForAddress(address, range) == false)
 	{
-		cemu_assert_debug(false);
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("espresso.recompiler.discover_function");
+		funcBoundaries.trackStartPoint(address);
+		// get range that encompasses address
+		if (funcBoundaries.getRangeForAddress(address, range) == false)
+		{
+			cemu_assert_debug(false);
+		}
 	}
 
 	// todo - use info from previously compiled ranges to determine full size of this function (and merge all the entryAddresses)
@@ -447,12 +471,17 @@ void PPCRecompiler_recompileAtAddress(uint32 address)
 	PPCRecFunction_t* func = PPCRecompiler_recompileFunction(range, entryAddresses, functionEntryPoints, funcBoundaries);
 	if (!func)
 		return; // recompilation failed
-	PPCRecompiler_makeRecompiledFunctionActive(address, range, func, functionEntryPoints);
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("espresso.recompiler.activate");
+		PPCRecompiler_makeRecompiledFunctionActive(address, range, func, functionEntryPoints);
+	}
 }
 
 void PPCRecompiler_thread()
 {
 	SetThreadName("PPCRecompiler");
+	spatial::profiler::ProfilerSetCurrentThreadName("PPCRecompiler");
+	spatial::profiler::ProfilerNotifyThisThreadName();
 #if PPCREC_FORCE_SYNCHRONOUS_COMPILATION
 	return;
 #endif
@@ -486,7 +515,10 @@ void PPCRecompiler_thread()
 			}
 			s_ppcRecompilerState.recompilerSpinlock.unlock();
 
-			PPCRecompiler_recompileAtAddress(enterAddress);
+			{
+				SPATIAL_PROFILER_AUTO_SCOPE_NAME("espresso.recompiler.compile");
+				PPCRecompiler_recompileAtAddress(enterAddress);
+			}
 			if(s_ppcRecompilerState.workerThreadStopSignal)
 				return;
 		}
@@ -591,6 +623,7 @@ void PPCRecompiler_deleteFunction(PPCRecFunction_t* func)
 
 void PPCRecompiler_invalidateRange(uint32 startAddr, uint32 endAddr)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("espresso.recompiler.invalidate");
 	if (!s_ppcRecompilerState.initialized)
 		return;
 	if (startAddr >= PPC_REC_CODE_AREA_SIZE)

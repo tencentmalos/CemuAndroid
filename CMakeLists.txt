@@ -1,16 +1,14 @@
 cmake_minimum_required(VERSION 3.25)
 
-option(ENABLE_VCPKG "Enable the vcpkg package manager" ON)
 option(MACOS_BUNDLE "The executable when built on macOS will be created as an application bundle" OFF)
 option(ALLOW_PORTABLE "Allow Cemu to be run in portable mode" ON)
-option(CEMU_ENABLE_FOUNDATION "Enable the spatial foundation integration" ON)
 
 # used by CI script to set version:
 set(EMULATOR_VERSION_MAJOR "0" CACHE STRING "")
 set(EMULATOR_VERSION_MINOR "0" CACHE STRING "")
 set(EMULATOR_VERSION_PATCH "0" CACHE STRING "")
 
-set(THREADS_PREFER_PTHREAD_FLAG true) # needs to be set before vcpkg
+set(THREADS_PREFER_PTHREAD_FLAG true)
 
 execute_process(
 		COMMAND git log --format=%h -1
@@ -20,57 +18,18 @@ execute_process(
 )
 add_definitions(-DEMULATOR_HASH=${GIT_HASH})
 
-if (ENABLE_VCPKG)
-	# check if vcpkg is shallow and unshallow it if necessary
-	execute_process(
-	COMMAND git rev-parse --is-shallow-repository
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/dependencies/vcpkg
-	OUTPUT_VARIABLE is_vcpkg_shallow
-	OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-	if(is_vcpkg_shallow STREQUAL "true")
-		message(STATUS "vcpkg is shallow. Unshallowing it now...")
-		execute_process(
-			COMMAND git fetch --unshallow
-			WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/dependencies/vcpkg"
-			RESULT_VARIABLE result
-			OUTPUT_VARIABLE output
-		)
-	endif()
-
-
-	if(VCPKG_TARGET_ANDROID)
-		set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_LIST_DIR}/dependencies/vcpkg_overlay_ports")
-	elseif(UNIX AND NOT APPLE)
-		set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_LIST_DIR}/dependencies/vcpkg_overlay_ports_linux;${CMAKE_CURRENT_LIST_DIR}/dependencies/vcpkg_overlay_ports")
-	elseif(APPLE)
-		set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_LIST_DIR}/dependencies/vcpkg_overlay_ports_mac;${CMAKE_CURRENT_LIST_DIR}/dependencies/vcpkg_overlay_ports")
-	else()
-		set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_LIST_DIR}/dependencies/vcpkg_overlay_ports_win;${CMAKE_CURRENT_LIST_DIR}/dependencies/vcpkg_overlay_ports")
-	endif()
-	if(VCPKG_TARGET_ANDROID)
-		set(ENV{ANDROID_NDK_HOME} ${ANDROID_NDK})
-        set(ENV{VCPKG_ROOT} "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/vcpkg")
-		include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/vcpkg_android.cmake")
-	else()
-		set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/vcpkg/scripts/buildsystems/vcpkg.cmake"
-			CACHE STRING "Vcpkg toolchain file")
-	endif()
-	# Set this so that all the various find_package() calls don't need an explicit
-	# CONFIG option
-	set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-	if (WIN32)
-		set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
-	endif()
-endif()
-
-project(Cemu VERSION 2.0.0)
+project(Cemu VERSION 2.0.0 LANGUAGES C CXX ASM)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if (ANDROID AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	# NDK 29 marks several standard type traits as non-specializable. The pinned
+	# foundation half type predates that diagnostic and remains ABI-compatible.
+	add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-invalid-specialization>)
+endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -224,34 +183,11 @@ endif()
 option(ENABLE_CUBEB "Enabled cubeb backend" ON)
 
 option(ENABLE_WXWIDGETS "Build with wxWidgets UI (Currently required)" ON)
-option(CEMU_USE_BUNDLED_DEPENDENCIES "Use repository-managed dependencies instead of vcpkg where available" ON)
 
 find_package(Threads REQUIRED)
 include(CemuBundledDependencies)
 
-find_package(CURL REQUIRED)
-find_package(pugixml REQUIRED)
-find_package(Boost COMPONENTS program_options filesystem nowide REQUIRED)
-if(ANDROID)
-	find_package(Boost COMPONENTS context iostreams REQUIRED)
-endif()
-find_package(libzip REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(OpenSSL COMPONENTS Crypto SSL REQUIRED)
-find_package(glm REQUIRED)
-find_package(PNG REQUIRED)
-
-if (NOT CEMU_USE_BUNDLED_DEPENDENCIES)
-	find_package(glslang REQUIRED)
-	find_package(zstd MODULE REQUIRED) # MODULE so that zstd::zstd is available
-	find_package(fmt 12.1 REQUIRED)
-	if (ENABLE_LIBUSB)
-		find_package(libusb MODULE REQUIRED)
-	endif()
-endif()
-
 if(ENABLE_SDL)
-	find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
 	add_compile_definitions(HAS_SDL)
 endif()
 
@@ -306,15 +242,17 @@ if (ENABLE_DISCORD_RPC)
 	add_compile_definitions(ENABLE_DISCORD_RPC)
 endif()
 
-if (CEMU_ENABLE_FOUNDATION)
-	if (NOT EXISTS "${CMAKE_SOURCE_DIR}/dependencies/foundation/CMakeLists.txt")
-		message(FATAL_ERROR
-			"foundation submodule missing, run: git submodule update --init --recursive")
-	endif()
-	add_subdirectory("dependencies/foundation" EXCLUDE_FROM_ALL)
-elseif (ANDROID)
-	message(FATAL_ERROR "CEMU_ENABLE_FOUNDATION must be enabled for Android builds")
+if (NOT EXISTS "${CMAKE_SOURCE_DIR}/dependencies/foundation/CMakeLists.txt")
+	message(FATAL_ERROR
+		"foundation submodule missing, run: git submodule update --init --recursive")
 endif()
+add_subdirectory("dependencies/foundation" EXCLUDE_FROM_ALL)
+# foundation_allocator stores reflection objects in public allocator types,
+# while foundation_meta_reflection also uses the allocator. Declare the
+# complete static-library cycle so CMake repeats the archives at final link.
+target_link_libraries(foundation_allocator PUBLIC
+	spatial::foundation_meta_reflection
+)
 
 if (ENABLE_HIDAPI)
 	set(SUPPORTS_WIIMOTE ON)
@@ -329,23 +267,14 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
 	endif()
 endif()
 
-if (ENABLE_WXWIDGETS)
-	find_package(wxWidgets 3.3 REQUIRED COMPONENTS base core gl propgrid xrc)
-endif()
-
 if (ENABLE_CUBEB)
-	if (NOT ENABLE_VCPKG)
-	    find_package(cubeb)
-	endif()
-	if (NOT cubeb_FOUND)
-		option(BUILD_TESTS "" OFF)
-		option(BUILD_TOOLS "" OFF)
-		option(BUNDLE_SPEEX "" OFF)
-		set(USE_WINMM OFF CACHE BOOL "")
-		add_subdirectory("dependencies/cubeb" EXCLUDE_FROM_ALL SYSTEM)
-		set_property(TARGET cubeb PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-		add_library(cubeb::cubeb ALIAS cubeb)
-	endif()
+	option(BUILD_TESTS "" OFF)
+	option(BUILD_TOOLS "" OFF)
+	option(BUNDLE_SPEEX "" OFF)
+	set(USE_WINMM OFF CACHE BOOL "")
+	add_subdirectory("dependencies/cubeb" EXCLUDE_FROM_ALL SYSTEM)
+	set_property(TARGET cubeb PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	add_library(cubeb::cubeb ALIAS cubeb)
 	add_compile_definitions("HAS_CUBEB=1")
 endif()
 
@@ -379,11 +308,60 @@ if (CEMU_USE_UNITY_BUILD)
 	# their supported build path without modifying bundled dependency sources.
 	foreach(target IN ITEMS
 		CemuWxGui
+		wxadv
+		wxaui
+		wxbase
+		wxcore
+		wxgl
+		wxhtml
+		wxlexilla
+		wxmedia
+		wxnet
+		wxpropgrid
+		wxqa
+		wxrc
+		wxribbon
+		wxrichtext
+		wxscintilla
+		wxstc
+		wxwebview
+		wxxml
+		wxxrc
+		bs_obj
+		cemu_boost_iostreams
+		cemu_boost_program_options
+		cemu_libusb
+		crypto_obj
 		cubeb
+		foundation_third_party_libevent
 		glslang
 		ih264d
 		imguiImpl
+		libcurl_object
+		libcurl_static
 		libzstd_static
+		libwebpmux
+		sharpyuv
+		ssl_obj
+		tls_obj
+		webp
+		webpdecode
+		webpdecoder
+		webpdemux
+		webpdsp
+		webpdspdecode
+		webpencode
+		webputils
+		webputilsdecode
+		wxexpat
+		wxjpeg
+		wxpng
+		wxregex
+		tiff
+		wxtiff
+		wxzlib
+		zip
+		zlib
 	)
 		if (TARGET ${target})
 			set_target_properties(${target} PROPERTIES UNITY_BUILD OFF)

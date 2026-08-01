@@ -626,6 +626,18 @@ namespace coreinit
 
 #pragma pack()
 
+namespace coreinit
+{
+	struct GuestExecutionProfilerCounters
+	{
+		uint64 quanta{};
+		uint64 jitEntries{};
+		uint64 interpreterInstructions{};
+	};
+
+	GuestExecutionProfilerCounters ConsumeGuestExecutionProfilerCounters();
+}
+
 // deprecated / clean up required
 extern MPTR activeThread[256];
 extern sint32 activeThreadCount;

@@ -3,6 +3,23 @@
 
 include(FindPackageHandleStandardArgs)
 
+if (TARGET zstd::zstd OR TARGET zstd::libzstd_static)
+	if (NOT TARGET zstd::zstd)
+		add_library(zstd::zstd ALIAS zstd::libzstd_static)
+	endif()
+	set(zstd_FOUND TRUE)
+	set(zstd_VERSION "1.5.7")
+	set(ZSTD_FOUND TRUE)
+	set(ZSTD_VERSION "${zstd_VERSION}")
+	set(ZSTD_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/dependencies/zstd/lib")
+	set(ZSTD_LIBRARIES zstd::zstd)
+	find_package_handle_standard_args(zstd
+		REQUIRED_VARS ZSTD_LIBRARIES ZSTD_INCLUDE_DIRS
+		VERSION_VAR zstd_VERSION
+	)
+	return()
+endif()
+
 find_package(zstd CONFIG)
 if (zstd_FOUND)
 	# Use upstream zstdConfig.cmake if possible

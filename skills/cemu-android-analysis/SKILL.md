@@ -11,7 +11,9 @@ description: Use when analyzing Cemu Android build failures, adb runs, logcat ou
 
 - Android project: `src/android`
 - App namespace/application id: `info.cemu.cemu`
-- Debug 包名后缀：`info.cemu.cemu.debug`
+- 可运行验证包名：`info.cemu.cemu`
+- Gradle `relWithDebInfo` variant：APK 可调试/run-as，Native CMake 类型为 `RelWithDebInfo`
+- Debug 包名后缀：`info.cemu.cemu.debug`，仅用于 debug-only 测试任务
 - Native CMake 入口：仓库根目录 `CMakeLists.txt`
 - Android Native 入口目录：`src/android/app/src/main/cpp`
 - 当前 Gradle NDK 版本：`29.0.14206865`
@@ -23,9 +25,12 @@ description: Use when analyzing Cemu Android build failures, adb runs, logcat ou
 
 ```sh
 cd src/android
-./gradlew assembleDebug
-./gradlew installDebug
+./gradlew assembleRelWithDebInfo
+./gradlew installRelWithDebInfo
 ```
+
+真机功能、性能、游戏启动和 native 崩溃复现统一使用 release APK；该 APK 内的
+Native 库由 `RelWithDebInfo` 构建。不要用 debug APK 形成性能结论。
 
 单元测试：
 
@@ -63,16 +68,16 @@ adb logcat -d | rg -i 'cemu|info.cemu|fatal|crash|tombstone|signal|vulkan|jni|ex
 adb devices
 ```
 
-检查 debug app 是否存活：
+检查用于验证的 app 是否存活：
 
 ```sh
-adb shell pidof info.cemu.cemu.debug
+adb shell pidof info.cemu.cemu
 ```
 
-显式启动 debug app：
+显式启动验证包：
 
 ```sh
-adb shell monkey -p info.cemu.cemu.debug 1
+adb shell monkey -p info.cemu.cemu 1
 ```
 
 调试生命周期问题时，记录 app 是崩溃、停留后台，还是进入了预期 Activity。

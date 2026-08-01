@@ -1,11 +1,20 @@
 #include "Cafe/HW/Latte/Core/LattePerformanceMonitor.h"
 #include "Cafe/HW/Latte/Core/LatteOverlay.h"
+#include "Cafe/OS/libs/coreinit/coreinit_Thread.h"
 #include "WindowSystem.h"
+
+#include "spatial/profiler/Profiler.h"
 
 performanceMonitor_t performanceMonitor{};
 
 void LattePerformanceMonitor_frameEnd()
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.frame.end");
+	SPATIAL_PROFILER_FRAME_END();
+	const auto guestCounters = coreinit::ConsumeGuestExecutionProfilerCounters();
+	SPATIAL_PROFILER_COUNTER_SET("cemu.guest_quanta_per_frame", guestCounters.quanta, "Cemu Guest", "quanta");
+	SPATIAL_PROFILER_COUNTER_SET("cemu.guest_jit_entries_per_frame", guestCounters.jitEntries, "Cemu Guest", "entries");
+	SPATIAL_PROFILER_COUNTER_SET("cemu.guest_interpreter_instructions_per_frame", guestCounters.interpreterInstructions, "Cemu Guest", "instructions");
 	// per-frame stats
 	performanceMonitor.gpuTime_shaderCreate.frameFinished();
 	performanceMonitor.gpuTime_frameTime.frameFinished();
@@ -112,12 +121,17 @@ void LattePerformanceMonitor_frameEnd()
 		{
 			LatteOverlay_updateStats(fps, drawCallCounter / elapsedFrames, fastDrawCallCounter / elapsedFrames);
 			WindowSystem::UpdateWindowTitles(false, false, fps);
+			SPATIAL_PROFILER_COUNTER_SET("cemu.fps_milli", static_cast<std::int64_t>(fps * 1000.0), "Cemu Frame", "milli-fps");
+			if (fps > 0.0)
+				SPATIAL_PROFILER_COUNTER_SET("cemu.frame_time_us", static_cast<std::int64_t>(1000000.0 / fps), "Cemu Frame", "us");
+			SPATIAL_PROFILER_COUNTER_SET("cemu.draws_per_frame", drawCallCounter / elapsedFrames, "Cemu GPU", "draws");
 		}
 	}
 }
 
 void LattePerformanceMonitor_frameBegin()
 {
+	SPATIAL_PROFILER_FRAME_START();
 	performanceMonitor.vk.numDrawBarriersPerFrame.reset();
 	performanceMonitor.vk.numBeginRenderpassPerFrame.reset();
 }

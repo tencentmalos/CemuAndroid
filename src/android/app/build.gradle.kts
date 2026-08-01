@@ -96,6 +96,12 @@ android {
                 signingConfigs.getByName("debug")
             }
         }
+        create("relWithDebInfo") {
+            isDebuggable = true
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("debug", "release")
+        }
     }
 
     externalNativeBuild {
@@ -111,9 +117,6 @@ android {
             cmake {
                 arguments(
                     "-DANDROID_STL=c++_shared",
-                    "-DENABLE_VCPKG=ON",
-                    "-DVCPKG_TARGET_ANDROID=ON",
-                    "-DCEMU_ENABLE_FOUNDATION=ON",
                     "-DENABLE_LTO=OFF",
                     "-DENABLE_SDL=OFF",
                     "-DENABLE_WXWIDGETS=OFF",

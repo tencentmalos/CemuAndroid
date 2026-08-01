@@ -5,6 +5,7 @@
 #include "Cafe/HW/Latte/Renderer/Vulkan/VulkanTextureReadback.h"
 #include "Cafe/HW/Latte/Renderer/Vulkan/CocoaSurface.h"
 #include "Cafe/HW/Latte/Renderer/Vulkan/VulkanPipelineCompiler.h"
+#include "Cafe/HW/Latte/Renderer/Vulkan/VulkanProfiler.h"
 
 #include "Cafe/HW/Latte/Core/LatteBufferCache.h"
 #include "Cafe/HW/Latte/Core/LattePerformanceMonitor.h"
@@ -30,6 +31,8 @@
 
 #include <cstdint>
 #include <glslang/Public/ShaderLang.h>
+
+#include "spatial/profiler/Profiler.h"
 
 #ifndef VK_API_VERSION_MAJOR
 #define VK_API_VERSION_MAJOR(version) (((uint32_t)(version) >> 22) & 0x7FU)
@@ -852,6 +855,7 @@ VulkanRenderer::~VulkanRenderer()
 	SubmitCommandBuffer();
 	WaitDeviceIdle();
 	WaitCommandBufferFinished(GetCurrentCommandBufferId());
+	DestroyGpuProfilerContext();
 	// shut down pipeline save thread
 	m_destructionRequested = true;
 	m_pipeline_cache_semaphore.notify();
@@ -2109,7 +2113,13 @@ bool VulkanRenderer::ImguiBegin(bool mainWindow)
 void VulkanRenderer::ImguiEnd()
 {
 	ImGui::Render();
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_state.currentCommandBuffer);
+	ImDrawData* mainDrawData = ImGui::GetDrawData();
+	ImDrawData* statusDrawData = ImguiRenderStatusLayer();
+	const uint32 mainBufferIndex = IsImguiMainWindow() ? 0 : 1;
+	const uint32 statusBufferIndex = IsImguiMainWindow() ? 2 : 3;
+	ImGui_ImplVulkan_RenderDrawData(mainDrawData, m_state.currentCommandBuffer, mainBufferIndex);
+	if (statusDrawData)
+		ImGui_ImplVulkan_RenderDrawData(statusDrawData, m_state.currentCommandBuffer, statusBufferIndex);
 	vkCmdEndRenderPass(m_state.currentCommandBuffer);
 }
 
@@ -2192,6 +2202,7 @@ void VulkanRenderer::InitFirstCommandBuffer()
 
 void VulkanRenderer::ProcessFinishedCommandBuffers()
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.command_buffer.process_finished");
 	bool finishedCmdBuffers = false;
 	while (m_commandBufferSyncIndex != m_commandBufferIndex)
 	{
@@ -2221,6 +2232,7 @@ void VulkanRenderer::ProcessFinishedCommandBuffers()
 
 void VulkanRenderer::WaitForNextFinishedCommandBuffer()
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.command_buffer.wait_for_fence");
 	cemu_assert_debug(m_commandBufferSyncIndex != m_commandBufferIndex);
 	// wait on least recently submitted command buffer
 	VkResult result = vkWaitForFences(m_logicalDevice, 1, &m_cmdBufferFences[m_commandBufferSyncIndex], true, UINT64_MAX);
@@ -2238,11 +2250,23 @@ void VulkanRenderer::WaitForNextFinishedCommandBuffer()
 
 void VulkanRenderer::SubmitCommandBuffer(VkSemaphore signalSemaphore, VkSemaphore waitSemaphore)
 {
-	draw_endRenderPass();
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.submit");
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.submit.end_render_pass");
+		draw_endRenderPass();
+	}
 
-	occlusionQuery_notifyEndCommandBuffer();
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.submit.collect_queries");
+		occlusionQuery_notifyEndCommandBuffer();
+		InitializeGpuProfilerContext();
+		CollectGpuProfilerQueries(m_state.currentCommandBuffer);
+	}
 
-	vkEndCommandBuffer(m_state.currentCommandBuffer);
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.submit.end_command_buffer");
+		vkEndCommandBuffer(m_state.currentCommandBuffer);
+	}
 
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -2276,7 +2300,11 @@ void VulkanRenderer::SubmitCommandBuffer(VkSemaphore signalSemaphore, VkSemaphor
 	submitInfo.pWaitDstStageMask = semWaitStageMask;
 	submitInfo.pWaitSemaphores = waitSemArray;
 
-	const VkResult result = vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_cmdBufferFences[m_commandBufferIndex]);
+	VkResult result;
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.submit.queue_submit");
+		result = vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_cmdBufferFences[m_commandBufferIndex]);
+	}
 	if (result != VK_SUCCESS)
 		UnrecoverableError(fmt::format("failed to submit command buffer. Error {}", result).c_str());
 	m_numSubmittedCmdBuffers++;
@@ -2292,34 +2320,83 @@ void VulkanRenderer::SubmitCommandBuffer(VkSemaphore signalSemaphore, VkSemaphor
 		cemuLog_logDebug(LogType::Force, "Vulkan: Waiting for available command buffer...");
 		WaitForNextFinishedCommandBuffer();
 	}
-	m_cmdBufferUniformRingbufIndices[nextCmdBufferIndex] = m_cmdBufferUniformRingbufIndices[m_commandBufferIndex];
-	m_commandBufferIndex = nextCmdBufferIndex;
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.submit.recycle_command_buffer");
+		m_cmdBufferUniformRingbufIndices[nextCmdBufferIndex] = m_cmdBufferUniformRingbufIndices[m_commandBufferIndex];
+		m_commandBufferIndex = nextCmdBufferIndex;
 
+		m_state.currentCommandBuffer = m_commandBuffers[m_commandBufferIndex];
+		vkResetFences(m_logicalDevice, 1, &m_cmdBufferFences[m_commandBufferIndex]);
+		vkResetCommandBuffer(m_state.currentCommandBuffer, 0);
 
-	m_state.currentCommandBuffer = m_commandBuffers[m_commandBufferIndex];
-	vkResetFences(m_logicalDevice, 1, &m_cmdBufferFences[m_commandBufferIndex]);
-	vkResetCommandBuffer(m_state.currentCommandBuffer, 0);
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		vkBeginCommandBuffer(m_state.currentCommandBuffer, &beginInfo);
 
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	vkBeginCommandBuffer(m_state.currentCommandBuffer, &beginInfo);
+		// make sure some states are set for this command buffer
+		vkCmdSetViewport(m_state.currentCommandBuffer, 0, 1, &m_state.currentViewport);
+		vkCmdSetScissor(m_state.currentCommandBuffer, 0, 1, &m_state.currentScissorRect);
 
-	// make sure some states are set for this command buffer
-	vkCmdSetViewport(m_state.currentCommandBuffer, 0, 1, &m_state.currentViewport);
-	vkCmdSetScissor(m_state.currentCommandBuffer, 0, 1, &m_state.currentScissorRect);
+		// reset states which are bound to a command buffer
+		m_state.resetCommandBufferState();
 
-	// DEBUG
-	//debug_genericBarrier();
-
-	// reset states which are bound to a command buffer
-	m_state.resetCommandBufferState();
-
-	occlusionQuery_notifyBeginCommandBuffer();
+		occlusionQuery_notifyBeginCommandBuffer();
+	}
 
 	m_recordedDrawcalls = 0;
 	m_submitThreshold = 300;
 	m_submitOnIdle = false;
+}
+
+void VulkanRenderer::InitializeGpuProfilerContext()
+{
+	if (m_gpuProfilerContextCreated || !spatial::modules::gProfilerConnected)
+		return;
+
+	// Tracy records and submits the command buffer passed to its Vulkan context
+	// constructor. The renderer's current command buffer is already recording at
+	// this point, so reusing it corrupts its state (and crashes Adreno inside
+	// vkQueueSubmit). Give profiler initialization a one-shot buffer of its own.
+	VkCommandBufferAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocateInfo.commandPool = m_commandPool;
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocateInfo.commandBufferCount = 1;
+	VkCommandBuffer profilerCommandBuffer = VK_NULL_HANDLE;
+	if (vkAllocateCommandBuffers(m_logicalDevice, &allocateInfo, &profilerCommandBuffer) != VK_SUCCESS)
+	{
+		cemuLog_log(LogType::Force, "Vulkan: Failed to allocate Tracy initialization command buffer");
+		return;
+	}
+
+	spatial::VulkanGPUProfileInitParam param;
+	param.instance = reinterpret_cast<void*>(m_instance);
+	param.physicalDevice = reinterpret_cast<void*>(m_physicalDevice);
+	param.device = reinterpret_cast<void*>(m_logicalDevice);
+	param.queue = reinterpret_cast<void*>(m_graphicsQueue);
+	param.commandBuffer = reinterpret_cast<void*>(profilerCommandBuffer);
+	param.getInstanceProcAddr = reinterpret_cast<void (*)()>(vkGetInstanceProcAddr);
+	param.getDeviceProcAddr = reinterpret_cast<void (*)()>(vkGetDeviceProcAddr);
+	spatial::modules::getProfiler()->createGPUProfilerCtx(&param);
+	vkFreeCommandBuffers(m_logicalDevice, m_commandPool, 1, &profilerCommandBuffer);
+	m_gpuProfilerContextCreated = true;
+}
+
+void VulkanRenderer::DestroyGpuProfilerContext()
+{
+	if (!m_gpuProfilerContextCreated)
+		return;
+	spatial::modules::getProfiler()->destroyGPUProfilerCtx();
+	m_gpuProfilerContextCreated = false;
+}
+
+void VulkanRenderer::CollectGpuProfilerQueries(VkCommandBuffer commandBuffer)
+{
+	if (!m_gpuProfilerContextCreated || !spatial::modules::gProfilerConnected)
+		return;
+	spatial::VulkanGPUProfileZoneCtx context{reinterpret_cast<void*>(commandBuffer)};
+	spatial::modules::getProfiler()->collectGPUSample(&context);
 }
 
 // submit within next 10 drawcalls
@@ -2431,6 +2508,7 @@ void VulkanRenderer::PipelineCacheSaveThread(size_t cache_size)
 
 void VulkanRenderer::CreatePipelineCache()
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.pipeline_cache.create");
 	std::vector<uint8_t> cacheData;
 	const auto dir = ActiveSettings::GetCachePath("shaderCache/driver/vk");
 	if (fs::exists(dir))
@@ -3315,6 +3393,9 @@ void VulkanRenderer::DrawBackbufferQuad(LatteTextureView* texView, RendererOutpu
 {
 	if(!AcquireNextSwapchainImage(!padView))
 		return;
+
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.present_blit.prepare");
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.present_blit", m_state.currentCommandBuffer);
 
 	auto& chainInfo = GetChainInfo(!padView);
 	LatteTextureViewVk* texViewVk = (LatteTextureViewVk*)texView;

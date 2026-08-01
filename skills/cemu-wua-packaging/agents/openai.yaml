@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cemu WUA Packaging"
+  short_description: "Inspect Wii U versions and package verified WUA files"
+  default_prompt: "Use $cemu-wua-packaging to inspect Wii U title versions and create a verified WUA archive."

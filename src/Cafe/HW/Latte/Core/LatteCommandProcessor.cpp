@@ -18,6 +18,11 @@
 
 #include <boost/container/small_vector.hpp>
 
+#include <atomic>
+#include <chrono>
+
+#include "spatial/profiler/Profiler.h"
+
 void LatteCP_DebugPrintCmdBuffer(uint32be* bufferPtr, uint32 size);
 
 #define CP_TIMER_RECHECK	1024
@@ -161,18 +166,37 @@ void LatteCP_signalEnterWait()
 	LatteIndices_invalidateAll();
 }
 
-/*
-* Read a U32 from the command buffer
-* If no data is available then wait in a busy loop
-*/
-uint32 LatteCP_readU32Deprc()
+void LatteCP_syncAsyncOperations()
 {
-	// no display list active
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.sync.async_operations");
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.sync.async_readback");
+		LatteTextureReadback_UpdateFinishedTransfers(true);
+	}
+	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.sync.async_queries");
+		LatteQuery_UpdateFinishedQueriesForceFinishAll();
+	}
+}
+
+uint32 LatteCP_waitForCommandFromGuest()
+{
+	const auto waitStart = std::chrono::steady_clock::now();
+	static std::atomic<sint64> waitCount{};
+	auto recordWait = [&] {
+		const auto waitUs = std::chrono::duration_cast<std::chrono::microseconds>(
+			std::chrono::steady_clock::now() - waitStart).count();
+		SPATIAL_PROFILER_COUNTER_SET("cemu.latte_command_ring_wait_count", waitCount.fetch_add(1, std::memory_order_relaxed) + 1, "Cemu Host Wait", "waits");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.latte_command_ring_last_wait_us", waitUs, "Cemu Host Wait", "us");
+	};
 	while (true)
 	{
 		uint32 cmdWord;
-		if ( TCL::TCLGPUReadRBWord(cmdWord) )
+		if (TCL::TCLGPUReadRBWord(cmdWord))
+		{
+			recordWait();
 			return cmdWord;
+		}
 
 		g_renderer->NotifyLatteCommandProcessorIdle(); // let the renderer know in case it wants to flush any commands
 		performanceMonitor.gpuTime_idleTime.beginMeasuring();
@@ -183,8 +207,11 @@ uint32 LatteCP_readU32Deprc()
 		}
 		LatteThread_HandleOSScreen(); // check if new frame was presented via OSScreen API
 
-		if ( TCL::TCLGPUReadRBWord(cmdWord) )
+		if (TCL::TCLGPUReadRBWord(cmdWord))
+		{
+			recordWait();
 			return cmdWord;
+		}
 		if (Latte_GetStopSignal())
 			LatteThread_Exit();
 
@@ -194,7 +221,18 @@ uint32 LatteCP_readU32Deprc()
 		std::this_thread::yield();
 		performanceMonitor.gpuTime_idleTime.endMeasuring();
 	}
-	UNREACHABLE;
+}
+
+/*
+* Read a U32 from the command buffer
+* If no data is available then wait in a busy loop
+*/
+uint32 LatteCP_readU32Deprc()
+{
+	uint32 cmdWord;
+	if (TCL::TCLGPUReadRBWord(cmdWord))
+		return cmdWord;
+	return LatteCP_waitForCommandFromGuest();
 }
 
 template<uint32 readU32()>
@@ -209,6 +247,7 @@ void LatteCP_skipWords(uint32 wordsToSkip)
 
 LatteCMDPtr LatteCP_itSurfaceSync(LatteCMDPtr cmd)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.surface.sync");
 	uint32 invalidationFlags = LatteReadCMD();
 	uint32 size = LatteReadCMD() << 8;
 	MPTR addressPhys = LatteReadCMD() << 8;
@@ -470,6 +509,7 @@ LatteCMDPtr LatteCP_itWaitRegMem(LatteCMDPtr cmd, uint32 nWords)
 	bool stalls = false;
 	if ((word0 & 0x10) != 0)
 	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.sync.wait_reg_mem");
 		// wait for memory address
 		performanceMonitor.gpuTime_fenceTime.beginMeasuring();
 		while (true)
@@ -623,6 +663,7 @@ LatteCMDPtr LatteCP_itMemSemaphore(LatteCMDPtr cmd, uint32 nWords)
 	}
 	else if(SEM_SIGNAL == 7)
 	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.sync.mem_semaphore_wait");
 		// wait
 		LatteCP_signalEnterWait();
 		size_t loopCount = 0;
@@ -854,6 +895,7 @@ LatteCMDPtr LatteCP_itHLEBottomOfPipeCB(LatteCMDPtr cmd, uint32 nWords)
 // GPU-side handler for GX2CopySurface/GX2CopySurfaceEx and similar
 LatteCMDPtr LatteCP_itHLECopySurfaceNew(LatteCMDPtr cmd, uint32 nWords)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.surface.copy");
 	cemu_assert_debug(nWords == 4+9*2);
 	// copy rect
 	LatteSurfaceCopyRect copyRect;
@@ -890,6 +932,7 @@ LatteCMDPtr LatteCP_itHLECopySurfaceNew(LatteCMDPtr cmd, uint32 nWords)
 
 LatteCMDPtr LatteCP_itHLEClearColorDepthStencil(LatteCMDPtr cmd, uint32 nWords)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.surface.clear");
 	cemu_assert_debug(nWords == 23);
 	uint32 clearMask = LatteReadCMD(); // color (1), depth (2), stencil (4)
 	// color buffer
@@ -941,6 +984,7 @@ LatteCMDPtr LatteCP_itHLERequestSwapBuffers(LatteCMDPtr cmd, uint32 nWords)
 
 LatteCMDPtr LatteCP_itHLESwapScanBuffer(LatteCMDPtr cmd, uint32 nWords)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.scanbuffer.swap");
 	catchOpenGLError();
 	cemu_assert_debug(nWords == 1);
 	MPTR reserved1 = LatteReadCMD(); // reserved
@@ -950,6 +994,7 @@ LatteCMDPtr LatteCP_itHLESwapScanBuffer(LatteCMDPtr cmd, uint32 nWords)
 
 LatteCMDPtr LatteCP_itHLEWaitForFlip(LatteCMDPtr cmd, uint32 nWords)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.sync.wait_for_flip");
 	catchOpenGLError();
 	cemu_assert_debug(nWords == 1);
 	MPTR reserved1 = LatteReadCMD(); // reserved
@@ -971,6 +1016,7 @@ LatteCMDPtr LatteCP_itHLEWaitForFlip(LatteCMDPtr cmd, uint32 nWords)
 
 LatteCMDPtr LatteCP_itHLECopyColorBufferToScanBuffer(LatteCMDPtr cmd, uint32 nWords)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.scanbuffer.copy");
 	MPTR colorBufferPtr = LatteReadCMD(); // physical address
 	uint32 colorBufferWidth = LatteReadCMD();
 	uint32 colorBufferHeight = LatteReadCMD();
@@ -1007,6 +1053,7 @@ void LatteCP_dumpCommandBufferError(LatteCMDPtr cmdStart, LatteCMDPtr cmdEnd, La
 // we implement this optimization by having a specialized version of LatteCP_processCommandBuffer, called right after drawcalls, which only implements commands that dont interfere with fast drawing. Other commands will cause this function to return to the complex and generic parser
 void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCtx)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.draw_pass.decode");
 	cemu_assert_debug(drawPassCtx.isWithinDrawPass());
 	// quit early if there are parameters set which are generally incompatible with fast drawing
 	if (LatteGPUState.contextRegister[mmVGT_STRMOUT_EN] != 0)
@@ -1172,6 +1219,7 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 
 void LatteCP_processCommandBuffer(DrawPassContext& drawPassCtx)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.command_buffer.decode");
 	while (true)
 	{
 		LatteCMDPtr cmd, cmdStart, cmdEnd;
@@ -1403,8 +1451,7 @@ void LatteCP_processCommandBuffer(DrawPassContext& drawPassCtx)
 				}
 				case IT_HLE_SYNC_ASYNC_OPERATIONS:
 				{
-					LatteTextureReadback_UpdateFinishedTransfers(true);
-					LatteQuery_UpdateFinishedQueriesForceFinishAll();
+					LatteCP_syncAsyncOperations();
 					break;
 				}
 				default:
@@ -1711,8 +1758,7 @@ void LatteCP_ProcessRingbuffer()
 			case IT_HLE_SYNC_ASYNC_OPERATIONS:
 			{
 				//LatteCP_skipWords<LatteCP_readU32Deprc>(nWords);
-				LatteTextureReadback_UpdateFinishedTransfers(true);
-				LatteQuery_UpdateFinishedQueriesForceFinishAll();
+				LatteCP_syncAsyncOperations();
 				break;
 			}
 			default:

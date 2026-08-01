@@ -11,6 +11,7 @@
 #include "Cemu/FileCache/FileCache.h"
 #include "Cafe/HW/Latte/Core/LatteShaderCache.h"
 #include "util/helpers/helpers.h"
+#include "spatial/profiler/Profiler.h"
 #include <openssl/sha.h>
 
 struct
@@ -409,12 +410,17 @@ bool VulkanPipelineStableCache::DeserializePipeline(MemStreamReader& memReader, 
 int VulkanPipelineStableCache::CompilerThread()
 {
 	SetThreadName("plCacheCompiler");
+	spatial::profiler::ProfilerSetCurrentThreadName("plCacheCompiler");
+	spatial::profiler::ProfilerNotifyThisThreadName();
 	while (m_numCompilationThreads != 0)
 	{
 		std::vector<uint8> pipelineData = m_compilationQueue.pop();
 		if(pipelineData.empty())
 			continue;
-		LoadPipelineFromCache(pipelineData);
+		{
+			SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.pipeline_cache.compile");
+			LoadPipelineFromCache(pipelineData);
+		}
 		++g_vkCacheState.pipelinesLoaded;
 	}
 	return 0;
@@ -423,6 +429,8 @@ int VulkanPipelineStableCache::CompilerThread()
 void VulkanPipelineStableCache::WorkerThread()
 {
 	SetThreadName("plCacheWriter");
+	spatial::profiler::ProfilerSetCurrentThreadName("plCacheWriter");
+	spatial::profiler::ProfilerNotifyThisThreadName();
 	while (true)
 	{
 		CachedPipeline* job;
@@ -432,16 +440,19 @@ void VulkanPipelineStableCache::WorkerThread()
 			delete job;
 			continue;
 		}
-		// serialize
-		MemStreamWriter memWriter(1024 * 4);
-		SerializePipeline(memWriter, *job);
-		auto blob = memWriter.getResult();
-		// file name is derived from data hash
-		uint8 hash[SHA256_DIGEST_LENGTH];
-		SHA256(blob.data(), blob.size(), hash);
-		uint64 nameA = *(uint64be*)(hash + 0);
-		uint64 nameB = *(uint64be*)(hash + 8);
-		s_cache->AddFileAsync({ nameA, nameB }, blob.data(), blob.size());
+		{
+			SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.pipeline_cache.write");
+			// serialize
+			MemStreamWriter memWriter(1024 * 4);
+			SerializePipeline(memWriter, *job);
+			auto blob = memWriter.getResult();
+			// file name is derived from data hash
+			uint8 hash[SHA256_DIGEST_LENGTH];
+			SHA256(blob.data(), blob.size(), hash);
+			uint64 nameA = *(uint64be*)(hash + 0);
+			uint64 nameB = *(uint64be*)(hash + 8);
+			s_cache->AddFileAsync({ nameA, nameB }, blob.data(), blob.size());
+		}
 		delete job;
 	}
 }

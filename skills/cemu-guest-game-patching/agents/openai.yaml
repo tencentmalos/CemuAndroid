@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cemu Guest Game Patching"
+  short_description: "逆向 Wii U Guest 游戏并制作、验证 Cemu patch"
+  default_prompt: "分析指定 Wii U Guest 游戏版本，审计或制作 Cemu graphic pack patch，并通过桌面或 Android 真机验证。"

@@ -67,9 +67,12 @@ class ControllersViewModel(val controllerIndex: Int) : ViewModel() {
         refreshControllerData()
     }
 
-    fun mapKeyEvent(keyEvent: KeyEvent, buttonId: Int) {
-        InputMapper.mapKeyEventToMappingId(controllerIndex, buttonId, keyEvent)
+    fun tryMapKeyEvent(keyEvent: KeyEvent, buttonId: Int): Boolean {
+        if (!InputMapper.tryMapKeyEventToMappingId(controllerIndex, buttonId, keyEvent)) {
+            return false
+        }
         _controls.value += getControllerMapping(buttonId)
+        return true
     }
 
     fun refreshAvailableControllers(): Boolean {

@@ -188,8 +188,9 @@ fun ControllerInputSettingsScreen(
         InputBindingPopup(
             buttonName = it.name,
             mapKeyEvent = { event ->
-                viewModel.mapKeyEvent(event, it.id)
-                viewModel.clearButtonToBind()
+                if (viewModel.tryMapKeyEvent(event, it.id)) {
+                    viewModel.clearButtonToBind()
+                }
             },
             mapMotionEvent = { event ->
                 if (viewModel.tryMapMotionEvent(event, it.id)) {

@@ -44,7 +44,8 @@ C4–C7 见 §9，本文只给纲要，其中 C6/C7 含未决设计，**不要�
 
 分支关系（2026-07-26，C1 完成后）：
 
-- 本地 `main`、`origin/main`、`upstream/main` 均为 `b8f2cf4b`
+- 本地 `main`、`origin/main` 为 `b8f2cf4b`；截至 2026-08-01，
+  `upstream/main` 为 `1706e5f3`，领先 1 个待阶段边界同步的 UI 提交
 - `fc884596` 的两个父提交为 `2588c674`（原 `basic_version`）和 `b8f2cf4b`（main）
 - `main...feature/malos/basic_version` 为 `0 311`，即 main 独有提交为 0，完整 main 已成为产品分支祖先
 - `android-port` 仍是产品分支祖先，但后续不再作为官方同步中转站
@@ -77,7 +78,7 @@ sudo cp MoltenVK/lib/libMoltenVK.dylib /opt/homebrew/lib/
 | --- | --- |
 | 路径 | `dependencies/foundation` |
 | URL | `git@github.com:tencentmalos/foundation.git`（私有） |
-| 当前指针 | `b01f41c`（`heads/main`） |
+| 当前指针 | `be67a11`（`heads/main`） |
 | API 版本 | `SPATIAL_FOUNDATION_API_VERSION = 1`，定义于 `basic/underlying/core/public/spatial/core/FoundationApiVersion.h` |
 
 可用 target（`modules/debugbus/CMakeLists.txt`）：
@@ -303,10 +304,10 @@ git merge --no-ff main
 > 后续依赖收敛见
 > `docs/verification/20260726-C2/dependency-convergence.md`。
 > Azahar 对照和 Cemu 双平台实测后，最终采用根 CMake
-> `EXCLUDE_FROM_ALL` 的按需构建方式。C2 初始提交未向 vcpkg 新增 Crypto++；
+> `EXCLUDE_FROM_ALL` 的按需构建方式。C2 初始提交未为 Crypto++ 增加新的包管理路径；
 > 维护者随后确认 core/network/profiler/XR 都会使用，因此通过 Azahar 已验证的
 > `cryptopp` / `cryptopp-cmake` 子模块预备其真实依赖，仍不把 Crypto++ 加入
-> vcpkg。
+> 重复依赖管理路径。
 
 ### C2-T1 改为根 CMake 接入（修 S3）
 
@@ -321,11 +322,13 @@ git merge --no-ff main
 - 用 `add_subdirectory(dependencies/foundation EXCLUDE_FROM_ALL)` 替换现有的
   stub + 子目录接入。根目录负责注册真实 target，`EXCLUDE_FROM_ALL` 保证只有
   Cemu 明确链接的组件进入默认构建
-- 把 `if(EXISTS ...)` 改成显式选项 `CEMU_ENABLE_FOUNDATION`；开启但子模块缺失时 `message(FATAL_ERROR "foundation submodule missing, run: git submodule update --init --recursive")`
-- **mac 与 Android 都要能配过。** mac 当前不链接 foundation 组件，默认构建图
-  不应因此膨胀；Android 当前只链接 debugbus/dumpsys。core/network/profiler/XR
-  都是后续范围，不得因为当前没有消费者而删除；依赖可提前注册，但不得让它们
-  无条件进入默认构建闭包
+- 把 `if(EXISTS ...)` 静默降级改成 foundation 硬依赖；子模块缺失时直接
+  `message(FATAL_ERROR "foundation submodule missing, run: git submodule update --init --recursive")`。
+  后续 profiler、ImGui、debugbus 和 XR 都依赖 foundation，因此不再保留条件宏或
+  关闭分支
+- **mac 与 Android 都要能配过。** Foundation 已是两个平台的共享硬依赖；profiler、
+  ImGui、debugbus 和未来 XR 走同一基础设施。平台传输层仍可按 Android dumpsys / 桌面
+  TCP 选择，但不得再把 Foundation 本体或其核心功能做成可关闭路径
 - foundation 里的 `CITRA_USE_UNITY_BUILD` 是从 azahar 带过来的变量名；C2
   当时不定义，已在 C3 统一到全局宿主开关
 - 后续组件一旦成为真实消费者，其依赖应由对应 foundation target 自洽带入；
@@ -334,12 +337,13 @@ git merge --no-ff main
 **退出标准：**
 
 - mac：配置成功、`cmake --build build` 成功、GUI 可启动
-- Android：`assembleDebug` + `assembleRelease` 通过
+- Android：`assembleRelWithDebInfo` 通过；该 variant 使用 Native RelWithDebInfo 且 APK
+  保持 debuggable，是后续设备验证的统一基线
 - 故意重命名 `dependencies/foundation` 目录后配置报出上述 FATAL_ERROR（验证后改回）
 - **记录接入前后的 build edges 数、编译 wall time、产物体积对比**，写进 `docs/verification/<YYYYMMDD>-C2/`——这是 C3 的度量输入
-- Cemu `vcpkg.json` 不因 foundation 后续组件增加依赖；若出现第三方库
-  重复/冲突，优先复用 Azahar 已验证或 `tencentmalos` 已镜像的子模块并记录
-  版本，不能靠删除 foundation 能力规避
+- foundation 后续组件不得引入第二套依赖管理路径；若出现第三方库重复/冲突，
+  优先复用 Azahar 已验证或 `tencentmalos` 已镜像的子模块并记录版本，不能靠
+  删除 foundation 能力规避
 
 ### C2-T2 API 版本护栏（修 S6）
 
@@ -358,7 +362,7 @@ static_assert(SPATIAL_FOUNDATION_API_VERSION >= 1, "foundation submodule too old
 
 ### C2-T4 依赖收敛（C2 后续，已完成）
 
-维护者确认 foundation 新增组件后续都会使用，并要求尽量移除 vcpkg。执行时：
+维护者确认 foundation 新增组件后续都会使用，并要求移除旧包管理路径。执行时：
 
 - 所有新增子模块继续使用 `git@github.com:tencentmalos/...`，版本钉在已验证
   tag/commit。
@@ -368,20 +372,21 @@ static_assert(SPATIAL_FOUNDATION_API_VERSION >= 1, "foundation submodule too old
   `spatial::third_party_rapidjson`。
 - Crypto++ 采用 Azahar 已验证的 `cryptopp` / `cryptopp-cmake` 指针，为
   foundation core 等后续真实消费者准备 target；未被链接时仍不构建。
-- 暂不迁移没有精确版本对齐或完整跨平台验证的依赖。尤其 Boost 当前 vcpkg 为
-  1.88、Azahar 镜像已到 1.90；Cemu 要求 SDL 3.4.10，而现有镜像 tag 只到
-  3.4.8。不得为了降低依赖数量而做无验证升级。
+- Boost 使用 `tencentmalos/ext-boost` 的 `cemu-1.90` 分支；SDL 使用
+  `cemu-3.4.10`，wxWidgets 使用 `cemu-3.3.3`。所有为 Cemu 补齐的构建修复必须
+  提交并推送到对应子仓，再更新父仓 gitlink。
 
 **退出标准：**
 
-- vcpkg 直接依赖项减少，且未向 vcpkg 添加 Crypto++。
-- macOS 配置/编译通过；Android `assembleDebug`、`assembleRelease`、
+- 旧包管理子模块、manifest、toolchain helper、overlay ports 和 CI cache action
+  均不存在，活跃构建文件不再引用它们。
+- macOS 配置/编译通过；Android `assembleRelWithDebInfo`、
   `testDebugUnitTest` 通过。
 - `git submodule status --recursive` 无 `-` 或 `+`，所有 URL 指向
   `tencentmalos`。
 - foundation core/network/profiler/XR target 和源码仍保留。
 
-**提交：** `build: migrate shared dependencies out of vcpkg`
+**提交：** `build: use repository-managed dependencies`
 
 ---
 
@@ -588,10 +593,39 @@ core/network/profiler/XR 后若出现过大的传递依赖，
 
 前置：C4。
 
+> **实现状态（2026-08-01）：** C5-T2 已接入共享 C++ profiler registry，并完成
+> CPU zones、Vulkan GPU zones、FPS/frame-time/draw/CPU/RAM counters 与 FPS
+> 概要面板；PC 与 Android 使用同一套核心埋点。桌面 TCP transport 固定监听
+> `127.0.0.1:45987`（可用 `CEMU_DEBUGBUS_PORT` 覆盖），实际通过多客户端、同连接
+> 多命令和断开重连 smoke test；Tracy 端点为 `tcp:8086`。Android
+> `assembleRelWithDebInfo` 通过，产物为 debuggable APK，native `.so` 已包含
+> `localabstract:azahar-tracy` 和关键 CPU/GPU/counter 标记。正式包已在 AYANEO
+> Pocket DS 上通过 Profiler MCP 的 Tracy 0.10 协议完成 40 秒实采：514 帧、351394
+> 个 CPU zones、49327 个解析到真实 GPU time 的 Vulkan zones，五组概要 counters
+> 均有样本。`open_last_game` 与异步 `warmup_a` 已用于在采集连接建立后进入 BOTW。
+> 针对 Android 慢加载，warmup 默认改为 35 秒启动缓冲、6 次 250ms A（间隔 10 秒）
+> 和 60 秒稳定等待；只有稳定窗口结束才报告 completed，并已肉眼确认进入实际游戏
+> 场景。FPS 概要面板已迁移为 foundation `Statistics` layer，并在
+> BOTW v208 / DLC v80 的 Vulkan 真机画面上确认可见。Cemu 自带
+> `dependencies/imgui` 已移除，Vulkan/Metal/OpenGL 只链接
+> `spatial::foundation_imgui`。状态层当前固定显示；旧 `Summary` 开关不再隐藏它，
+> 旧位置为 Disabled 时回退左上角，待后续再增加明确的显隐控制。C5-T1 未实现，
+> C5-T3 继续推迟。实测证据见
+> `docs/verification/20260801-C5/performance-profiler.md`；BOTW gameplay 实采最慢帧
+> 的 Guest / Host / GPU 拆分见
+> `docs/architecture/cemu-frame-performance.md`。
+
 - **C5-T1 screenshot 实装** — Kotlin 侧提供 capture 回调（PixelCopy 或复用 cemu 现有截图路径），native 注册为 host action。返回落盘路径供 `adb pull`。
-- **C5-T2 profiler 命令** — 链接 `spatial::foundation_debugbus_profiler`（依赖 C2 提供的真 `spatial::foundation_profiler`），`RegisterProfilerCommands(registry)`。退出标准：`profiler_backend` / `profiler_endpoint` / `profiler_port` 真机可用，输出与 `integrating-emulator-host.md` §5 一致。
+- **C5-T2 profiler 命令（实现并完成 Android 实采）** — 链接 `spatial::foundation_debugbus_profiler`（依赖 C2 提供的真 `spatial::foundation_profiler`），`RegisterProfilerCommands(registry)`。`profiler_backend` / `profiler_endpoint` / `profiler_port` 已在真机可用；Profiler MCP 使用 `android://localabstract:azahar-tracy`、`protocol=tracy` 完成 CPU/GPU/counter 采集。
 - **C5-T3 calibration — 推迟到 C6 之后**（无 XR 时标定图没有验收对象）。
-- **C5-T4 TCP transport — 按需**。
+- **C5-T4 TCP transport（桌面已实现）** — 使用 foundation network/debugbus，默认仅绑定 loopback；Android 保持 dumpsys transport，不引入平台分叉的 profiler 实现。
+- **C5-T5 快速启动与 warmup（实现并完成 Android 真机验证）** — `open_last_game` 由各平台 host 复用共享命令入口；`warmup_a` / `warmup_status` / `warmup_cancel` 为共享 C++ 实现，等待标题与 controller 0 就绪后慢速触发 A 键，并在最后一次输入后进入可观测的 `settling` 状态，不阻塞 App 生命周期 debugbus。Android 记录最近一次正常启动路径，桌面读取 recent launch list。退出标准：空闲态可打开上次游戏、运行态拒绝重复启动、稳定等待后 warmup 完成、不影响 Tracy 采集，并以截图确认已进入实际可操作游戏画面；不得只凭 `title_running` 或按键计数推断。
+- **C5-T6 foundation 状态层（实现并完成 Android 真机验证）** — 性能概要由
+  foundation `LayerManager`/`Layer` 承载，TV/Pad 主层和 Statistics 层共享 manager
+  font atlas，但各自使用独立 context。Vulkan、Metal、OpenGL backend 都消费这套
+  layer 输出；foundation 是唯一 ImGui core 提供方，Cemu 不保留第二份 ImGui。当前
+  状态层不做动态隐藏：`Summary=false` 和旧位置 Disabled 都不得使其消失，Disabled
+  暂按左上角渲染；后续显隐控制必须作为独立、明确的状态层能力实现。
 
 ---
 
@@ -601,9 +635,12 @@ core/network/profiler/XR 后若出现过大的传递依赖，
 
 1. **OpenXR loader 选型（C6 前置）** — foundation 只提供 headers（`third_party/openxr` → `spatial::third_party_openxr_headers`），**不含 loader**。需确定来源：厂商 AAR / 系统 loader / 静态 loader。原计划完全没提这一项。
 2. **帧路径选型（即 D7）** — cemu Android 当前走 `SurfaceTexture` + `ANativeWindow`（`src/android/app/src/main/cpp/NativeEmulation.cpp:167-201`）。Surface path 改动小但受中转开销与时序限制；Vulkan path 需拿到 cemu Vulkan renderer 的输出纹理与队列/同步对象，改动大但延迟更优。
-3. **产品范围确认** — C7 的终点是「平面画面 + 手柄映射」的 **XR 影院模式**，不是立体 6DOF VR。若目标是后者（对标 `~/workspace/BotW-BetterVR`），需追加 C8，且立体渲染需求会**反向否决 Surface path**。这个问题必须在 D7 之前回答。
+3. **产品范围确认** — C7 的终点是「平面画面 + 手柄映射」的 **XR 影院模式**，不是立体 6DOF VR。若目标是后者（对标 `references/BotW-BetterVR`），需追加 C8，且立体渲染需求会**反向否决 Surface path**。这个问题必须在 D7 之前回答。
+4. **UI 栈约束** — XR overlay/status 必须直接复用 foundation `LayerManager`、共享
+   font atlas 与 backend 接口；不得从 Cemu 的 renderer overlay 再复制一套 ImGui
+   core、上下文管理或平台专用菜单实现。
 
-**参考实现：** `~/workspace/BotW-BetterVR`（详见计划 §4）。可借鉴 `src/rendering/`（Cemu Vulkan 输出 → OpenXR swapchain）、`src/utils/controller_bindings.h` + `src/hooking/controls.cpp`（VR 手柄 → Wii U GamePad 映射）、`src/hooking/rumble.cpp`（震动）。**不可借鉴** `src/hooking/` 的 BotW 游戏结构 hook，以及 Vulkan layer 拦截架构（Android 无外部 layer 注入机制）。
+**参考实现：** `references/BotW-BetterVR`（详见计划 §4 和 `docs/bettervr/README.md`）。可借鉴 `src/rendering/`（Cemu Vulkan 输出 → OpenXR swapchain）、`src/utils/controller_bindings.h` + `src/hooking/controls.cpp`（VR 手柄 → Wii U GamePad 映射）、`src/hooking/rumble.cpp`（震动）。**不可借鉴** `src/hooking/` 的 BotW 游戏结构 hook，以及 Vulkan layer 拦截架构（Android 无外部 layer 注入机制）。
 
 C7 手柄 adapter 的前置是 C1 同步带入的 `ad73c1e0 Input: Fix race condition in button mapping access`——adapter 写法取决于修复后的加锁语义。
 

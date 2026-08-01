@@ -3,6 +3,7 @@
 #include "Cafe/HW/Latte/Core/LatteShader.h"
 #include "Cafe/HW/Latte/Core/LatteSurfaceCopy.h"
 #include "Cafe/HW/Latte/Core/LatteTexture.h"
+#include "spatial/profiler/Profiler.h"
 
 void LatteThread_Exit();
 
@@ -123,6 +124,7 @@ void LatteAsyncCommands_checkAndExecute()
 		LatteThread_Exit();
 	if (LatteAsyncCommandQueue.empty())
 		return;
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.async_commands.execute");
 	swl_gpuAsyncCommands.LockWrite();
 	while (LatteAsyncCommandQueue.empty() == false)
 	{
@@ -131,6 +133,7 @@ void LatteAsyncCommands_checkAndExecute()
 		swl_gpuAsyncCommands.UnlockWrite();
 		if (asyncCommand.type == ASYNC_CMD_FORCE_TEXTURE_READBACK)
 		{
+			SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.async_commands.texture_readback");
 			cemu_assert_debug(asyncCommand.forceTextureReadback.level == 0); // implement mip swizzle and verify
 			LatteTextureView* textureView = LatteTC_GetTextureSliceViewOrTryCreate(asyncCommand.forceTextureReadback.physAddr, asyncCommand.forceTextureReadback.mipAddr, (Latte::E_GX2SURFFMT)asyncCommand.forceTextureReadback.format, asyncCommand.forceTextureReadback.tilemode, asyncCommand.forceTextureReadback.width, asyncCommand.forceTextureReadback.height, asyncCommand.forceTextureReadback.depth, asyncCommand.forceTextureReadback.pitch, 0, asyncCommand.forceTextureReadback.slice, asyncCommand.forceTextureReadback.level);
 			if (textureView != nullptr)
@@ -148,10 +151,12 @@ void LatteAsyncCommands_checkAndExecute()
 		}
 		else if (asyncCommand.type == ASYNC_CMD_DELETE_SHADER)
 		{
+			SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.async_commands.delete_shader");
 			LatteSHRC_RemoveFromCacheByHash(asyncCommand.deleteShader.shaderBaseHash, asyncCommand.deleteShader.shaderAuxHash, asyncCommand.deleteShader.shaderType);
 		}
 		else if (asyncCommand.type == ASYNC_CMD_TEXTURE_COPY)
 		{
+			SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.async_commands.texture_copy");
 			LatteSurfaceCopy_copySurfaceNew(asyncCommand.textureCopy.src, asyncCommand.textureCopy.dst, asyncCommand.textureCopy.rect);
 		}
 		else

@@ -35,6 +35,7 @@ public:
 
 	static bool ForceInterpreter() { return s_force_interpreter; };
 	static bool ForceMultiCoreInterpreter() { return s_force_multicore_interpreter; }
+	static int GetExitCode() { return s_exit_code; }
 
 	static std::optional<uint32> GetPersistentId() { return s_persistent_id; }
 
@@ -60,6 +61,7 @@ private:
 
 	inline static bool s_force_interpreter = false;
 	inline static bool s_force_multicore_interpreter = false;
+	inline static int s_exit_code = 0;
 	
 	inline static std::optional<uint32> s_persistent_id{};
 

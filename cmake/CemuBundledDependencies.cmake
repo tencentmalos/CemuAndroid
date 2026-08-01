@@ -9,7 +9,49 @@ function(cemu_add_bundled_subdirectory dependency source_directory)
 	)
 endfunction()
 
-if (CEMU_USE_BUNDLED_DEPENDENCIES)
+add_library(cemu_async_simple_headers INTERFACE)
+target_include_directories(cemu_async_simple_headers INTERFACE
+	"${CMAKE_SOURCE_DIR}/dependencies/foundation/third_party/yalantinglibs/include/ylt/thirdparty"
+)
+add_library(Cemu::async_simple_headers ALIAS cemu_async_simple_headers)
+
+# Boost is intentionally consumed as a repository-managed source subset.
+# Keep the conventional imported target names so Cemu code does not need to
+# know whether Boost came from a package manager or this submodule.
+add_library(cemu_boost_headers INTERFACE)
+target_include_directories(cemu_boost_headers SYSTEM INTERFACE
+	"${CMAKE_SOURCE_DIR}/dependencies/boost"
+)
+add_library(Boost::boost ALIAS cemu_boost_headers)
+add_library(Boost::headers ALIAS cemu_boost_headers)
+add_library(Boost::nowide ALIAS cemu_boost_headers)
+
+	file(GLOB CEMU_BOOST_PROGRAM_OPTIONS_SOURCES CONFIGURE_DEPENDS
+		"${CMAKE_SOURCE_DIR}/dependencies/boost/libs/program_options/src/*.cpp"
+	)
+	add_library(cemu_boost_program_options STATIC EXCLUDE_FROM_ALL
+		${CEMU_BOOST_PROGRAM_OPTIONS_SOURCES}
+	)
+	target_link_libraries(cemu_boost_program_options PUBLIC cemu_boost_headers)
+	target_compile_definitions(cemu_boost_program_options PUBLIC BOOST_ALL_NO_LIB)
+	set_target_properties(cemu_boost_program_options PROPERTIES
+		POSITION_INDEPENDENT_CODE ON
+	)
+	add_library(Boost::program_options ALIAS cemu_boost_program_options)
+
+	if (ANDROID)
+		add_library(cemu_boost_iostreams STATIC EXCLUDE_FROM_ALL
+			"${CMAKE_SOURCE_DIR}/dependencies/boost/libs/iostreams/src/file_descriptor.cpp"
+			"${CMAKE_SOURCE_DIR}/dependencies/boost/libs/iostreams/src/mapped_file.cpp"
+		)
+		target_link_libraries(cemu_boost_iostreams PUBLIC cemu_boost_headers)
+		target_compile_definitions(cemu_boost_iostreams PUBLIC BOOST_ALL_NO_LIB)
+		set_target_properties(cemu_boost_iostreams PROPERTIES
+			POSITION_INDEPENDENT_CODE ON
+		)
+		add_library(Boost::iostreams ALIAS cemu_boost_iostreams)
+	endif()
+
 	set(FMT_DOC OFF CACHE BOOL "" FORCE)
 	set(FMT_INSTALL OFF CACHE BOOL "" FORCE)
 	set(FMT_TEST OFF CACHE BOOL "" FORCE)
@@ -24,6 +66,136 @@ if (CEMU_USE_BUNDLED_DEPENDENCIES)
 	cemu_add_bundled_subdirectory(zstd zstd/build/cmake)
 	if (NOT TARGET zstd::zstd)
 		add_library(zstd::zstd ALIAS libzstd_static)
+	endif()
+
+	set(ZLIB_COMPAT ON CACHE BOOL "" FORCE)
+	set(ZLIB_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+	set(ZLIBNG_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+	set(WITH_GTEST OFF CACHE BOOL "" FORCE)
+	set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
+	set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+	cemu_add_bundled_subdirectory(zlib-ng zlib-ng)
+	if (NOT TARGET ZLIB::ZLIB)
+		add_library(ZLIB::ZLIB ALIAS zlib)
+	endif()
+	set(ZLIB_FOUND TRUE)
+	set(ZLIB_VERSION_STRING "2.2.5")
+	set(ZLIB_INCLUDE_DIRS
+		"${CMAKE_BINARY_DIR}/dependencies/zlib-ng"
+		"${CMAKE_SOURCE_DIR}/dependencies/zlib-ng"
+	)
+	set(ZLIB_LIBRARIES ZLIB::ZLIB)
+
+	set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+	cemu_add_bundled_subdirectory(libressl libressl)
+	target_include_directories(crypto PUBLIC
+		"${CMAKE_SOURCE_DIR}/dependencies/libressl/include"
+		"${CMAKE_BINARY_DIR}/include"
+	)
+	target_include_directories(ssl PUBLIC
+		"${CMAKE_SOURCE_DIR}/dependencies/libressl/include"
+		"${CMAKE_BINARY_DIR}/include"
+	)
+	add_library(OpenSSL::Crypto ALIAS crypto)
+	add_library(OpenSSL::SSL ALIAS ssl)
+	set(OpenSSL_FOUND TRUE)
+	set(OPENSSL_FOUND TRUE)
+	set(OPENSSL_VERSION "3.8.0")
+	set(OPENSSL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/dependencies/libressl/include")
+	set(OPENSSL_INCLUDE_DIRS "${OPENSSL_INCLUDE_DIR}")
+	set(OPENSSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
+
+	set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+	set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+	set(BUILD_LIBCURL_DOCS OFF CACHE BOOL "" FORCE)
+	set(BUILD_MISC_DOCS OFF CACHE BOOL "" FORCE)
+	set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+	set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
+	set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+	set(CURL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
+	set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
+	set(CURL_DISABLE_LDAPS ON CACHE BOOL "" FORCE)
+	set(CURL_ENABLE_EXPORT_TARGET OFF CACHE BOOL "" FORCE)
+	set(CURL_USE_OPENSSL ON CACHE BOOL "" FORCE)
+	set(CURL_USE_PKGCONFIG OFF CACHE BOOL "" FORCE)
+	set(USE_NGHTTP2 OFF CACHE BOOL "" FORCE)
+	set(CURL_ZLIB ON CACHE STRING "" FORCE)
+	set(CURL_BROTLI OFF CACHE STRING "" FORCE)
+	# Cemu links its pinned zstd target directly. Avoid making curl/libzip run a
+	# second package-discovery path for that same implementation.
+	set(CURL_ZSTD OFF CACHE STRING "" FORCE)
+	set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
+	set(CURL_USE_LIBSSH2 OFF CACHE BOOL "" FORCE)
+	set(CURL_USE_LIBSSH OFF CACHE BOOL "" FORCE)
+	set(CURL_USE_GSASL OFF CACHE BOOL "" FORCE)
+	set(CURL_USE_GSSAPI OFF CACHE BOOL "" FORCE)
+	set(USE_LIBIDN2 OFF CACHE BOOL "" FORCE)
+	# curl's configure checks run in isolated try_compile projects where aliases
+	# to parent-project targets are not visible. These values describe the pinned
+	# LibreSSL headers and avoid probing a different system OpenSSL installation.
+	set(HAVE_AWSLC FALSE CACHE INTERNAL "" FORCE)
+	set(HAVE_BORINGSSL FALSE CACHE INTERNAL "" FORCE)
+	set(HAVE_LIBRESSL TRUE CACHE INTERNAL "" FORCE)
+	set(HAVE_OPENSSL_SRP FALSE CACHE INTERNAL "" FORCE)
+	set(HAVE_SSL_SET0_WBIO FALSE CACHE INTERNAL "" FORCE)
+	set(CURL_DISABLE_SRP ON CACHE BOOL "" FORCE)
+	cemu_add_bundled_subdirectory(curl curl)
+
+	set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+	set(PUGIXML_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+	set(PUGIXML_INSTALL OFF CACHE BOOL "" FORCE)
+	cemu_add_bundled_subdirectory(pugixml pugixml)
+
+	set(GLM_BUILD_INSTALL OFF CACHE BOOL "" FORCE)
+	set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
+	set(GLM_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+	cemu_add_bundled_subdirectory(glm glm)
+
+	if (ENABLE_SDL)
+		set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+		set(SDL_INSTALL OFF CACHE BOOL "" FORCE)
+		set(SDL_HIDAPI_LIBUSB OFF CACHE BOOL "" FORCE)
+		set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+		set(SDL_STATIC ON CACHE BOOL "" FORCE)
+		set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+		set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+		set(SDL_UNINSTALL OFF CACHE BOOL "" FORCE)
+		cemu_add_bundled_subdirectory(SDL SDL)
+	endif()
+
+	if (ENABLE_WXWIDGETS)
+		set(BUILD_DOC OFF CACHE BOOL "" FORCE)
+		set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+		set(BUILD_OSSFUZZ OFF CACHE BOOL "" FORCE)
+		set(BUILD_REGRESS OFF CACHE BOOL "" FORCE)
+		set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+		set(BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+		set(ENABLE_BZIP2 OFF CACHE BOOL "" FORCE)
+		set(ENABLE_COMMONCRYPTO OFF CACHE BOOL "" FORCE)
+		set(ENABLE_GNUTLS OFF CACHE BOOL "" FORCE)
+		set(ENABLE_LZMA OFF CACHE BOOL "" FORCE)
+		set(ENABLE_MBEDTLS OFF CACHE BOOL "" FORCE)
+		set(ENABLE_OPENSSL ON CACHE BOOL "" FORCE)
+		set(ENABLE_WINDOWS_CRYPTO OFF CACHE BOOL "" FORCE)
+		set(ENABLE_ZSTD OFF CACHE BOOL "" FORCE)
+		set(LIBZIP_DO_INSTALL OFF CACHE BOOL "" FORCE)
+		cemu_add_bundled_subdirectory(libzip libzip)
+
+		set(wxBUILD_BENCHMARKS OFF CACHE STRING "" FORCE)
+		set(wxBUILD_DEMOS OFF CACHE STRING "" FORCE)
+		set(wxBUILD_INSTALL OFF CACHE BOOL "" FORCE)
+		set(wxBUILD_LOCALES OFF CACHE STRING "" FORCE)
+		set(wxBUILD_PRECOMP OFF CACHE STRING "" FORCE)
+		set(wxBUILD_SAMPLES OFF CACHE STRING "" FORCE)
+		set(wxBUILD_SHARED OFF CACHE BOOL "" FORCE)
+		set(wxBUILD_TESTS OFF CACHE STRING "" FORCE)
+		set(wxUSE_EXPAT builtin CACHE STRING "" FORCE)
+		set(wxUSE_LIBJPEG builtin CACHE STRING "" FORCE)
+		set(wxUSE_LIBPNG builtin CACHE STRING "" FORCE)
+		set(wxUSE_LIBTIFF builtin CACHE STRING "" FORCE)
+		set(wxUSE_LIBWEBP builtin CACHE STRING "" FORCE)
+		set(wxUSE_ZLIB builtin CACHE STRING "" FORCE)
+		cemu_add_bundled_subdirectory(wxWidgets wxWidgets)
 	endif()
 
 	set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
@@ -42,13 +214,11 @@ if (CEMU_USE_BUNDLED_DEPENDENCIES)
 		"${CMAKE_SOURCE_DIR}/dependencies"
 	)
 
-	if (CEMU_ENABLE_FOUNDATION)
-		set(CRYPTOPP_BUILD_DOCUMENTATION OFF CACHE BOOL "" FORCE)
-		set(CRYPTOPP_BUILD_TESTING OFF CACHE BOOL "" FORCE)
-		set(CRYPTOPP_INSTALL OFF CACHE BOOL "" FORCE)
-		set(CRYPTOPP_SOURCES "${CMAKE_SOURCE_DIR}/dependencies/cryptopp" CACHE PATH "" FORCE)
-		cemu_add_bundled_subdirectory(cryptopp cryptopp-cmake)
-	endif()
+	set(CRYPTOPP_BUILD_DOCUMENTATION OFF CACHE BOOL "" FORCE)
+	set(CRYPTOPP_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+	set(CRYPTOPP_INSTALL OFF CACHE BOOL "" FORCE)
+	set(CRYPTOPP_SOURCES "${CMAKE_SOURCE_DIR}/dependencies/cryptopp" CACHE PATH "" FORCE)
+	cemu_add_bundled_subdirectory(cryptopp cryptopp-cmake)
 
 	if (ENABLE_VULKAN AND NOT TARGET vulkan-headers)
 		add_library(vulkan-headers INTERFACE)
@@ -193,13 +363,7 @@ if (CEMU_USE_BUNDLED_DEPENDENCIES)
 			POSITION_INDEPENDENT_CODE ON
 		)
 	endif()
-endif()
 
 add_library(cemu_rapidjson INTERFACE)
-if (CEMU_USE_BUNDLED_DEPENDENCIES AND CEMU_ENABLE_FOUNDATION)
-	target_link_libraries(cemu_rapidjson INTERFACE spatial::third_party_rapidjson)
-else()
-	find_package(RapidJSON REQUIRED)
-	target_include_directories(cemu_rapidjson INTERFACE ${RAPIDJSON_INCLUDE_DIRS})
-endif()
+target_link_libraries(cemu_rapidjson INTERFACE spatial::third_party_rapidjson)
 add_library(Cemu::rapidjson ALIAS cemu_rapidjson)

@@ -1,6 +1,8 @@
 #pragma once
 
-#include <boost/context/detail/fcontext.hpp>
+#include <async_simple/uthread/internal/thread_impl.h>
+
+namespace fcontext = async_simple::uthread::internal;
 
 class Fiber
 {
@@ -13,10 +15,10 @@ class Fiber
 	static void* GetFiberPrivateData();
 
   private:
-	static void Start(boost::context::detail::transfer_t transfer);
+	static void Start(fcontext::transfer_t transfer);
 	Fiber(void* privateData); // fiber from current thread
 
-	boost::context::detail::fcontext_t m_context{};
+	fcontext::fcontext_t m_context{};
 
 	void (*m_entryPoint)(void* userParam){};
 	void* m_userParam{};

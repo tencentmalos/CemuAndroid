@@ -6,7 +6,8 @@
 
 #include <imgui.h>
 #include "imgui/imgui_extension.h"
-#include <png.h>
+#include "spatial/imgui/Layer.hpp"
+#include "spatial/imgui/LayerManager.hpp"
 
 #include "config/ActiveSettings.h"
 
@@ -35,30 +36,59 @@ bool Renderer::GetVRAMInfo(int& usageInMB, int& totalInMB) const
 
 void Renderer::Initialize()
 {
-	// imgui
-	imguiFontAtlas = new ImFontAtlas();
-	imguiFontAtlas->AddFontDefault();
+	auto& layerManager = spatial::imgui::LayerManager::getInstance();
+	layerManager.initialize();
+	layerManager.setGlobalAsActiveContext();
+	ImFontAtlas* sharedFontAtlas = ImGui::GetIO().Fonts;
+	if (!sharedFontAtlas)
+		throw std::runtime_error("foundation ImGui font atlas failed to initialize");
 
-	auto setupContext = [](ImGuiContext* context){
-		ImGui::SetCurrentContext(context);
+	m_imguiTVLayer = std::make_shared<spatial::imgui::Layer>(spatial::imgui::LayerType::Main, "CemuTVMain");
+	m_imguiPadLayer = std::make_shared<spatial::imgui::Layer>(spatial::imgui::LayerType::Main, "CemuPadMain");
+	m_imguiTVStatusLayer = std::make_shared<spatial::imgui::Layer>(spatial::imgui::LayerType::Statistics, "CemuTVStatistics");
+	m_imguiPadStatusLayer = std::make_shared<spatial::imgui::Layer>(spatial::imgui::LayerType::Statistics, "CemuPadStatistics");
+	m_imguiTVLayer->initialize(sharedFontAtlas);
+	m_imguiPadLayer->initialize(sharedFontAtlas);
+	m_imguiTVStatusLayer->initialize(sharedFontAtlas);
+	m_imguiPadStatusLayer->initialize(sharedFontAtlas);
+
+	auto setupContext = [](const std::shared_ptr<spatial::imgui::Layer>& layer) {
+		layer->setAsActiveContext();
 		ImGuiIO& io = ImGui::GetIO();
 		io.WantSaveIniSettings = false;
 		io.IniFilename = nullptr;
 	};
 
-	imguiTVContext = ImGui::CreateContext(imguiFontAtlas);
-	imguiPadContext = ImGui::CreateContext(imguiFontAtlas);
-	setupContext(imguiTVContext);
-	setupContext(imguiPadContext);
+	setupContext(m_imguiTVLayer);
+	setupContext(m_imguiPadLayer);
+	setupContext(m_imguiTVStatusLayer);
+	setupContext(m_imguiPadStatusLayer);
+
+	m_imguiTVStatusLayer->setRenderCallback([](spatial::imgui::Layer&) {
+		LatteOverlay_renderStatusLayer(false);
+	});
+	m_imguiPadStatusLayer->setRenderCallback([](spatial::imgui::Layer&) {
+		LatteOverlay_renderStatusLayer(true);
+	});
+
+	m_imguiTVLayer->setAsActiveContext();
 }
 
 void Renderer::Shutdown()
 {
-	// imgui
-	ImGui::DestroyContext(imguiTVContext);
-	ImGui::DestroyContext(imguiPadContext);
-    ImGui_ClearFonts();
-	delete imguiFontAtlas;
+	if (m_imguiPadStatusLayer)
+		m_imguiPadStatusLayer->shutdown();
+	if (m_imguiTVStatusLayer)
+		m_imguiTVStatusLayer->shutdown();
+	if (m_imguiPadLayer)
+		m_imguiPadLayer->shutdown();
+	if (m_imguiTVLayer)
+		m_imguiTVLayer->shutdown();
+
+	m_imguiPadStatusLayer.reset();
+	m_imguiPadLayer.reset();
+	m_imguiTVStatusLayer.reset();
+	m_imguiTVLayer.reset();
 }
 
 bool Renderer::ImguiBegin(bool mainWindow)
@@ -74,8 +104,16 @@ bool Renderer::ImguiBegin(bool mainWindow)
 	if (w == 0 || h == 0)
 		return false;
 
-	// select the right context
-	ImGui::SetCurrentContext(mainWindow ? imguiTVContext : imguiPadContext);
+	m_imguiMainWindow = mainWindow;
+	m_imguiWidth = w;
+	m_imguiHeight = h;
+
+	auto& layerManager = spatial::imgui::LayerManager::getInstance();
+	layerManager.setDisplaySize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
+	const auto& layer = mainWindow ? m_imguiTVLayer : m_imguiPadLayer;
+	if (!layer || !layer->getContext())
+		return false;
+	layer->setAsActiveContext();
 
 	const Vector2f window_size{(float)w, (float)h};
 	auto& io = ImGui::GetIO();
@@ -83,6 +121,83 @@ bool Renderer::ImguiBegin(bool mainWindow)
 
 	ImGui_PrecacheFonts();
 	return true;
+}
+
+ImDrawData* Renderer::ImguiRenderStatusLayer()
+{
+	const auto& config = GetConfig();
+	const auto& statusLayer = m_imguiMainWindow ? m_imguiTVStatusLayer : m_imguiPadStatusLayer;
+	const auto& mainLayer = m_imguiMainWindow ? m_imguiTVLayer : m_imguiPadLayer;
+	if (!statusLayer || !mainLayer || m_imguiWidth <= 0 || m_imguiHeight <= 0)
+		return nullptr;
+
+	spatial::imgui::LayerSettings settings{};
+	sint32 statusWidth{}, statusHeight{};
+	LatteOverlay_getStatusLayerCanvasSize(!m_imguiMainWindow, statusWidth, statusHeight);
+	settings.widthContent = std::to_string(statusWidth);
+	settings.heightContent = std::to_string(statusHeight);
+	settings.margins = spatial::math::Vector4i(10, 10, 10, 10);
+	settings.bgColor = spatial::math::color(0.05f, 0.05f, 0.05f, 0.65f);
+	settings.borderColor = spatial::math::color(0.2f, 0.2f, 0.2f, 0.8f);
+	settings.borderShadowColor = spatial::math::color(0.0f, 0.0f, 0.0f, 0.0f);
+	settings.windowTitle = m_imguiMainWindow ? "Cemu TV status" : "Cemu Pad status";
+	settings.needBasicWindowContainer = true;
+	settings.showWindowTitle = false;
+	settings.withScrollBar = false;
+
+	const ScreenPosition statusPosition = config.overlay.position == ScreenPosition::kDisabled
+		? ScreenPosition::kTopLeft
+		: config.overlay.position;
+	switch (statusPosition)
+	{
+	case ScreenPosition::kTopLeft:
+		settings.horizontalAlign = spatial::imgui::HorizontalAlignment::Left;
+		settings.verticalAlign = spatial::imgui::VerticalAlignment::Top;
+		break;
+	case ScreenPosition::kTopCenter:
+		settings.horizontalAlign = spatial::imgui::HorizontalAlignment::Center;
+		settings.verticalAlign = spatial::imgui::VerticalAlignment::Top;
+		break;
+	case ScreenPosition::kTopRight:
+		settings.horizontalAlign = spatial::imgui::HorizontalAlignment::Right;
+		settings.verticalAlign = spatial::imgui::VerticalAlignment::Top;
+		break;
+	case ScreenPosition::kBottomLeft:
+		settings.horizontalAlign = spatial::imgui::HorizontalAlignment::Left;
+		settings.verticalAlign = spatial::imgui::VerticalAlignment::Bottom;
+		break;
+	case ScreenPosition::kBottomCenter:
+		settings.horizontalAlign = spatial::imgui::HorizontalAlignment::Center;
+		settings.verticalAlign = spatial::imgui::VerticalAlignment::Bottom;
+		break;
+	case ScreenPosition::kBottomRight:
+		settings.horizontalAlign = spatial::imgui::HorizontalAlignment::Right;
+		settings.verticalAlign = spatial::imgui::VerticalAlignment::Bottom;
+		break;
+	default:
+		settings.horizontalAlign = spatial::imgui::HorizontalAlignment::Left;
+		settings.verticalAlign = spatial::imgui::VerticalAlignment::Top;
+		break;
+	}
+
+	statusLayer->applyLayerSettings(settings);
+	auto& layerManager = spatial::imgui::LayerManager::getInstance();
+	layerManager.setDisplaySize(static_cast<uint32_t>(m_imguiWidth), static_cast<uint32_t>(m_imguiHeight));
+
+	mainLayer->setAsActiveContext();
+	const float deltaTime = ImGui::GetIO().DeltaTime;
+	statusLayer->setAsActiveContext();
+	auto& statusIo = ImGui::GetIO();
+	statusIo.DisplaySize = ImVec2(static_cast<float>(m_imguiWidth), static_cast<float>(m_imguiHeight));
+	statusIo.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+	statusIo.DeltaTime = deltaTime;
+
+	spatial::imgui::LayerInputEvent input{};
+	bool captureMouse = false;
+	bool captureKeyboard = false;
+	ImDrawData* drawData = statusLayer->doFrame(input, captureMouse, captureKeyboard);
+	mainLayer->setAsActiveContext();
+	return drawData;
 }
 
 uint8 Renderer::SRGBComponentToRGB(uint8 ci)

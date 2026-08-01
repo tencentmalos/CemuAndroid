@@ -1,0 +1,114 @@
+[19:18:02.222] ------- Init Cemu 39ec7c55 -------
+[19:18:02.222] Init Wii U memory space (base: 0x0000007464075000)
+[19:18:02.222] mlc01 path: /storage/emulated/0/Android/data/info.cemu.cemu/files/mlc01
+[19:18:02.222] CPU: QTI, SG8275
+[19:18:02.222] RAM: 15257MB
+[19:18:02.222] Platform: Android (API level 33)
+[19:18:02.222] Used CPU extensions: 
+[19:18:02.224] IOSU_CRYPTO: No otp.bin found. Online mode cannot be used
+[19:18:02.224] IOSU_CRYPTO: No Seeprom.bin found. Online mode cannot be used
+[19:18:28.236] Mounting title 00050000101c9300
+[19:18:28.236] Base: content://com.android.externalstorage.documents/tree/primary%3Aroms%2FWIIU/document/primary%3Aroms/WIIU/The%20Legend%20of%20Zelda%20Breath%20of%20the%20Wild%20(JP)%20(v208)%20(DLC%20v80).wua [WUA] [00050000101c9300_v0]
+[19:18:28.259] Update: content://com.android.externalstorage.documents/tree/primary%3Aroms%2FWIIU/document/primary%3Aroms/WIIU/The%20Legend%20of%20Zelda%20Breath%20of%20the%20Wild%20(JP)%20(v208)%20(DLC%20v80).wua [WUA] [0005000e101c9300_v208]
+[19:18:28.259] DLC: content://com.android.externalstorage.documents/tree/primary%3Aroms%2FWIIU/document/primary%3Aroms/WIIU/The%20Legend%20of%20Zelda%20Breath%20of%20the%20Wild%20(JP)%20(v208)%20(DLC%20v80).wua [WUA] [0005000c101c9300_v80]
+[19:18:28.287] COS: System fonts found. Generated shareddata (26609KB)
+[19:18:28.295] Recompiler initialized
+[19:18:28.549] ------- Init Vulkan graphics backend -------
+[19:18:28.565] Vulkan instance version: 1.3
+[19:18:28.578] Using GPU: Adreno (TM) 740
+[19:18:28.578] Driver version: Driver Build: 8193e26746, I5a14d5d512, 1692025621
+Date: 08/14/23
+Compiler Version: E031.41.03.41
+Driver Branch: 
+
+[19:18:28.578] Vulkan: present_wait extension: unsupported
+[19:18:28.578] VK_EXT_attachment_feedback_loop_layout(_dynamic_state) not supported
+[19:18:28.578] VulkanLimits: UBAlignment 64 nonCoherentAtomSize 1
+[19:18:28.578] VK_EXT_pipeline_robustness not supported. Falling back to robustBufferAccess
+[19:18:28.580] Vulkan device memory info:
+[19:18:28.580] Heap 0 - Size 15257MB Flags 0x00000001
+[19:18:28.580] Heap 1 - Size 256MB Flags 0x00000001
+[19:18:28.580] Memory 0 - HeapIndex 0 Flags 0x00000001
+[19:18:28.580] Memory 1 - HeapIndex 0 Flags 0x00000001
+[19:18:28.580] Memory 2 - HeapIndex 0 Flags 0x00000001
+[19:18:28.580] Memory 3 - HeapIndex 0 Flags 0x0000000b
+[19:18:28.580] Memory 4 - HeapIndex 0 Flags 0x00000007
+[19:18:28.580] Memory 5 - HeapIndex 0 Flags 0x00000007
+[19:18:28.580] Memory 6 - HeapIndex 0 Flags 0x0000000f
+[19:18:28.580] Memory 7 - HeapIndex 1 Flags 0x00000021
+[19:18:28.580] Memory 8 - HeapIndex 0 Flags 0x00000011
+[19:18:28.580] VK_FORMAT_R4G4_UNORM_PACK8 not supported
+[19:18:28.606] Vulkan: Can't find immediate present mode
+[19:18:29.289] ------- Loaded title -------
+[19:18:29.289] TitleId: 00050000-101c9300
+[19:18:29.290] TitleVersion: v208
+[19:18:29.290] TitleRegion: JP
+[19:18:29.290] Save path:   /storage/emulated/0/Android/data/info.cemu.cemu/files/mlc01/usr/save/00050000/101C9300/user/
+[19:18:29.290] Shader cache file: shaderCache/transferable/00050000101c9300.bin
+[19:18:29.290] gameprofile path: gameProfiles/default/00050000101c9300.ini
+[19:18:29.290] RPX hash (updated): fb7911ad
+[19:18:29.290] RPX hash (base): dcac9927
+[19:18:29.431] Loaded module 'u-king' with checksum 0x6267bfd0
+[19:18:29.431] RPL link time: 142ms
+[19:18:29.570] HLE scan time: 139ms
+[19:18:29.570] ------- Active settings -------
+[19:18:29.570] CPU-Mode: Multi-core recompiler
+[19:18:29.570] Load shared libraries: true
+[19:18:29.570] Use precompiled shaders: auto (gameprofile)
+[19:18:29.570] Full sync at GX2DrawDone: true
+[19:18:29.570] Strict shader mul: true
+[19:18:29.570] Async compile: true
+[19:18:29.570] Console language: 1
+[19:18:29.840] ------- Activate graphic packs -------
+[19:18:29.940] Graphic pack patches: Code cave for group [BetterVR_CutsceneSettings_V208] in gfx pack "Better VR" ranges from 0 to 0x1176c but has only few instructions. Is this intentional?
+[19:18:29.944] Applying patch group 'BetterVR_ImproveGUI_V208' (Codecave: 01800000-01800058)
+[19:18:29.944] Applying patch group 'BetterVR_UpdateCamera_V208' (Codecave: 01800100-018007f0)
+[19:18:29.944] Applying patch group 'BetterVR_FirstPersonMode_V208' (Codecave: 01800800-01800840)
+[19:18:29.944] Applying patch group 'BetterVR_STUB_StereoRenderingDebugging_V208' (Codecave: 01800900-01800a2c)
+[19:18:29.944] Applying patch group 'BetterVR_Find3DFrameBuffer_V208' (Codecave: 01800b00-01800d3c)
+[19:18:29.944] Applying patch group 'BetterVR_StereoRendering_CameraAndProjection_V208' (Codecave: 01800e00-018011e8)
+[19:18:29.944] Applying patch group 'BetterVR_StereoRendering_Optimizations_V208' (Codecave: 01801200-018013c4)
+[19:18:29.944] Applying patch group 'BetterVR_EntityController_V208' (Codecave: 01801400-01801738)
+[19:18:29.944] Applying patch group 'BetterVR_Misc_V208'
+[19:18:29.944] Applying patch group 'BetterVR_WeaponAttacks_V208' (Codecave: 01801800-01801b90)
+[19:18:29.944] Applying patch group 'BetterVR_PlayerDirectionFixes_V208'
+[19:18:29.944] Applying patch group 'BetterVR_RND_Logging_V208' (Codecave: 01801c00-018021d8)
+[19:18:29.944] Applying patch group 'BetterVR_Find2DFrameBuffer_V208' (Codecave: 01802200-0180236c)
+[19:18:29.944] Applying patch group 'BetterVR_PPC_Profiling_V208' (Codecave: 01802400-01802acc)
+[19:18:29.944] Applying patch group 'BetterVR_HandBones_V208' (Codecave: 01802b00-01802bb0)
+[19:18:29.944] Applying patch group 'BetterVR_StereoRendering_ActorJobs_V208' (Codecave: 01802c00-01803634)
+[19:18:29.944] Applying patch group 'BetterVR_Rumble_V208' (Codecave: 01803700-01803748)
+[19:18:29.944] Applying patch group 'BetterVR_SpawnEquipment_V208' (Codecave: 01803800-0180394c)
+[19:18:29.944] Applying patch group 'BetterVR_FirstPersonMode_Events_V208' (Codecave: 01803a00-01803afc)
+[19:18:29.944] Applying patch group 'BetterVR_FirstPersonMode_V208' (Codecave: 01803b00-01803b8c)
+[19:18:29.944] Applying patch group 'BetterVR_Utils_V208' (Codecave: 01803c00-01803d30)
+[19:18:29.944] Applying patch group 'BetterVR_StereoRendering_ScreenChecks_V208' (Codecave: 01803e00-01803ea4)
+[19:18:29.944] Applying patch group 'BetterVR_UpdateSettings_V208'
+[19:18:29.944] Applying patch group 'BetterVR_ControlsLogging_V208' (Codecave: 01803f00-01803f78)
+[19:18:29.944] Applying patch group 'BetterVR_CutsceneSettings_V208' (Codecave: 01804000-0181576c)
+[19:18:29.944] Applying patch group 'BetterVR_NewActorHook_V208' (Codecave: 01815800-01815864)
+[19:18:29.944] Applying patch group 'BetterVR_HookInput_V208' (Codecave: 01815900-01815970)
+[19:18:29.944] Applying patch group 'BetterVR_ControlsLoggingPhysics_V208' (Codecave: 01815a00-01815a3c)
+[19:18:29.944] Applying patch group 'BetterVR_WeaponHands_V208' (Codecave: 01815b00-01815d24)
+[19:18:29.944] Applying patch group 'BetterVR_CameraControls_V208' (Codecave: 01815e00-01815f74)
+[19:18:29.949] Activate graphic pack: The Legend of Zelda: Breath of the Wild/Better VR [Presets: Use Default Colors (Default, White)]
+[19:18:29.949] ------- Init Audio backend -------
+[19:18:29.949] DirectSound: not supported
+[19:18:29.949] XAudio 2.8: not supported
+[19:18:29.949] XAudio 2.7: not supported
+[19:18:29.949] Cubeb: available
+[19:18:29.949] ------- Init Audio input backend -------
+[19:18:29.949] Cubeb: available
+[19:18:29.949] ------- Run title -------
+[19:18:30.589] Unsupported lib call: coreinit.FSSetStateChangeNotification
+[19:18:30.590] IOSU_ACT: using account default in first slot
+[19:18:30.592] Unsupported lib call: gx2.GX2SetTVScale
+[19:18:30.593] Unsupported lib call: coreinit.hook_OSReportToConsole
+[19:18:30.593] Unsupported lib call: padscore.KPADSetMplsWorkarea
+[19:18:30.603] Unsupported lib call: coreinit.hook_EndCameraSide
+[19:18:30.603] Unsupported lib call: coreinit.hook_BeginCameraSide
+[19:18:30.603] Unsupported lib call: coreinit.hook_InjectXRInput
+[19:18:30.604] Unsupported lib call: coreinit.OSGetShutdownReason
+[19:18:30.605] Unsupported lib call: coreinit.hook_UpdateSettings
+[19:18:30.605] Unsupported lib call: coreinit.UCOpen
+[19:18:30.605] Unsupported lib call: coreinit.UCClose

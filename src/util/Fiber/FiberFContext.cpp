@@ -2,7 +2,7 @@
 
 thread_local Fiber* sCurrentFiber = nullptr;
 
-using namespace boost::context::detail;
+using namespace fcontext;
 
 Fiber::Fiber(void (*fiberEntryPoint)(void* userParam), void* userParam, void* privateData)
 	: m_entryPoint(fiberEntryPoint),
@@ -11,7 +11,7 @@ Fiber::Fiber(void (*fiberEntryPoint)(void* userParam), void* userParam, void* pr
 {
 	const size_t stackSize = 2 * 1024 * 1024;
 	m_stackPtr = malloc(stackSize);
-	m_context = make_fcontext(static_cast<uint8*>(m_stackPtr) + stackSize, stackSize, Fiber::Start);
+	m_context = _fl_make_fcontext(static_cast<uint8*>(m_stackPtr) + stackSize, stackSize, Fiber::Start);
 }
 
 Fiber::Fiber(void* privateData) : m_privateData(privateData)
@@ -45,7 +45,7 @@ void Fiber::Switch(Fiber& targetFiber)
 	Fiber* thisFiber = sCurrentFiber;
 	sCurrentFiber = &targetFiber;
 	targetFiber.m_prevFiber = thisFiber;
-	transfer_t transfer = jump_fcontext(targetFiber.m_context, &targetFiber);
+	transfer_t transfer = _fl_jump_fcontext(targetFiber.m_context, &targetFiber);
 	thisFiber->m_prevFiber->m_context = transfer.fctx;
 }
 

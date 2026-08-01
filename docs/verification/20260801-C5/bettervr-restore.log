@@ -1,0 +1,71 @@
+[19:25:19.119] ------- Init Cemu 39ec7c55 -------
+[19:25:19.120] Init Wii U memory space (base: 0x0000007464cd6000)
+[19:25:19.120] mlc01 path: /storage/emulated/0/Android/data/info.cemu.cemu/files/mlc01
+[19:25:19.120] CPU: QTI, SG8275
+[19:25:19.120] RAM: 15257MB
+[19:25:19.120] Platform: Android (API level 33)
+[19:25:19.120] Used CPU extensions: 
+[19:25:19.122] IOSU_CRYPTO: No otp.bin found. Online mode cannot be used
+[19:25:19.122] IOSU_CRYPTO: No Seeprom.bin found. Online mode cannot be used
+[19:25:25.774] Mounting title 00050000101c9300
+[19:25:25.774] Base: content://com.android.externalstorage.documents/tree/primary%3Aroms%2FWIIU/document/primary%3Aroms/WIIU/The%20Legend%20of%20Zelda%20Breath%20of%20the%20Wild%20(JP)%20(v208)%20(DLC%20v80).wua [WUA] [00050000101c9300_v0]
+[19:25:25.788] Update: content://com.android.externalstorage.documents/tree/primary%3Aroms%2FWIIU/document/primary%3Aroms/WIIU/The%20Legend%20of%20Zelda%20Breath%20of%20the%20Wild%20(JP)%20(v208)%20(DLC%20v80).wua [WUA] [0005000e101c9300_v208]
+[19:25:25.788] DLC: content://com.android.externalstorage.documents/tree/primary%3Aroms%2FWIIU/document/primary%3Aroms/WIIU/The%20Legend%20of%20Zelda%20Breath%20of%20the%20Wild%20(JP)%20(v208)%20(DLC%20v80).wua [WUA] [0005000c101c9300_v80]
+[19:25:25.819] COS: System fonts found. Generated shareddata (26609KB)
+[19:25:25.829] Recompiler initialized
+[19:25:26.083] ------- Init Vulkan graphics backend -------
+[19:25:26.098] Vulkan instance version: 1.3
+[19:25:26.111] Using GPU: Adreno (TM) 740
+[19:25:26.111] Driver version: Driver Build: 8193e26746, I5a14d5d512, 1692025621
+Date: 08/14/23
+Compiler Version: E031.41.03.41
+Driver Branch: 
+
+[19:25:26.112] Vulkan: present_wait extension: unsupported
+[19:25:26.112] VK_EXT_attachment_feedback_loop_layout(_dynamic_state) not supported
+[19:25:26.112] VulkanLimits: UBAlignment 64 nonCoherentAtomSize 1
+[19:25:26.112] VK_EXT_pipeline_robustness not supported. Falling back to robustBufferAccess
+[19:25:26.113] Vulkan device memory info:
+[19:25:26.113] Heap 0 - Size 15257MB Flags 0x00000001
+[19:25:26.113] Heap 1 - Size 256MB Flags 0x00000001
+[19:25:26.113] Memory 0 - HeapIndex 0 Flags 0x00000001
+[19:25:26.113] Memory 1 - HeapIndex 0 Flags 0x00000001
+[19:25:26.113] Memory 2 - HeapIndex 0 Flags 0x00000001
+[19:25:26.113] Memory 3 - HeapIndex 0 Flags 0x0000000b
+[19:25:26.113] Memory 4 - HeapIndex 0 Flags 0x00000007
+[19:25:26.113] Memory 5 - HeapIndex 0 Flags 0x00000007
+[19:25:26.113] Memory 6 - HeapIndex 0 Flags 0x0000000f
+[19:25:26.113] Memory 7 - HeapIndex 1 Flags 0x00000021
+[19:25:26.113] Memory 8 - HeapIndex 0 Flags 0x00000011
+[19:25:26.113] VK_FORMAT_R4G4_UNORM_PACK8 not supported
+[19:25:26.135] Vulkan: Can't find immediate present mode
+[19:25:26.723] ------- Loaded title -------
+[19:25:26.723] TitleId: 00050000-101c9300
+[19:25:26.723] TitleVersion: v208
+[19:25:26.723] TitleRegion: JP
+[19:25:26.723] Save path:   /storage/emulated/0/Android/data/info.cemu.cemu/files/mlc01/usr/save/00050000/101C9300/user/
+[19:25:26.723] Shader cache file: shaderCache/transferable/00050000101c9300.bin
+[19:25:26.723] gameprofile path: gameProfiles/default/00050000101c9300.ini
+[19:25:26.723] RPX hash (updated): fb7911ad
+[19:25:26.723] RPX hash (base): dcac9927
+[19:25:26.860] Loaded module 'u-king' with checksum 0x6267bfd0
+[19:25:26.860] RPL link time: 137ms
+[19:25:26.998] HLE scan time: 137ms
+[19:25:26.998] ------- Active settings -------
+[19:25:26.998] CPU-Mode: Multi-core recompiler
+[19:25:26.998] Load shared libraries: true
+[19:25:26.998] Use precompiled shaders: auto (gameprofile)
+[19:25:26.998] Full sync at GX2DrawDone: true
+[19:25:26.998] Strict shader mul: true
+[19:25:26.998] Async compile: true
+[19:25:26.998] Console language: 1
+[19:25:27.278] ------- Activate graphic packs -------
+[19:25:27.279] ------- Init Audio backend -------
+[19:25:27.279] DirectSound: not supported
+[19:25:27.279] XAudio 2.8: not supported
+[19:25:27.279] XAudio 2.7: not supported
+[19:25:27.279] Cubeb: available
+[19:25:27.279] ------- Init Audio input backend -------
+[19:25:27.279] Cubeb: available
+[19:25:27.279] ------- Run title -------
+[19:25:27.921] IOSU_ACT: using account default in first slot

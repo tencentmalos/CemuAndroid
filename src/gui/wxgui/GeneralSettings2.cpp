@@ -754,8 +754,12 @@ wxPanel* GeneralSettings2::AddOverlayPage(wxNotebook* notebook)
 
 		auto settings2_row = new wxFlexGridSizer(0, 4, 2, 0);
 		{
+			m_overlay_summary = new wxCheckBox(box, wxID_ANY, _("Performance summary"));
+			m_overlay_summary->SetToolTip(_("Shows FPS, frame time, CPU, RAM, and draw calls in a compact panel"));
+			settings2_row->Add(m_overlay_summary, 0, wxALL, 5);
+
 			m_overlay_fps = new wxCheckBox(box, wxID_ANY, _("FPS"));
-			m_overlay_fps->SetToolTip(_("The number of frames per second. Average over last 5 seconds"));
+			m_overlay_fps->SetToolTip(_("The number of frames per second, smoothed over recent frames"));
 			settings2_row->Add(m_overlay_fps, 0, wxALL, 5);
 
 			m_overlay_drawcalls = new wxCheckBox(box, wxID_ANY, _("Draw calls per frame"));
@@ -1275,6 +1279,7 @@ void GeneralSettings2::StoreConfig()
 	config.overlay.text_color = m_overlay_font_color->GetColour().GetRGBA();
 	config.overlay.text_scale = m_overlay_scale->GetSelection() * 25 + 50;
 
+	config.overlay.summary = m_overlay_summary->GetValue();
 	config.overlay.fps = m_overlay_fps->GetValue();
 	config.overlay.drawcalls = m_overlay_drawcalls->GetValue();
 	config.overlay.cpu_usage = m_overlay_cpu->GetValue();
@@ -1933,6 +1938,7 @@ void GeneralSettings2::ApplyConfig()
 	wxASSERT(selection < m_overlay_scale->GetCount());
 	m_overlay_scale->SetSelection(selection);
 
+	m_overlay_summary->SetValue(config.overlay.summary);
 	m_overlay_fps->SetValue(config.overlay.fps);
 	m_overlay_drawcalls->SetValue(config.overlay.drawcalls);
 	m_overlay_cpu->SetValue(config.overlay.cpu_usage);

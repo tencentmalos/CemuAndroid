@@ -76,8 +76,16 @@ if(WIN32)
 	target_sources(CemuUtil PRIVATE SystemInfo/SystemInfoWin.cpp)
 elseif(UNIX)
   if(ANDROID)
-    target_sources(CemuUtil PRIVATE Fiber/FiberFContext.cpp)
-    target_link_libraries(CemuUtil PRIVATE Boost::context)
+    set(CEMU_FCONTEXT_DIR
+      "${CMAKE_SOURCE_DIR}/dependencies/foundation/third_party/yalantinglibs/include/ylt/thirdparty/async_simple/uthread/internal/Linux/aarch64"
+    )
+    target_sources(CemuUtil PRIVATE
+      Fiber/FiberFContext.cpp
+      "${CEMU_FCONTEXT_DIR}/jump_arm64_aapcs_elf_gas.S"
+      "${CEMU_FCONTEXT_DIR}/make_arm64_aapcs_elf_gas.S"
+    )
+    # FiberFContext.h is part of CemuUtil's public headers.
+    target_link_libraries(CemuUtil PUBLIC Cemu::async_simple_headers)
   else()
     target_sources(CemuUtil PRIVATE Fiber/FiberUContext.cpp)
   endif()

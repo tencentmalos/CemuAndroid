@@ -32,17 +32,12 @@ cemu_use_precompiled_header(imguiImpl)
 
 target_include_directories(imguiImpl PUBLIC "../")
 
-# imgui source files
-target_sources(imguiImpl PRIVATE
-"../../dependencies/imgui/imgui.cpp"
-"../../dependencies/imgui/imgui_draw.cpp"
-"../../dependencies/imgui/imgui_tables.cpp"
-"../../dependencies/imgui/imgui_widgets.cpp"
-)
-
-target_include_directories(imguiImpl PUBLIC "../../dependencies/imgui/")
-
-target_link_libraries(imguiImpl PRIVATE
+target_link_libraries(imguiImpl
+	PUBLIC
+		spatial::foundation_imgui
+	PRIVATE
 	CemuCommon
 	CemuGui
+	CemuInput
+	pugixml::pugixml
 )

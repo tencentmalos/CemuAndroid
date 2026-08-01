@@ -296,13 +296,12 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* drawData, id<MTLCommandBuffer> c
     [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer>)
     {
         dispatch_async(dispatch_get_main_queue(), ^{
-            ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
-            if (bd != nullptr)
+            if (ctx != nil)
             {
-                @synchronized(bd->SharedMetalContext.bufferCache)
+                @synchronized(ctx.bufferCache)
                 {
-                    [bd->SharedMetalContext.bufferCache addObject:vertexBuffer];
-                    [bd->SharedMetalContext.bufferCache addObject:indexBuffer];
+                    [ctx.bufferCache addObject:vertexBuffer];
+                    [ctx.bufferCache addObject:indexBuffer];
                 }
             }
         });

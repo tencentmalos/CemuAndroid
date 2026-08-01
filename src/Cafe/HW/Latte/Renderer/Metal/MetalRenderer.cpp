@@ -22,6 +22,7 @@
 #include "Cafe/HW/Latte/Core/FetchShader.h"
 #include "Cafe/HW/Latte/Core/LatteConst.h"
 #include "config/CemuConfig.h"
+#include "spatial/imgui/Layer.hpp"
 
 #define IMGUI_IMPL_METAL_CPP
 #include "imgui/imgui_extension.h"
@@ -331,8 +332,17 @@ void MetalRenderer::Initialize()
 
 void MetalRenderer::Shutdown()
 {
-    // TODO: should shutdown both layers
-    ImGui_ImplMetal_Shutdown();
+    auto shutdownImGuiBackend = [](const std::shared_ptr<spatial::imgui::Layer>& layer) {
+        if (!layer || !layer->getContext())
+            return;
+        layer->setAsActiveContext();
+        if (ImGui::GetIO().BackendRendererUserData)
+            ImGui_ImplMetal_Shutdown();
+    };
+    shutdownImGuiBackend(m_imguiTVStatusLayer);
+    shutdownImGuiBackend(m_imguiPadStatusLayer);
+    shutdownImGuiBackend(m_imguiTVLayer);
+    shutdownImGuiBackend(m_imguiPadLayer);
     CommitCommandBuffer();
     Renderer::Shutdown();
     RendererShaderMtl::Shutdown();
@@ -589,8 +599,12 @@ void MetalRenderer::ImguiEnd()
     }
 
     ImGui::Render();
-	ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), GetCurrentCommandBuffer(), (MTL::RenderCommandEncoder*)m_commandEncoder);
-	//ImGui::EndFrame();
+    ImDrawData* mainDrawData = ImGui::GetDrawData();
+    ImDrawData* statusDrawData = ImguiRenderStatusLayer();
+    ImGui_ImplMetal_RenderDrawData(mainDrawData, GetCurrentCommandBuffer(), (MTL::RenderCommandEncoder*)m_commandEncoder);
+    if (statusDrawData)
+        ImGui_ImplMetal_RenderDrawData(statusDrawData, GetCurrentCommandBuffer(), (MTL::RenderCommandEncoder*)m_commandEncoder);
+    //ImGui::EndFrame();
 
 	EndEncoding();
 }

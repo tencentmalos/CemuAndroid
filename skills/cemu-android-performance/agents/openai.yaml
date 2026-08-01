@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cemu Android Performance"
+  short_description: "Profile Cemu Android CPU, GPU, and frame performance"
+  default_prompt: "Use $cemu-android-performance to build, connect Tracy, and analyze Cemu Android performance."

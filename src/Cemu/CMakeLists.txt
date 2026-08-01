@@ -47,7 +47,10 @@ target_include_directories(CemuComponents PUBLIC "../")
 
 target_link_libraries(CemuComponents PRIVATE
 	CemuCommon
-  CemuGui
+	CemuGui
+	CURL::libcurl
+	OpenSSL::Crypto
+	pugixml::pugixml
 )
 
 # PUBLIC because fmt/format.h is included in ExpressionParser/ExpressionParser.h

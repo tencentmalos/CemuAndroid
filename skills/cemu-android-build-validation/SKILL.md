@@ -52,7 +52,7 @@ Debian ARM64 toolchain 路径使用仓库脚本：
 BUILD_TYPE=release ./build_arm.sh
 ```
 
-该脚本会配置 `build_arm`，关闭 vcpkg 和若干桌面端特性，并用 Ninja 构建。失败时在结果中保留第一个 CMake 配置错误和失败的编译命令。
+该脚本会配置 `build_arm`，使用仓库内钉住的子模块依赖，关闭若干桌面端特性，并用 Ninja 构建。失败时在结果中保留第一个 CMake 配置错误和失败的编译命令。
 
 ## Android Gradle 构建与测试
 
@@ -60,10 +60,16 @@ Android 工程根目录是 `src/android`：
 
 ```sh
 cd src/android
-./gradlew assembleDebug
+./gradlew assembleRelWithDebInfo
 ./gradlew testDebugUnitTest
 ./gradlew connectedDebugAndroidTest
 ```
+
+Gradle `relWithDebInfo` variant 使用正式包名、允许 debug/run-as、不启用 R8；其
+variant 名称对应 Native CMake `RelWithDebInfo`。可运行 APK、真机功能验证和性能
+验证统一使用 `assembleRelWithDebInfo` / `installRelWithDebInfo`；不要用 debug APK
+形成性能结论。`testDebugUnitTest` 与 `connectedDebugAndroidTest` 是当前测试任务只
+提供 debug variant 的例外。
 
 当前 `src/android/app/build.gradle.kts` 配置为 `arm64-v8a`。除非任务明确要求，不要扩大 ABI 范围。
 
@@ -81,7 +87,7 @@ ANDROID_KEY_ALIAS=...
 
 - 仅文档变更：检查文件内容、路径链接和 `git diff`。
 - CMake 或 Native 源码变更：至少运行相关 CMake 配置/构建。
-- Android Kotlin、Gradle、资源、JNI 或打包变更：运行 `assembleDebug` 和最接近的测试任务。
+- Android Kotlin、Gradle、资源、JNI 或打包变更：运行 `assembleRelWithDebInfo` 和最接近的测试任务。
 - 子模块变更：检查 `.gitmodules`、`git submodule sync --recursive`，可行时验证递归 clone/update。
 
 如果工具链、SDK、设备或依赖缺失导致命令无法运行，明确报告阻塞原因，并说明已经完成的最强替代检查。

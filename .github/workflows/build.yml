@@ -10,11 +10,6 @@ on:
         required: false
         type: string
 
-env:
-  VCPKG_ROOT: "${{github.workspace}}/dependencies/vcpkg"
-  VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
-  VCPKG_FORCE_DOWNLOADED_BINARIES: true
-
 jobs:
   build-ubuntu:
     continue-on-error: true
@@ -52,11 +47,6 @@ jobs:
         run: |
           sudo apt update -qq
           sudo apt install -y clang-15 cmake freeglut3-dev libgcrypt20-dev libglm-dev libgtk-3-dev libpulse-dev libsecret-1-dev libsystemd-dev libudev-dev nasm ninja-build libbluetooth-dev
-
-      - name: Setup vcpkg binary cache
-        uses: ./.github/actions/set-up-vcpkg-binary-cache-action
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: "cmake"
         run: |
@@ -139,18 +129,11 @@ jobs:
         with:
           cmake-version: "3.29.0"
 
-      - name: Setup vcpkg binary cache
-        uses: ./.github/actions/set-up-vcpkg-binary-cache-action
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-
       - name: "cmake"
         run: |
-          mkdir -p build
-          cd build
           echo "[INFO] BUILD_FLAGS: ${{ env.BUILD_FLAGS }}"
           echo "[INFO] BUILD_MODE: ${{ env.BUILD_MODE }}"
-          cmake .. ${{ env.BUILD_FLAGS }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_MODE }} -DVCPKG_INSTALL_OPTIONS="--clean-after-build"
+          cmake -S . -B build ${{ env.BUILD_FLAGS }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_MODE }}
 
       - name: "Build Cemu"
         run: |
@@ -229,11 +212,6 @@ jobs:
         with:
           cmake-version: "3.29.0"
 
-      - name: Setup vcpkg binary cache
-        uses: ./.github/actions/set-up-vcpkg-binary-cache-action
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-
       - name: "cmake"
         run: |
           mkdir build
@@ -280,7 +258,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update -qq
-          sudo apt install -y gettext mono-complete
+          sudo apt install -y gettext
 
       - name: Uncompile message catalogs
         run: |
@@ -292,11 +270,6 @@ jobs:
             mkdir -p $(dirname $po_file)
             msgunfmt $mo_file -o $po_file || echo "Failed to uncompile message catalog from $mo_file"
           done
-
-      - name: Setup vcpkg binary cache
-        uses: ./.github/actions/set-up-vcpkg-binary-cache-action
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Build Cemu
         env:
@@ -318,7 +291,7 @@ jobs:
             echo "No Android signing store file provided. The APK will not be signed with a release key."
           fi
 
-          ./gradlew assembleRelease
+          ./gradlew assembleRelWithDebInfo
       # - name: Upload artifact
       #   uses: actions/upload-artifact@v4
       #   with:

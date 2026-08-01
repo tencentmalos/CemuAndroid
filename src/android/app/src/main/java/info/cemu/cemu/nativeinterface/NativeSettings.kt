@@ -128,6 +128,12 @@ object NativeSettings {
     external fun setOverlayTextScalePercentage(value: Int)
 
     @JvmStatic
+    external fun isOverlaySummaryEnabled(): Boolean
+
+    @JvmStatic
+    external fun setOverlaySummaryEnabled(value: Boolean)
+
+    @JvmStatic
     external fun isOverlayFPSEnabled(): Boolean
 
     @JvmStatic

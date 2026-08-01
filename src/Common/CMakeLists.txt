@@ -68,7 +68,7 @@ endif()
 cemu_use_precompiled_header(CemuCommon)
 target_include_directories(CemuCommon PUBLIC "../")
 
-target_link_libraries(CemuCommon PRIVATE
+target_link_libraries(CemuCommon PUBLIC
 	glm::glm
 )
 
@@ -84,6 +84,7 @@ endif()
 # - boost/nowide/convert.hpp is included in precompiled.h
 # - boost/predef/os.h is included in platform.h
 # - fmt/core.h is included in precompiled.h
+# - glm/glm.hpp is included in precompiled.h
 target_link_libraries(CemuCommon PUBLIC
 	Threads::Threads # necessary because some targets may need -pthreads
 	Boost::nowide

@@ -88,8 +88,13 @@ public:
 		if (m_fscType != FSC_TYPE_DIRECTORY)
 			return false;
 		FSTFileHandle entryItr;
-		if (!m_volume->Next(m_dirIterator, entryItr))
-			return false;
+		do
+		{
+			if (!m_volume->Next(m_dirIterator, entryItr))
+				return false;
+			// Link entries cannot be opened by this device and therefore must not
+			// appear in its directory listing either.
+		} while (m_volume->HasLinkFlag(entryItr));
 		if (m_volume->IsDirectory(entryItr))
 		{
 			dirEntry->isDirectory = true;

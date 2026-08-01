@@ -6,17 +6,9 @@
 	path = dependencies/cubeb
 	url = git@github.com:tencentmalos/cubeb.git
 	shallow = true
-[submodule "dependencies/vcpkg"]
-	path = dependencies/vcpkg
-	url = git@github.com:tencentmalos/vcpkg.git
-	shallow = false
 [submodule "dependencies/Vulkan-Headers"]
 	path = dependencies/Vulkan-Headers
 	url = git@github.com:tencentmalos/Vulkan-Headers.git
-	shallow = true
-[submodule "dependencies/imgui"]
-	path = dependencies/imgui
-	url = git@github.com:tencentmalos/imgui.git
 	shallow = true
 [submodule "dependencies/metal-cpp"]
 	path = dependencies/metal-cpp
@@ -55,4 +47,55 @@
 [submodule "dependencies/cryptopp-cmake"]
 	path = dependencies/cryptopp-cmake
 	url = git@github.com:tencentmalos/cryptopp-cmake.git
+	shallow = true
+[submodule "dependencies/boost"]
+	path = dependencies/boost
+	url = git@github.com:tencentmalos/ext-boost.git
+	branch = cemu-1.90
+	shallow = true
+[submodule "dependencies/glm"]
+	path = dependencies/glm
+	url = git@github.com:tencentmalos/glm.git
+	branch = cemu-1.0.2
+	shallow = true
+[submodule "dependencies/curl"]
+	path = dependencies/curl
+	url = git@github.com:tencentmalos/curl.git
+	shallow = true
+[submodule "dependencies/pugixml"]
+	path = dependencies/pugixml
+	url = git@github.com:tencentmalos/pugixml.git
+	shallow = true
+[submodule "dependencies/zlib-ng"]
+	path = dependencies/zlib-ng
+	url = git@github.com:tencentmalos/zlib-ng.git
+	shallow = true
+[submodule "dependencies/libressl"]
+	path = dependencies/libressl
+	url = git@github.com:tencentmalos/ext-libressl-portable.git
+	shallow = true
+[submodule "dependencies/libzip"]
+	path = dependencies/libzip
+	url = git@github.com:tencentmalos/libzip.git
+	branch = cemu-1.11.4
+	shallow = true
+[submodule "dependencies/SDL"]
+	path = dependencies/SDL
+	url = git@github.com:tencentmalos/SDL.git
+	branch = cemu-3.4.10
+	shallow = true
+[submodule "dependencies/wxWidgets"]
+	path = dependencies/wxWidgets
+	url = git@github.com:tencentmalos/wxWidgets.git
+	branch = cemu-3.3.3
+	shallow = true
+[submodule "references/BotW-BetterVR"]
+	path = references/BotW-BetterVR
+	url = git@github.com:tencentmalos/BotW-BetterVR.git
+	branch = main
+	shallow = true
+[submodule "references/botw"]
+	path = references/botw
+	url = git@github.com:tencentmalos/botw.git
+	branch = master
 	shallow = true

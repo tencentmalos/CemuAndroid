@@ -21,4 +21,5 @@ target_link_libraries(CemuConfig PRIVATE
 	CemuCommon
     CemuGui
     Boost::program_options
+	OpenSSL::Crypto
 )

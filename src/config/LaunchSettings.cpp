@@ -12,6 +12,7 @@
 #include "util/crypto/aes128.h"
 
 #include "Cafe/Filesystem/FST/FST.h"
+#include "Cemu/Tools/WuaTool.h"
 #include "util/helpers/StringHelpers.h"
 
 void requireConsole();
@@ -91,12 +92,22 @@ bool LaunchSettings::HandleCommandline(const std::vector<std::wstring>& args)
 		("extract,e", po::wvalue<std::wstring>(), "Path to WUD or WUX file for extraction")
 		("path,p", po::value<std::string>(), "Path of file to extract (for example meta/meta.xml)")
 		("output,o", po::wvalue<std::wstring>(), "Output path for extracted file.");
+
+	po::options_description wuaTool{ "WUA tool" };
+	wuaTool.add_options()
+		("create-wua", po::wvalue<std::wstring>(), "Create a WUA archive at this output path")
+		("wua-base", po::wvalue<std::wstring>(), "Path to the base title.tmd")
+		("wua-update", po::wvalue<std::wstring>(), "Path to the update title.tmd")
+		("wua-dlc", po::wvalue<std::wstring>(), "Path to the DLC title.tmd")
+		("wua-update-overlay", po::wvalue<std::wstring>(), "Directory of files to bake over the update title")
+		("wua-overwrite", "Replace an existing WUA output")
+		("inspect-wua", po::wvalue<std::wstring>(), "Read title IDs and versions from a WUA archive");
 	
 	po::options_description all;
-	all.add(desc).add(hidden).add(extractor);
+	all.add(desc).add(hidden).add(extractor).add(wuaTool);
 
 	po::options_description visible;
-	visible.add(desc).add(extractor);
+	visible.add(desc).add(extractor).add(wuaTool);
 
 	try
 	{
@@ -246,10 +257,60 @@ bool LaunchSettings::HandleCommandline(const std::vector<std::wstring>& args)
 			return false;
 		}
 
+		const bool createWua = vm.count("create-wua") != 0;
+		const bool inspectWua = vm.count("inspect-wua") != 0;
+		if (createWua && inspectWua)
+		{
+			requireConsole();
+			std::cerr << "--create-wua and --inspect-wua cannot be used together\n";
+			s_exit_code = 1;
+			return false;
+		}
+		if (createWua)
+		{
+			requireConsole();
+			if (!vm.count("wua-base"))
+			{
+				std::cerr << "--create-wua requires --wua-base\n";
+				s_exit_code = 1;
+				return false;
+			}
+
+			std::optional<fs::path> updatePath;
+			std::optional<fs::path> aocPath;
+			std::optional<fs::path> updateOverlayPath;
+			if (vm.count("wua-update"))
+				updatePath = fs::path(vm["wua-update"].as<std::wstring>());
+			if (vm.count("wua-dlc"))
+				aocPath = fs::path(vm["wua-dlc"].as<std::wstring>());
+			if (vm.count("wua-update-overlay"))
+				updateOverlayPath = fs::path(vm["wua-update-overlay"].as<std::wstring>());
+			const bool result = WuaTool::Create(fs::path(vm["create-wua"].as<std::wstring>()),
+				fs::path(vm["wua-base"].as<std::wstring>()), updatePath, aocPath, updateOverlayPath,
+				vm.count("wua-overwrite") != 0);
+			s_exit_code = result ? 0 : 1;
+			return false;
+		}
+		if (inspectWua)
+		{
+			requireConsole();
+			s_exit_code = WuaTool::Inspect(fs::path(vm["inspect-wua"].as<std::wstring>())) ? 0 : 1;
+			return false;
+		}
+		if (vm.count("wua-base") || vm.count("wua-update") || vm.count("wua-dlc") ||
+			vm.count("wua-update-overlay") || vm.count("wua-overwrite"))
+		{
+			requireConsole();
+			std::cerr << "WUA input options require --create-wua\n";
+			s_exit_code = 1;
+			return false;
+		}
+
 		return true;
 	}
 	catch (const std::exception& ex)
 	{
+		s_exit_code = 1;
 		std::string errorMsg;
 		errorMsg.append("Error while trying to parse command line parameter:\n");
 		errorMsg.append(ex.what());

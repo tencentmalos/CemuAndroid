@@ -13,8 +13,12 @@
 #endif
 
 // imgui forward declarations
-struct ImFontAtlas;
-struct ImGuiContext;
+struct ImDrawData;
+
+namespace spatial::imgui
+{
+class Layer;
+}
 
 enum class GfxVendor
 {
@@ -181,10 +185,16 @@ protected:
 
 	void SaveScreenshot(const std::vector<uint8>& rgb_data, int width, int height, bool mainWindow);
 
+	ImDrawData* ImguiRenderStatusLayer();
+	bool IsImguiMainWindow() const { return m_imguiMainWindow; }
 
-	ImFontAtlas* imguiFontAtlas{};
-	ImGuiContext* imguiTVContext{};
-	ImGuiContext* imguiPadContext{};
+	std::shared_ptr<spatial::imgui::Layer> m_imguiTVLayer;
+	std::shared_ptr<spatial::imgui::Layer> m_imguiPadLayer;
+	std::shared_ptr<spatial::imgui::Layer> m_imguiTVStatusLayer;
+	std::shared_ptr<spatial::imgui::Layer> m_imguiPadStatusLayer;
+	bool m_imguiMainWindow{true};
+	sint32 m_imguiWidth{};
+	sint32 m_imguiHeight{};
 
 #if BOOST_OS_WINDOWS
 	std::unique_ptr<DXGIWrapper> m_dxgi_wrapper{};

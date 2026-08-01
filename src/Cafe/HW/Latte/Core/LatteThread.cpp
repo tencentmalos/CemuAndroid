@@ -19,6 +19,8 @@
 
 #include "Cafe/CafeSystem.h"
 
+#include "spatial/profiler/Profiler.h"
+
 LatteGPUState_t LatteGPUState = {};
 
 std::atomic_bool sLatteThreadRunning = false;
@@ -115,6 +117,8 @@ void LatteThread_HandleOSScreen()
 int Latte_ThreadEntry()
 {
 	SetThreadName("LatteThread");
+	spatial::profiler::ProfilerSetCurrentThreadName("Latte GPU Thread");
+	spatial::profiler::ProfilerNotifyThisThreadName();
 	sint32 w,h;
 	WindowSystem::GetWindowPhysSize(w,h);
 

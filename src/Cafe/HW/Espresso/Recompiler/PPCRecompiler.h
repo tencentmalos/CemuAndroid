@@ -170,4 +170,4 @@ extern void ATTR_MS_ABI (*PPCRecompiler_leaveRecompilerCode_unvisited)();
 
 void PPCRecompiler_recompileIfUnvisited(uint32 enterAddress);
 void PPCRecompiler_attemptEnter(struct PPCInterpreter_t* hCPU, uint32 enterAddress);
-void PPCRecompiler_attemptEnterWithoutRecompile(struct PPCInterpreter_t* hCPU, uint32 enterAddress);
+bool PPCRecompiler_attemptEnterWithoutRecompile(struct PPCInterpreter_t* hCPU, uint32 enterAddress);

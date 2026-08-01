@@ -529,6 +529,9 @@ private:
 
 	void CreateCommandPool();
 	void CreateCommandBuffers();
+	void InitializeGpuProfilerContext();
+	void DestroyGpuProfilerContext();
+	void CollectGpuProfilerQueries(VkCommandBuffer commandBuffer);
 
 	void swapchain_createDescriptorSetLayout();
 
@@ -625,6 +628,7 @@ private:
 	std::unordered_map<uint64, VkDescriptorSet> m_backbufferBlitDescriptorSetCache;
 	VkPipelineLayout m_pipelineLayout{nullptr};
 	VkCommandPool m_commandPool{ nullptr };
+	bool m_gpuProfilerContextCreated = false;
 
 	// buffer to cache uniform vars
 	VkBuffer m_uniformVarBuffer = VK_NULL_HANDLE;

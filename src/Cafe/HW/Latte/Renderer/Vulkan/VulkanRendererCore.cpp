@@ -3,6 +3,7 @@
 #include "Cafe/HW/Latte/Renderer/Vulkan/LatteTextureVk.h"
 #include "Cafe/HW/Latte/Renderer/Vulkan/RendererShaderVk.h"
 #include "Cafe/HW/Latte/Renderer/Vulkan/VulkanPipelineCompiler.h"
+#include "Cafe/HW/Latte/Renderer/Vulkan/VulkanProfiler.h"
 
 #include "Cafe/HW/Latte/Core/LattePerformanceMonitor.h"
 #include "Cafe/HW/Latte/Core/LatteShader.h"
@@ -12,6 +13,8 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "Cafe/GameProfile/GameProfile.h"
 #include "util/helpers/helpers.h"
+
+#include "spatial/profiler/Profiler.h"
 
 extern bool hasValidFramebufferAttached;
 
@@ -1741,6 +1744,8 @@ void VulkanRenderer::draw_execute_continued(uint32 baseVertex, uint32 baseInstan
 
 void VulkanRenderer::draw_execute(uint32 baseVertex, uint32 baseInstance, uint32 instanceCount, uint32 count, MPTR indexDataMPTR, Latte::LATTE_VGT_DMA_INDEX_TYPE::E_INDEX_TYPE indexType, const LatteDrawcallContext& drawcallContext)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.draw.prepare");
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.draw", m_state.currentCommandBuffer);
 	if (drawcallContext.isFirst)
 		draw_execute_first(baseVertex, baseInstance, instanceCount, count, indexDataMPTR, indexType, drawcallContext);
 	else

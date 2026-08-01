@@ -1,5 +1,7 @@
 #include "MainWindow.h"
 
+#include "Cafe/Diagnostics/CemuDiagnostics.h"
+
 // subwindows
 #include "TitleManager.h"
 #include "GeneralSettings2.h"
@@ -161,6 +163,7 @@ enum
 wxDEFINE_EVENT(wxEVT_SET_WINDOW_TITLE, wxCommandEvent);
 wxDEFINE_EVENT(wxEVT_REQUEST_GAMELIST_REFRESH, wxCommandEvent);
 wxDEFINE_EVENT(wxEVT_LAUNCH_GAME, wxLaunchGameEvent);
+wxDEFINE_EVENT(wxEVT_LAUNCH_LAST_GAME, wxCommandEvent);
 wxDEFINE_EVENT(wxEVT_REQUEST_RECREATE_CANVAS, wxCommandEvent);
 wxDEFINE_EVENT(wxEVT_REQUEST_GAME_EXIT, wxCommandEvent);
 
@@ -372,6 +375,15 @@ MainWindow::MainWindow()
 
 	Bind(wxEVT_OPEN_GRAPHIC_PACK, &MainWindow::OnGraphicWindowOpen, this);
 	Bind(wxEVT_LAUNCH_GAME, &MainWindow::OnLaunchFromFile, this);
+	Bind(wxEVT_LAUNCH_LAST_GAME, &MainWindow::OnLaunchLastGame, this);
+	CemuDiagnostics::SetOpenLastGameHandler([] {
+		if (CafeSystem::IsTitleRunning())
+			return std::string{"open_last_game unavailable: a title is already running\n"};
+		if (g_mainFrame == nullptr)
+			return std::string{"open_last_game unavailable: main window is not ready\n"};
+		wxQueueEvent(g_mainFrame, new wxCommandEvent{wxEVT_LAUNCH_LAST_GAME});
+		return std::string{"open_last_game scheduled\n"};
+	});
 
 	if (LaunchSettings::GDBStubEnabled())
 	{
@@ -381,6 +393,7 @@ MainWindow::MainWindow()
 
 MainWindow::~MainWindow()
 {
+	CemuDiagnostics::SetOpenLastGameHandler({});
 	if (m_padView)
 	{
 		m_padView->Destroy();
@@ -391,6 +404,23 @@ MainWindow::~MainWindow()
 
 	std::unique_lock lock(g_mutex);
 	g_mainFrame = nullptr;
+}
+
+void MainWindow::OnLaunchLastGame([[maybe_unused]] wxCommandEvent& event)
+{
+	if (CafeSystem::IsTitleRunning())
+	{
+		cemuLog_log(LogType::Force, "open_last_game ignored: a title is already running");
+		return;
+	}
+
+	const auto& recentLaunchFiles = GetWxGUIConfig().recent_launch_files;
+	if (recentLaunchFiles.empty())
+	{
+		cemuLog_log(LogType::Force, "open_last_game unavailable: no recently launched game");
+		return;
+	}
+	FileLoad(_utf8ToPath(recentLaunchFiles.front()), wxLaunchGameEvent::INITIATED_BY::MENU);
 }
 
 void MainWindow::CreateGameListAndStatusBar()

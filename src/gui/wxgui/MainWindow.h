@@ -25,6 +25,7 @@ class EmulatedUSBDeviceFrame;
 class wxLaunchGameEvent;
 
 wxDECLARE_EVENT(wxEVT_LAUNCH_GAME, wxLaunchGameEvent);
+wxDECLARE_EVENT(wxEVT_LAUNCH_LAST_GAME, wxCommandEvent);
 wxDECLARE_EVENT(wxEVT_SET_WINDOW_TITLE, wxCommandEvent);
 
 class wxLaunchGameEvent : public wxCommandEvent
@@ -97,6 +98,7 @@ public:
 	void OnOpenFolder(wxCommandEvent& event);
 	void OnClearSpotPassCache(wxCommandEvent& event);
 	void OnLaunchFromFile(wxLaunchGameEvent& event);
+	void OnLaunchLastGame(wxCommandEvent& event);
 	void OnInstallUpdate(wxCommandEvent& event);
 	void OnFileExit(wxCommandEvent& event);
 	void OnNFCMenu(wxCommandEvent& event);

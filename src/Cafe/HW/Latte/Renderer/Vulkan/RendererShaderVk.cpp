@@ -9,6 +9,7 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include "util/helpers/helpers.h"
+#include "spatial/profiler/Profiler.h"
 
 bool s_isLoadingShadersVk{ false };
 class FileCache* s_spirvCache{nullptr};
@@ -157,6 +158,8 @@ public:
 	void CompilerThreadFunc()
 	{
 		SetThreadName("vkShaderComp");
+		spatial::profiler::ProfilerSetCurrentThreadName("vkShaderComp");
+		spatial::profiler::ProfilerNotifyThisThreadName();
 		while (m_threadsActive.load(std::memory_order::relaxed))
 		{
 			s_compilationQueueCount.decrementWithWait();
@@ -174,7 +177,10 @@ public:
 			job->m_compilationState.setValue(RendererShaderVk::COMPILATION_STATE::COMPILING);
 			s_compilationQueueMutex.unlock();
 			// compile
-			job->CompileInternal(false);
+			{
+				SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.shader.compile");
+				job->CompileInternal(false);
+			}
 			++g_compiled_shaders_async;
 			// mark as compiled
 			cemu_assert_debug(job->m_compilationState.getValue() == RendererShaderVk::COMPILATION_STATE::COMPILING);

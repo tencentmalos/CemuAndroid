@@ -55,7 +55,7 @@ To compile Cemu, a recent enough compiler and STL with C++20 support is required
 #### For Debian, Ubuntu and derivatives:
 `sudo apt install -y cmake curl clang-15 freeglut3-dev git libbluetooth-dev libgcrypt20-dev libglm-dev libgtk-3-dev libpulse-dev libsecret-1-dev libsystemd-dev libtool nasm ninja-build`
 
-You may also need to install `libusb-1.0-0-dev` as a workaround for an issue with the vcpkg hidapi package.
+You may also need to install `libusb-1.0-0-dev` when enabling system HID or USB backends.
 
 At Step 3 in [Build Cemu using cmake and clang](#build-cemu-using-cmake-and-clang), use the following command instead:
    `cmake -S . -B build -DCMAKE_BUILD_TYPE=release -DCMAKE_C_COMPILER=/usr/bin/clang-15 -DCMAKE_CXX_COMPILER=/usr/bin/clang++-15 -G Ninja -DCMAKE_MAKE_PROGRAM=/usr/bin/ninja`
@@ -105,17 +105,6 @@ If you are using GCC, replace `cmake -S . -B build -DCMAKE_BUILD_TYPE=debug -DCM
 
 This section refers to running `cmake -S...` (truncated).
 
-* `vcpkg install failed`
-   * Run the following in the root directory and try running the command again (don't forget to change directories afterwards):
-      * `cd dependencies/vcpkg && git fetch --unshallow`
-* `Please ensure you're using the latest port files with git pull and vcpkg update.`
-   * Either:
-      * Update vcpkg by running by the following command:
-         * `git submodule update --remote dependencies/vcpkg`
-      * If you are sure vcpkg is up to date, check the following logs:
-         * `Cemu/dependencies/vcpkg/buildtrees/wxwidgets/config-x64-linux-out.log`
-         * `Cemu/dependencies/vcpkg/buildtrees/libsystemd/config-x64-linux-dbg-meson-log.txt.log`
-         * `Cemu/dependencies/vcpkg/buildtrees/libsystemd/config-x64-linux-dbg-out.log`
 * Not able to find Ninja.
    * Add the following and try running the command again:
       * `-DCMAKE_MAKE_PROGRAM=/usr/bin/ninja`
@@ -124,10 +113,7 @@ This section refers to running `cmake -S...` (truncated).
 * Compiling failed during rebuild after `git pull` with an error that mentions RPATH
    * Add the following and try running the command again:
       * `-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON`
-* Environment variable `VCPKG_FORCE_SYSTEM_BINARIES` must be set.
-   * Execute the folowing and then try running the command again:
-      * `export VCPKG_FORCE_SYSTEM_BINARIES=1`
-* If you are getting a random error, read the [package-name-and-platform]-out.log and [package-name-and-platform]-err.log for the actual reason to see if you might be lacking the headers from a dependency.
+* If dependency configuration fails, confirm all submodules are present with `git submodule update --init --recursive`, then inspect the first CMake error.
 
 
 If you are getting a different error than any of the errors listed above, you may either open an issue in this repo or try using [GCC](#gcc). Make sure your standard library and compilers are updated since Cemu uses a lot of modern features!
@@ -141,9 +127,6 @@ This section refers to running `cmake --build build`.
    * You likely are experiencing a clang-14 issue. This can only be fixed by either lowering the clang version or using GCC, see [GCC](#gcc).
 * `fatal error: 'span' file not found`
    *  You're either missing `libstdc++` or are using a version that's too old. Install at least v10 with your package manager, eg `sudo apt install libstdc++-10-dev`. See [#644](https://github.com/cemu-project/Cemu/issues/644).
-* `undefined libdecor_xx`
-   * You are likely experiencing an issue with sdl2 package that comes with vcpkg. Delete sdl2 from vcpkg.json in source file and recompile.
-
 If you are getting a different error than any of the errors listed above, you may either open an issue in this repo or try using [GCC](#gcc). Make sure your standard library and compilers are updated since Cemu uses a lot of modern features!
 
 ## macOS
@@ -165,7 +148,7 @@ To install the dependencies required to build Cemu, you will need to install Hom
 
 The following dependencies are required. You can install them using Homebrew with the following command:
 
-`brew install automake boost cmake git libtool nasm ninja pkgconf`
+`brew install automake cmake git libtool nasm ninja pkgconf`
 
 ### MoltenVK
 
@@ -228,7 +211,7 @@ Or a higher version as desired.
 ```
 git clone --recursive https://github.com/cemu-project/Cemu
 cd Cemu
-cmake -B build -DCMAKE_BUILD_TYPE=release -DENABLE_BLUEZ=OFF -DENABLE_DISCORD_RPC=OFF -DENABLE_FERAL_GAMEMODE=OFF -DENABLE_HIDAPI=OFF -DENABLE_VCPKG=OFF -G Ninja
+cmake -B build -DCMAKE_BUILD_TYPE=release -DENABLE_BLUEZ=OFF -DENABLE_DISCORD_RPC=OFF -DENABLE_FERAL_GAMEMODE=OFF -DENABLE_HIDAPI=OFF -G Ninja
 cmake --build build
 
 cd build && ninja install
@@ -258,7 +241,6 @@ Example usage: `cmake -S . -B build -DCMAKE_BUILD_TYPE=release -DENABLE_SDL=ON -
 | ENABLE_OPENGL      |   | Enable OpenGL graphics backend                                              | ON      |                    |
 | ENABLE_HIDAPI      |   | Enable HIDAPI (used for Wiimote controller API)                             | ON      |                    |
 | ENABLE_SDL         |   | Enable SDLController controller API                                         | ON      |                    |
-| ENABLE_VCPKG       |   | Use VCPKG package manager to obtain dependencies                            | ON      |                    |
 | ENABLE_VULKAN      |   | Enable the Vulkan graphics backend                                          | ON      |                    |
 | ENABLE_WXWIDGETS   |   | Enable wxWidgets UI                                                         | ON      | Currently required |
 | ENABLE_LIBUSB      |   | Enable libusb                                                               | ON      |                    |

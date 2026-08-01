@@ -47,7 +47,7 @@ struct ImGui_ImplVulkan_InitInfo
 IMGUI_IMPL_API bool     ImGui_ImplVulkan_Init(ImGui_ImplVulkan_InitInfo* info, VkRenderPass render_pass);
 IMGUI_IMPL_API void     ImGui_ImplVulkan_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplVulkan_NewFrame(VkCommandBuffer command_buffer, VkFramebuffer framebuffer, VkExtent2D extent);
-IMGUI_IMPL_API void     ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer command_buffer);
+IMGUI_IMPL_API void     ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer command_buffer, uint32_t render_buffer_index = 0);
 IMGUI_IMPL_API bool     ImGui_ImplVulkan_CreateFontsTexture(VkCommandBuffer command_buffer);
 IMGUI_IMPL_API void     ImGui_ImplVulkan_DestroyFontsTexture();
 IMGUI_IMPL_API void     ImGui_ImplVulkan_DestroyFontUploadObjects();
@@ -135,4 +135,3 @@ struct ImGui_ImplVulkanH_Window
         ClearEnable = true;
     }
 };
-

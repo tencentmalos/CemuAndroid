@@ -74,9 +74,13 @@ object InputMapper {
     }
 
 
-    fun mapKeyEventToMappingId(controllerIndex: Int, mappingId: Int, event: KeyEvent) {
-        if (!event.isFromPhysicalController()) {
-            return
+    fun tryMapKeyEventToMappingId(
+        controllerIndex: Int,
+        mappingId: Int,
+        event: KeyEvent,
+    ): Boolean {
+        if (event.action != KeyEvent.ACTION_UP || !event.isFromPhysicalController()) {
+            return false
         }
 
         val device = event.device
@@ -87,6 +91,7 @@ object InputMapper {
             mappingId,
             event.keyCode
         )
+        return true
     }
 
     private fun mapAxisCodeToMappingId(

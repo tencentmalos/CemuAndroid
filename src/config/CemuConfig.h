@@ -476,6 +476,7 @@ struct CemuConfig
 		ScreenPosition position = ScreenPosition::kDisabled;
 		uint32 text_color = 0xFFFFFFFF;
 		sint32 text_scale = 100;
+		bool summary = false;
 		bool fps = true;
 		bool drawcalls = false;
 		bool cpu_usage = false;

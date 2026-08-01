@@ -1,6 +1,8 @@
 #include "Cafe/HW/Latte/Core/LatteOverlay.h"
 #include "Cafe/HW/Latte/Core/LattePerformanceMonitor.h"
+#include "Cafe/HW/Latte/Core/Latte.h"
 #include "Cafe/HW/Latte/Renderer/Renderer.h"
+#include "Cafe/CafeSystem.h"
 #include "Cafe/Account/Account.h"
 #include "config/CemuConfig.h"
 #include "config/ActiveSettings.h"
@@ -14,6 +16,8 @@
 #include "util/SystemInfo/SystemInfo.h"
 
 #include <cinttypes>
+
+#include "spatial/profiler/Profiler.h"
 
 struct OverlayStats
 {
@@ -77,22 +81,13 @@ void LatteOverlay_renderOverlay(ImVec2& position, ImVec2& pivot, sint32 directio
 
 	const ImVec4 color = ImGui::ColorConvertU32ToFloat4(config.overlay.text_color);
 	ImGui::PushStyleColor(ImGuiCol_Text, color);
-	// stats overlay
-	if (config.overlay.fps || config.overlay.drawcalls || config.overlay.cpu_usage || config.overlay.cpu_per_core_usage || config.overlay.ram_usage)
+	// Scalar performance values are rendered by the foundation Statistics layer.
+	if (config.overlay.cpu_per_core_usage || config.overlay.vram_usage || config.overlay.debug)
 	{
 		ImGui::SetNextWindowPos(position, ImGuiCond_Always, pivot);
 		ImGui::SetNextWindowBgAlpha(kBackgroundAlpha);
 		if (ImGui::Begin("Stats overlay", nullptr, kPopupFlags))
 		{
-			if (config.overlay.fps)
-				ImGui::Text("FPS: %.2lf", g_state.fps);
-
-			if (config.overlay.drawcalls)
-				ImGui::Text("Draws/f: %d (fast: %d)", g_state.draw_calls_per_frame, g_state.fast_draw_calls_per_frame);
-
-			if (config.overlay.cpu_usage)
-				ImGui::Text("CPU: %.2lf%%", g_state.cpu_usage);
-
 			if (config.overlay.cpu_per_core_usage)
 			{
 				for (sint32 i = 0; i < g_state.processor_count; ++i)
@@ -100,9 +95,6 @@ void LatteOverlay_renderOverlay(ImVec2& position, ImVec2& pivot, sint32 directio
 					ImGui::Text("CPU #%d: %.2lf%%", i + 1, g_state.cpu_per_core[i]);
 				}
 			}
-
-			if (config.overlay.ram_usage)
-				ImGui::Text("RAM: %dMB", g_state.ram_usage);
 
 			if(config.overlay.vram_usage && g_state.vramUsage != -1 && g_state.vramTotal != -1)
 				ImGui::Text("VRAM: %dMB / %dMB", g_state.vramUsage, g_state.vramTotal);
@@ -124,6 +116,130 @@ void LatteOverlay_renderOverlay(ImVec2& position, ImVec2& pivot, sint32 directio
 
 	ImGui::PopStyleColor();
 	ImGui::PopFont();
+}
+
+namespace
+{
+void DrawStatusValue(const char* value)
+{
+	ImGui::TableNextColumn();
+	const float valueWidth = ImGui::CalcTextSize(value).x;
+	const float columnWidth = ImGui::GetContentRegionAvail().x;
+	if (valueWidth < columnWidth)
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + columnWidth - valueWidth);
+	ImGui::TextUnformatted(value);
+}
+
+void DrawStatusGroup(const char* name, const char* value)
+{
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted(name);
+	DrawStatusValue(value);
+}
+
+void DrawStatusProperty(const char* name, const char* value)
+{
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+	ImGui::Indent(8.0f * ImGui::GetIO().FontGlobalScale);
+	ImGui::TextDisabled("%s", name);
+	ImGui::Unindent(8.0f * ImGui::GetIO().FontGlobalScale);
+	DrawStatusValue(value);
+}
+
+void DrawStatusGap()
+{
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+	ImGui::Dummy(ImVec2(0.0f, 2.0f * ImGui::GetIO().FontGlobalScale));
+	ImGui::TableNextColumn();
+	ImGui::Dummy(ImVec2(0.0f, 2.0f * ImGui::GetIO().FontGlobalScale));
+}
+
+const char* GetRendererName()
+{
+	if (!g_renderer)
+		return "--";
+
+	switch (g_renderer->GetType())
+	{
+	case RendererAPI::OpenGL:
+		return "OpenGL";
+	case RendererAPI::Vulkan:
+		return "Vulkan";
+	case RendererAPI::Metal:
+		return "Metal";
+	default:
+		return "Unknown";
+	}
+}
+}
+
+void LatteOverlay_renderStatusLayer(bool pad_view)
+{
+	const auto& config = GetConfig();
+
+	const float dpiScale = pad_view ? WindowSystem::GetPadDPIScale() : WindowSystem::GetWindowDPIScale();
+	const float fontSize = 14.0f * static_cast<float>(config.overlay.text_scale) / 100.0f * dpiScale;
+	const auto font = ImGui_GetFont(fontSize);
+	if (!font)
+		return;
+
+	ImGui::PushFont(font);
+	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertU32ToFloat4(config.overlay.text_color));
+
+	constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_SizingStretchProp |
+		ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX;
+	if (ImGui::BeginTable("cemu_status_properties", 2, tableFlags))
+	{
+		ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthStretch, 0.46f);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.54f);
+
+		const std::string titleName = CafeSystem::GetForegroundTitleName();
+		const std::string titleVersion = fmt::format("v{}", CafeSystem::GetForegroundTitleVersion());
+		const std::string fps = fmt::format("{:.1f} FPS", g_state.fps);
+		const std::string frameTime = g_state.fps > 0.0 ? fmt::format("{:.2f} ms", 1000.0 / g_state.fps) : "--";
+		const std::string cpu = fmt::format("{:.1f}%", g_state.cpu_usage);
+		const std::string memory = fmt::format("{} MB", g_state.ram_usage);
+		const std::string draws = fmt::format("{} ({} fast)", g_state.draw_calls_per_frame, g_state.fast_draw_calls_per_frame);
+		int resolutionWidth{};
+		int resolutionHeight{};
+		if (pad_view && WindowSystem::IsPadWindowOpen())
+			WindowSystem::GetPadWindowPhysSize(resolutionWidth, resolutionHeight);
+		else
+			WindowSystem::GetWindowPhysSize(resolutionWidth, resolutionHeight);
+		const std::string resolution = resolutionWidth > 0 && resolutionHeight > 0
+			? fmt::format("{}x{}", resolutionWidth, resolutionHeight)
+			: "--";
+
+		DrawStatusGroup("Game", titleName.empty() ? "--" : titleName.c_str());
+		DrawStatusProperty("Version", titleVersion.c_str());
+		DrawStatusGap();
+		DrawStatusGroup("Rate", fps.c_str());
+		DrawStatusProperty("Frame", frameTime.c_str());
+		DrawStatusGap();
+		DrawStatusGroup("CPU", cpu.c_str());
+		DrawStatusProperty("Memory", memory.c_str());
+		DrawStatusGap();
+		DrawStatusGroup("GPU", GetRendererName());
+		DrawStatusProperty("Resolution", resolution.c_str());
+		DrawStatusProperty("Draws", draws.c_str());
+
+		ImGui::EndTable();
+	}
+
+	ImGui::PopStyleColor();
+	ImGui::PopFont();
+}
+
+void LatteOverlay_getStatusLayerCanvasSize(bool pad_view, sint32& width, sint32& height)
+{
+	const auto& config = GetConfig();
+	const float dpiScale = pad_view ? WindowSystem::GetPadDPIScale() : WindowSystem::GetWindowDPIScale();
+	const float contentScale = static_cast<float>(config.overlay.text_scale) / 100.0f * dpiScale;
+	width = std::max<sint32>(1, static_cast<sint32>(300.0f * contentScale));
+	height = std::max<sint32>(1, static_cast<sint32>(172.0f * contentScale));
 }
 
 void LatteOverlay_RenderNotifications(ImVec2& position, ImVec2& pivot, sint32 direction, float fontSize, bool pad)
@@ -550,14 +666,27 @@ void LatteOverlay_render(bool pad_view)
 	if (config.overlay.position != ScreenPosition::kDisabled)
 	{
 		LatteOverlay_translateScreenPosition(config.overlay.position, window_size, position, pivot, direction);
+		sint32 statusWidth{}, statusHeight{};
+		LatteOverlay_getStatusLayerCanvasSize(pad_view, statusWidth, statusHeight);
+		position.y += static_cast<float>(statusHeight + 10) * direction;
 		LatteOverlay_renderOverlay(position, pivot, direction, overlayFontSize, pad_view);
 	}
 	
 
 	if (config.notification.position != ScreenPosition::kDisabled)
 	{
-		if(config.overlay.position != config.notification.position)
+		const bool notificationPositionRecalculated = config.overlay.position != config.notification.position;
+		if (notificationPositionRecalculated)
 			LatteOverlay_translateScreenPosition(config.notification.position, window_size, position, pivot, direction);
+		const ScreenPosition statusPosition = config.overlay.position == ScreenPosition::kDisabled
+			? ScreenPosition::kTopLeft
+			: config.overlay.position;
+		if (notificationPositionRecalculated && config.notification.position == statusPosition)
+		{
+			sint32 statusWidth{}, statusHeight{};
+			LatteOverlay_getStatusLayerCanvasSize(pad_view, statusWidth, statusHeight);
+			position.y += static_cast<float>(statusHeight + 10) * direction;
+		}
 
 		LatteOverlay_RenderNotifications(position, pivot, direction, notificationsFontSize, pad_view);
 	}
@@ -599,18 +728,24 @@ static void UpdateStats_CpuPerCore()
 
 void LatteOverlay_updateStats(double fps, sint32 drawcalls, sint32 fastDrawcalls)
 {
-	if (GetConfig().overlay.position == ScreenPosition::kDisabled)
-		return;
+	const auto& overlay = GetConfig().overlay;
+	const bool overlayEnabled = overlay.position != ScreenPosition::kDisabled;
 
 	g_state.fps = fps;
 	g_state.draw_calls_per_frame = drawcalls;
 	g_state.fast_draw_calls_per_frame = fastDrawcalls;
 	UpdateStats_CemuCpu();
-	UpdateStats_CpuPerCore();
+	if (overlayEnabled && overlay.cpu_per_core_usage)
+		UpdateStats_CpuPerCore();
 
 	// update ram
-	g_state.ram_usage = (QueryRamUsage() / 1000) / 1000;
+	const uint64 ramUsageBytes = QueryRamUsage();
+	g_state.ram_usage = static_cast<uint32>((ramUsageBytes / 1000) / 1000);
 
 	// update vram
-	g_renderer->GetVRAMInfo(g_state.vramUsage, g_state.vramTotal);
+	if (overlayEnabled && overlay.vram_usage)
+		g_renderer->GetVRAMInfo(g_state.vramUsage, g_state.vramTotal);
+
+	SPATIAL_PROFILER_COUNTER_SET("cemu.cpu_usage_milli_percent", static_cast<std::int64_t>(g_state.cpu_usage * 1000.0f), "Cemu CPU", "milli-percent");
+	SPATIAL_PROFILER_COUNTER_SET("cemu.ram_bytes", static_cast<std::int64_t>(ramUsageBytes), "Cemu Memory", "bytes");
 }

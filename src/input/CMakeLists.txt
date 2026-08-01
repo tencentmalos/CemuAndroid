@@ -110,14 +110,18 @@ if(ENABLE_SDL)
 		api/SDL/SDLController.h
 		api/SDL/SDLControllerProvider.h
 	)
-	target_link_libraries(CemuInput PRIVATE SDL3::SDL3)
+	# SDL types are exposed by SDLControllerProvider.h through InputManager.h.
+	target_link_libraries(CemuInput PUBLIC SDL3::SDL3)
 endif()
 
 target_include_directories(CemuInput PUBLIC "../")
 
-target_link_libraries(CemuInput PRIVATE
-	CemuCommon
-	CemuGui
+target_link_libraries(CemuInput
+	PRIVATE
+		CemuCommon
+		CemuGui
+	PUBLIC
+		pugixml::pugixml
 )
 
 if (ENABLE_BLUEZ)

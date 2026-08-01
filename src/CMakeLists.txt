@@ -88,6 +88,8 @@ if(ANDROID)
     add_library(CemuBin STATIC
         main.cpp
         mainLLE.cpp
+        Cemu/Tools/WuaTool.cpp
+        Cemu/Tools/WuaTool.h
     )
 
 	cemu_use_precompiled_header(CemuBin)
@@ -97,6 +99,8 @@ else()
 	add_executable(CemuBin
 		main.cpp
 		mainLLE.cpp
+		Cemu/Tools/WuaTool.cpp
+		Cemu/Tools/WuaTool.h
 	)
 
 	cemu_use_precompiled_header(CemuBin)
@@ -169,14 +173,6 @@ if (MACOS_BUNDLE)
 			message(FATAL_ERROR "failed to find libMoltenVK.dylib")
 		endif ()
   endif()
-	if (ENABLE_LIBUSB AND NOT CEMU_USE_BUNDLED_DEPENDENCIES)
-		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-		    set(LIBUSB_PATH "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/debug/lib/libusb-1.0.0.dylib")
-		else()
-		    set(LIBUSB_PATH "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/lib/libusb-1.0.0.dylib")
-		endif()
-	endif()
-
 	set(UPDATE_SH_PATH "${CMAKE_SOURCE_DIR}/src/resource/update.sh")
 	set(APP_BUNDLE_DIR "$<TARGET_BUNDLE_DIR:CemuBin>")
 	set(FRAMEWORKS_DIR "${APP_BUNDLE_DIR}/Contents/Frameworks")
@@ -198,37 +194,22 @@ if (MACOS_BUNDLE)
 			"${RESOURCES_DIR}/update.sh"
 	)
 
-	if (ENABLE_LIBUSB AND NOT CEMU_USE_BUNDLED_DEPENDENCIES)
-		add_custom_command(TARGET CemuBin POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy
-				"${LIBUSB_PATH}"
-				"${FRAMEWORKS_DIR}/libusb-1.0.0.dylib"
-		)
-	endif()
-
 	set_target_properties(CemuBin PROPERTIES
 		BUILD_WITH_INSTALL_RPATH TRUE
 		INSTALL_RPATH "@executable_path/../Frameworks"
 	)
 
-	if (ENABLE_LIBUSB AND NOT CEMU_USE_BUNDLED_DEPENDENCIES)
-		add_custom_command(TARGET CemuBin POST_BUILD
-		COMMAND install_name_tool
-			-change @rpath/libusb-1.0.0.dylib
-				@executable_path/../Frameworks/libusb-1.0.0.dylib
-				"$<TARGET_FILE:CemuBin>"
-		)
-	endif()
 else()
-    if(APPLE)
+	if(APPLE)
 		if (ENABLE_VULKAN)
-			find_library(MOLTENVK_LIBRARY
-				NAMES MoltenVK moltenvk libMoltenVK.dylib
+			find_file(MOLTENVK_DYLIB
+				NAMES libMoltenVK.dylib
 				PATHS /usr/local/lib /opt/homebrew/lib
+				NO_DEFAULT_PATH
 			)
-			if(MOLTENVK_LIBRARY)
-				message(STATUS "Found MoltenVK: ${MOLTENVK_LIBRARY}")
-				target_link_libraries(CemuBin PRIVATE ${MOLTENVK_LIBRARY})
+			if(MOLTENVK_DYLIB)
+				message(STATUS "Found MoltenVK: ${MOLTENVK_DYLIB}")
+				target_link_libraries(CemuBin PRIVATE ${MOLTENVK_DYLIB})
 			else()
 				message(WARNING "libMoltenVK.dylib not found")
 			endif()
@@ -260,6 +241,7 @@ target_link_libraries(CemuBin PRIVATE
 	CemuGui
 	CemuInput
 	CemuUtil
+	ZArchive::zarchive
 )
 
 if(UNIX AND NOT APPLE)

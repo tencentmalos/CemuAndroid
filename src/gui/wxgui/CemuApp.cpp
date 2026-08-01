@@ -35,6 +35,7 @@
 #include "Cafe/TitleList/TitleList.h"
 #include "Cafe/TitleList/SaveList.h"
 #include "Cafe/CafeSystem.h"
+#include "Cafe/Diagnostics/CemuDiagnostics.h"
 
 wxIMPLEMENT_APP_NO_MAIN(CemuApp);
 
@@ -417,6 +418,7 @@ int CemuApp::OnExit()
 #endif
 	wxApp::OnExit();
 	wxTheClipboard->Flush();
+	CemuDiagnostics::Shutdown();
 	InputManager::instance().Shutdown();
 	int retValue = 0;
 	if (auto r = CafeSystem::GetForegroundTitleReturnStatus(); (LaunchSettings::GetLoadFile() || LaunchSettings::GetLoadTitleID()) && r)

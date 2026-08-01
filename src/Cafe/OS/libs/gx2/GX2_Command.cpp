@@ -12,6 +12,11 @@
 #include "GX2_Misc.h"
 #include "OS/libs/coreinit/coreinit_MEM.h"
 
+#include <atomic>
+#include <chrono>
+
+#include "spatial/profiler/Profiler.h"
+
 namespace GX2
 {
 	GX2PerCoreCBState s_perCoreCBState[Espresso::CORE_COUNT];
@@ -122,6 +127,7 @@ namespace GX2
 
 	void GX2Command_WaitForNextBufferRetired()
 	{
+		const auto waitStart = std::chrono::steady_clock::now();
 		uint64 retiredTimeStamp = GX2GetRetiredTimeStamp();
 		retiredTimeStamp += 1;
 		// but cant be higher than the submission timestamp
@@ -130,6 +136,10 @@ namespace GX2
 		if (retiredTimeStamp > submissionTimeStamp)
 			retiredTimeStamp = submissionTimeStamp;
 		GX2WaitTimeStamp(retiredTimeStamp);
+		static std::atomic<sint64> waitCount{};
+		const auto waitUs = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - waitStart).count();
+		SPATIAL_PROFILER_COUNTER_SET("cemu.gx2_command_pool_wait_count", waitCount.fetch_add(1, std::memory_order_relaxed) + 1, "Cemu Guest Wait", "waits");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.gx2_command_pool_last_wait_us", waitUs, "Cemu Guest Wait", "us");
 	}
 
 	void GX2Command_SetupCoreCommandBuffer(uint32be* buffer, uint32 sizeInU32s, bool isDisplayList)

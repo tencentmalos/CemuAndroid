@@ -11,6 +11,7 @@
 #include "input/InputManager.h"
 
 #include "Cafe/CafeSystem.h"
+#include "Cafe/Diagnostics/CemuDiagnostics.h"
 #include "Cafe/TitleList/TitleList.h"
 #include "Cafe/TitleList/SaveList.h"
 
@@ -114,6 +115,9 @@ void WindowsInitCwd()
 
 void CemuCommonInit()
 {
+	// JNI_OnLoad initializes this earlier on Android. The call is idempotent and
+	// gives desktop builds the same process-lifetime diagnostics setup.
+	CemuDiagnostics::Initialize();
 	reconfigureGLDrivers();
 	reconfigureVkDrivers();
 	// crypto init
@@ -245,7 +249,7 @@ int wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int
 	SDL_SetMainReady();
 #endif
 	if (!LaunchSettings::HandleCommandline(lpCmdLine))
-		return 0;
+		return LaunchSettings::GetExitCode();
 	WindowSystem::Create();
 	return 0;
 }
@@ -259,7 +263,7 @@ int main(int argc, char* argv[])
 	SDL_SetMainReady();
 #endif
 	if (!LaunchSettings::HandleCommandline(argc, argv))
-		return 0;
+		return LaunchSettings::GetExitCode();
 	WindowSystem::Create();
 	return 0;
 }
@@ -279,7 +283,7 @@ int main(int argc, char *argv[])
     XInitThreads();
 #endif
     if (!LaunchSettings::HandleCommandline(argc, argv))
-		return 0;
+		return LaunchSettings::GetExitCode();
 	WindowSystem::Create();
 	return 0;
 }

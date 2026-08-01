@@ -35,8 +35,8 @@ target_link_libraries(CemuAndroid PRIVATE
         CemuCafe
         CemuBin
         CemuGui
+        CemuInput
         spatial::foundation_debugbus
-        spatial::foundation_debugbus_dumpsys
         ZArchive::zarchive
         stb
 )

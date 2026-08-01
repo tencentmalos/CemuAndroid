@@ -4,6 +4,8 @@ add_library(CemuCafe
   Account/Account.h
   CafeSystem.cpp
   CafeSystem.h
+  Diagnostics/CemuDiagnostics.cpp
+  Diagnostics/CemuDiagnostics.h
   Filesystem/fsc.cpp
   Filesystem/fscDeviceHostFS.cpp
   Filesystem/fscDeviceHostFS.h
@@ -537,6 +539,7 @@ if (ENABLE_VULKAN)
     HW/Latte/Renderer/Vulkan/VulkanAPI.h
     HW/Latte/Renderer/Vulkan/VulkanPipelineCompiler.cpp
     HW/Latte/Renderer/Vulkan/VulkanPipelineCompiler.h
+    HW/Latte/Renderer/Vulkan/VulkanProfiler.h
     HW/Latte/Renderer/Vulkan/VulkanPipelineStableCache.cpp
     HW/Latte/Renderer/Vulkan/VulkanPipelineStableCache.h
     HW/Latte/Renderer/Vulkan/VulkanQuery.cpp
@@ -628,6 +631,20 @@ if(ANDROID)
   endif()
 endif()
 
+target_sources(CemuCafe PRIVATE
+  Diagnostics/CemuWarmup.cpp
+  Diagnostics/CemuWarmup.h
+)
+target_link_libraries(CemuCafe PRIVATE
+  spatial::foundation_debugbus_profiler
+  spatial::foundation_profiler
+)
+if(ANDROID)
+  target_link_libraries(CemuCafe PRIVATE spatial::foundation_debugbus_dumpsys)
+else()
+  target_link_libraries(CemuCafe PRIVATE spatial::foundation_debugbus_tcp)
+endif()
+
 if(CEMU_ARCHITECTURE MATCHES "(aarch64)|(AARCH64)|(arm64)|(ARM64)")
   target_sources(CemuCafe PRIVATE
     HW/Espresso/Recompiler/BackendAArch64/BackendAArch64.cpp
@@ -668,6 +685,25 @@ if (CEMU_USE_UNITY_BUILD)
     HW/Espresso/Recompiler/BackendAArch64/BackendAArch64.cpp
     PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
   )
+
+  # These backends include legacy headers without guards through different
+  # paths. Keep the backend translation units isolated while retaining Unity
+  # for the rest of CemuCafe.
+  set_source_files_properties(
+    OS/libs/nsyshid/AttachDefaultBackends.cpp
+    OS/libs/nsyshid/BackendEmulated.cpp
+    OS/libs/nsyshid/BackendLibusb.cpp
+    OS/libs/nsyshid/Skylander.cpp
+    OS/libs/nsyshid/SkylanderXbox360.cpp
+    PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+  )
+
+  # TCL.h is a legacy unguarded header included from both translation units.
+  set_source_files_properties(
+    OS/libs/TCL/TCL.cpp
+    OS/RPL/COSModule.cpp
+    PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+  )
 endif()
 
 cemu_use_precompiled_header(CemuCafe)
@@ -690,6 +726,7 @@ endif()
 target_link_libraries(CemuCafe PRIVATE
 	CemuCommon
   CemuGui
+  CemuInput
   ZArchive::zarchive
   imguiImpl
   pugixml::pugixml
@@ -702,6 +739,12 @@ target_link_libraries(CemuCafe PRIVATE
   PUBLIC
   OpenSSL::SSL
 )
+
+if (ANDROID)
+  # coreinit_Thread.cpp consumes the public async_simple type exposed by
+  # util/Fiber/FiberFContext.h directly.
+  target_link_libraries(CemuCafe PRIVATE Cemu::async_simple_headers)
+endif()
 
 if (ENABLE_WAYLAND)
 	# PUBLIC because wayland-client.h is included in VulkanAPI.h

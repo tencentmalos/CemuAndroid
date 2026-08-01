@@ -8,6 +8,7 @@
 #include "Cafe/HW/Latte/Core/LatteBufferCache.h" // also remove this dependency
 
 #include "Cafe/HW/MMU/MMU.h"
+#include "spatial/profiler/Profiler.h"
 
 using namespace iosu::kernel;
 
@@ -833,6 +834,8 @@ namespace iosu
 		void FSAIoThread()
 		{
 			SetThreadName("IOSU-FSA");
+			spatial::profiler::ProfilerSetCurrentThreadName("IOSU-FSA");
+			spatial::profiler::ProfilerNotifyThisThreadName();
 			IOSMessage msg;
 			while (true)
 			{
@@ -840,6 +843,7 @@ namespace iosu
 				cemu_assert(!IOS_ResultIsError(r));
 				if (msg == 0)
 					return; // shutdown signaled
+				SPATIAL_PROFILER_AUTO_SCOPE_NAME("iosu.fsa.request");
 				IPCCommandBody* cmd = MEMPTR<IPCCommandBody>(msg).GetPtr();
 				uint32 clientHandle = (uint32)cmd->devHandle;
 				if (cmd->cmdId == IPCCommandId::IOS_OPEN)

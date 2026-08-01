@@ -88,7 +88,8 @@ static VkDeviceMemory           g_UploadBufferMemory = VK_NULL_HANDLE;
 static VkBuffer                 g_UploadBuffer = VK_NULL_HANDLE;
 
 // Render buffers
-static ImGui_ImplVulkanH_WindowRenderBuffers    g_MainWindowRenderBuffers;
+constexpr uint32_t kRenderBufferCount = 4;
+static ImGui_ImplVulkanH_WindowRenderBuffers    g_WindowRenderBuffers[kRenderBufferCount];
 
 // Forward Declarations
 bool ImGui_ImplVulkan_CreateDeviceObjects();
@@ -321,7 +322,7 @@ static void ImGui_ImplVulkan_SetupRenderState(ImDrawData* draw_data, VkCommandBu
 
 // Render function
 // (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
-void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer command_buffer)
+void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer command_buffer, uint32_t render_buffer_index)
 {
     // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
     int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
@@ -332,7 +333,8 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
     ImGui_ImplVulkan_InitInfo* v = &g_VulkanInitInfo;
 
     // Allocate array to store enough vertex/index buffers
-    ImGui_ImplVulkanH_WindowRenderBuffers* wrb = &g_MainWindowRenderBuffers;
+    IM_ASSERT(render_buffer_index < kRenderBufferCount);
+    ImGui_ImplVulkanH_WindowRenderBuffers* wrb = &g_WindowRenderBuffers[render_buffer_index];
     if (wrb->FrameRenderBuffers == NULL)
     {
         wrb->Index = 0;
@@ -843,7 +845,8 @@ void    ImGui_ImplVulkan_DestroyFontUploadObjects()
 void    ImGui_ImplVulkan_DestroyDeviceObjects()
 {
     ImGui_ImplVulkan_InitInfo* v = &g_VulkanInitInfo;
-    ImGui_ImplVulkanH_DestroyWindowRenderBuffers(v->Device, &g_MainWindowRenderBuffers, v->Allocator);
+    for (auto& renderBuffers : g_WindowRenderBuffers)
+        ImGui_ImplVulkanH_DestroyWindowRenderBuffers(v->Device, &renderBuffers, v->Allocator);
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 
     if (g_FontView)             { vkDestroyImageView(v->Device, g_FontView, v->Allocator); g_FontView = VK_NULL_HANDLE; }
@@ -939,7 +942,8 @@ void ImGui_ImplVulkan_SetMinImageCount(uint32_t min_image_count)
     ImGui_ImplVulkan_InitInfo* v = &g_VulkanInitInfo;
     VkResult err = vkDeviceWaitIdle(v->Device);
     check_vk_result(err);
-    ImGui_ImplVulkanH_DestroyWindowRenderBuffers(v->Device, &g_MainWindowRenderBuffers, v->Allocator);
+    for (auto& renderBuffers : g_WindowRenderBuffers)
+        ImGui_ImplVulkanH_DestroyWindowRenderBuffers(v->Device, &renderBuffers, v->Allocator);
     g_VulkanInitInfo.MinImageCount = min_image_count;
 }
 
