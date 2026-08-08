@@ -8,8 +8,11 @@
 
 - `references/BotW-BetterVR`：BotW v208 的 VR graphic-pack、PPC patch、Cemu HLE hook、输入与 Vulkan/OpenXR 实现参考。
 - `references/botw`：BotW C/C++ 逆向结果，供符号、类型和引擎语义参考；其目标是 **Switch v1.5.0**，不能直接套用到 Wii U v208 的地址、ABI、结构偏移或指令。
+- `references/decaf-emu`：Wii U Latte/PM4 packet、寄存器和 Vulkan 翻译的只读语义参考。它用于交叉验证语义，不作为现代 Host 性能实现模板；不得直接修改子模块或复制 GPL 实现。
 - `games/reverse/botw/wiiu-v208`：绑定 JP v208 RPX SHA/module checksum 的 Wii U identity manifest、运行时符号证据与逆向入口；最终 `.i64` 位于 private 子模块 `ida-database`，子模块内由 Git LFS 管理。原始 RPX 不提交，其他版本不得复用其中硬编码地址。
 - `docs/bettervr/README.md`：上述仓库、BetterVR 文档快照、Android 迁移分析和真机验证证据的统一入口。
+
+PM4/Vulkan 优化还可只读对照本机同源仓库：`/Users/bytedance/workspace/emulations/switch/citron` 用于表驱动 dirty-state、pipeline key/transition cache，`/Users/bytedance/workspace/emulations/3ds/azahar` 用于 Android/Adreno Vulkan 动态状态与 scheduler，`/Users/bytedance/workspace/emulations/ps4/shadps4` 用于现代 AMD PM4 翻译边界。三者都不是 Latte 语义来源；工作树可能承载其他任务，不得修改或清理。完整边界与实施阶段见 `docs/plans/pm4-vulkan-translation-optimization-spec.md`。
 
 `references/` 默认只读。需要吸收实现时，在 Cemu 主仓中重写并验证；如确需修改参考仓库，应在对应子仓单独提交，不得把 detached HEAD 中的未提交改动留作依赖。BetterVR 应按 Guest patch、Host/HLE、renderer/XR 三层分别审计，不能用“补丁已应用”替代运行时功能验证。
 

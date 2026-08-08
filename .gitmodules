@@ -103,3 +103,8 @@
 	path = games/reverse/botw/wiiu-v208/ida-database
 	url = git@github.com:tencentmalos/cemu-botw-v208-reverse.git
 	branch = main
+[submodule "references/decaf-emu"]
+	path = references/decaf-emu
+	url = git@github.com:tencentmalos/decaf-emu.git
+	branch = master
+	shallow = true

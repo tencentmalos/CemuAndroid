@@ -22,8 +22,10 @@ BotW/BetterVR 工作还应直接使用仓库内固定的 reference 子模块和�
 
 - BetterVR graphic-pack、PPC patch、HLE hook、输入和 Vulkan/OpenXR 实现：`references/BotW-BetterVR`
 - BotW C/C++ 逆向符号、类型和引擎语义：`references/botw`（Switch v1.5.0，不得直接套用 Wii U v208 地址、ABI 或偏移）
+- Wii U Latte/PM4 packet、寄存器和 Vulkan 翻译语义：`references/decaf-emu`（只读交叉验证，不直接复制 GPL 实现）
 - BotW Wii U JP v208 identity、运行时符号证据与 private IDA 子模块：`games/reverse/botw/wiiu-v208`（`.i64` 在 `ida-database` 子模块内由 Git LFS 管理；只适用于绑定的 RPX SHA/module checksum）
 - BetterVR 文档快照、Android 迁移分析与真机证据索引：`docs/bettervr/README.md`
+- PM4/Vulkan Host 优化对照：本地 Citron、Azahar、shadPS4 的职责边界和固定快照见 `docs/plans/pm4-vulkan-translation-optimization-spec.md`；这些仓库只读，不得把其现有修改混入 Cemu。
 
 新增本项目专用工作流时，仍按 `AGENTS.md` 的约定放入 `skills/`，并在上面的列表中补一条入口。
 
