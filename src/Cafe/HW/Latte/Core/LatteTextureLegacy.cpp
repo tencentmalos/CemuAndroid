@@ -1,14 +1,10 @@
 #include "Cafe/HW/Latte/ISA/RegDefines.h"
 #include "Cafe/HW/Latte/Core/Latte.h"
 #include "Cafe/HW/Latte/Core/LatteShader.h"
+#include "Cafe/HW/Latte/Core/LatteFrameGraphShadow.h"
+#include "Cafe/Diagnostics/SurfaceResolutionDiagnostics.h"
 
 #include "Cafe/HW/Latte/Renderer/Renderer.h"
-
-#ifdef ENABLE_OPENGL
-#include "Cafe/HW/Latte/Renderer/OpenGL/OpenGLRenderer.h"
-#include "Cafe/HW/Latte/Renderer/OpenGL/LatteTextureGL.h"
-#include "Cafe/HW/Latte/Renderer/OpenGL/LatteTextureViewGL.h"
-#endif
 
 struct TexScaleXY
 {
@@ -38,6 +34,7 @@ void LatteTextureLoader_UpdateTextureSliceData(LatteTexture* tex, uint32 sliceIn
 
 void LatteTexture_ReloadData(LatteTexture* tex)
 {
+	SurfaceResolutionDiagnostics::RecordUpload(*tex);
 	tex->reloadCount++;
 	for(sint32 mip=0; mip<tex->mipLevels; mip++)
 	{
@@ -72,9 +69,9 @@ void LatteTexture_ReloadData(LatteTexture* tex)
 	tex->lastUpdateEventCounter = LatteTexture_getNextUpdateEventCounter();
 }
 
-LatteTextureView* LatteTexture_CreateTexture(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth)
+LatteTextureView* LatteTexture_CreateTexture(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth, LatteSurfaceUsage initialUsage)
 {
-	const auto tex = g_renderer->texture_createTextureEx(dim, physAddress, physMipAddress, format, width, height, depth, pitch, mipLevels, swizzle, tileMode, isDepth);
+	const auto tex = g_renderer->texture_createTextureEx(dim, physAddress, physMipAddress, format, width, height, depth, pitch, mipLevels, swizzle, tileMode, isDepth, initialUsage);
 
 	// init slice/mip info array
 	LatteTexture_InitSliceAndMipInfo(tex);
@@ -188,36 +185,14 @@ void LatteTexture_updateTexturesForStage(LatteDecompilerShader* shaderContext, u
 		if (!textureView)
 		{
 			// view not found, create a new mapping which will also create a new texture if necessary
-			textureView = LatteTexture_CreateMapping(physAddr, physMipAddr, width, height, depth, pitch, tileMode, swizzle, viewFirstMip, viewNumMips, viewFirstSlice, viewNumSlices, format, dim, dim, isDepthSampler);
+			textureView = LatteTexture_CreateMapping(physAddr, physMipAddr, width, height, depth, pitch, tileMode, swizzle, viewFirstMip, viewNumMips, viewFirstSlice, viewNumSlices, format, dim, dim, isDepthSampler, LatteSurfaceUsage::Sampled);
 			if (textureView == nullptr)
 				continue;
 			LatteGPUState.repeatTextureInitialization = true;
 		}
-
-#ifdef ENABLE_OPENGL
-		if (g_renderer->GetType() == RendererAPI::OpenGL)
-		{
-			// on OpenGL, texture views and sampler parameters are tied together (we are avoiding sampler objects due to driver bugs)
-			// in order to emulate different sampler parameters when a texture is bound multiple times we create extra views
-			OpenGLRenderer* rendererGL = static_cast<OpenGLRenderer*>(g_renderer.get());
-
-			// if this texture is bound multiple times then use alternative views
-			if (textureView->lastTextureBindIndex == LatteGPUState.textureBindCounter)
-			{
-				LatteTextureViewGL* textureViewGL = (LatteTextureViewGL*)textureView;
-				// get next unused alternative texture view
-				while (true)
-				{
-					textureViewGL = textureViewGL->GetAlternativeView();
-					if (textureViewGL->lastTextureBindIndex != LatteGPUState.textureBindCounter)
-						break;
-				}
-				textureView = textureViewGL;
-		}
-			textureView->lastTextureBindIndex = LatteGPUState.textureBindCounter;
-			rendererGL->renderstate_updateTextureSettingsGL(shaderContext, textureView, textureIndex + glBackendBaseTexUnit, word4, textureIndex, isDepthSampler);
-		}
-#endif
+		SurfaceResolutionDiagnostics::RecordUsage(*textureView->baseTexture, LatteSurfaceUsage::Sampled);
+		LatteFrameGraphShadow::RecordSurfaceBinding(textureView,
+			textureIndex + glBackendBaseTexUnit);
 
 		g_renderer->texture_setLatteTexture(textureView, textureIndex + glBackendBaseTexUnit);
 		// update if data changed
@@ -273,17 +248,10 @@ void LatteTexture_updateTexturesForStage(LatteDecompilerShader* shaderContext, u
 			baseTexture->lastUnflushedRTDrawcallIndex = 0;
 		}
 		// update scale
-		float texScaleU, texScaleV;
-		if (baseTexture->overwriteInfo.hasResolutionOverwrite == false)
-		{
-			texScaleU = 1.0f;
-			texScaleV = 1.0f;
-		}
-		else
-		{
-			texScaleU = (float)baseTexture->overwriteInfo.width / (float)baseTexture->width;
-			texScaleV = (float)baseTexture->overwriteInfo.height / (float)baseTexture->height;
-		}
+		const auto guestExtent = baseTexture->GetGuestExtent();
+		const auto hostExtent = baseTexture->GetHostExtent();
+		const float texScaleU = static_cast<float>(hostExtent.width) / static_cast<float>(guestExtent.width);
+		const float texScaleV = static_cast<float>(hostExtent.height) / static_cast<float>(guestExtent.height);
 		LatteTexture_setEffectiveTextureScale(shaderContext->shaderType, textureIndex, texScaleU, texScaleV);
 	}
 }
@@ -310,31 +278,30 @@ void LatteTexture_updateTextures()
 
 sint32 LatteTexture_getEffectiveWidth(LatteTexture* texture)
 {
-	if (texture->overwriteInfo.hasResolutionOverwrite)
-		return texture->overwriteInfo.width;
-	return texture->width;
+	return static_cast<sint32>(texture->GetHostExtent().width);
 }
 
 // returns true if the two textures have the same rescale factor
 bool LatteTexture_doesEffectiveRescaleRatioMatch(LatteTexture* texture1, sint32 mipLevel1, LatteTexture* texture2, sint32 mipLevel2)
 {
-	double widthRatio1 = (double)LatteTexture_getEffectiveWidth(texture1) / (double)texture1->width;
-	double widthRatio2 = (double)LatteTexture_getEffectiveWidth(texture2) / (double)texture2->width;
-	// the difference between the factors must be less than 5%
-	double diff = widthRatio1 / widthRatio2;
-	if (abs(1.0 - diff) > 0.05)
-	{
-		return false;
-	}
-	return true;
+	return texture1->HasSameHostScale(*texture2, static_cast<uint32>(mipLevel1), static_cast<uint32>(mipLevel2));
 }
 
 void LatteTexture_scaleToEffectiveSize(LatteTexture* texture, sint32* x, sint32* y, sint32 mipLevel)
 {
-	if( texture->overwriteInfo.hasResolutionOverwrite == false )
-		return;
-	*x = *x * std::max(1,texture->overwriteInfo.width>>mipLevel) / std::max(1,texture->width>>mipLevel);
-	*y = *y * std::max(1,texture->overwriteInfo.height>>mipLevel) / std::max(1, texture->height>>mipLevel);
+	const auto guestExtent = texture->GetGuestExtent(static_cast<uint32>(mipLevel));
+	const auto hostExtent = texture->GetHostExtent(static_cast<uint32>(mipLevel));
+	*x = static_cast<sint32>(LatteSurfaceBoundaryFloor(*x, guestExtent.width, hostExtent.width));
+	*y = static_cast<sint32>(LatteSurfaceBoundaryFloor(*y, guestExtent.height, hostExtent.height));
+}
+
+void LatteTexture_scaleRectToEffectiveSize(LatteTexture* texture, sint32* x, sint32* y, sint32* width, sint32* height, sint32 mipLevel)
+{
+	const LatteSurfaceRect scaledRect = texture->ScaleGuestRectToHost({*x, *y, *width, *height}, static_cast<uint32>(mipLevel));
+	*x = scaledRect.x;
+	*y = scaledRect.y;
+	*width = scaledRect.width;
+	*height = scaledRect.height;
 }
 
 uint64 _textureUpdateEventCounter = 1;

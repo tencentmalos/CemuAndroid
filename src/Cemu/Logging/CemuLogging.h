@@ -17,7 +17,6 @@ enum class LogType : sint32
 	Socket = 6,
 	Save = 7,
 	H264 = 9,
-	OpenGLLogging = 10, // OpenGL debug logging
 	TextureCache = 11, // texture cache warnings and info
 	VulkanValidation = 12, // Vulkan validation layer
 	Patches = 14,

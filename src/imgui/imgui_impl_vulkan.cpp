@@ -444,7 +444,8 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
                     scissor.extent.height = (uint32_t)(clip_rect.w - clip_rect.y);
                     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-                    VkDescriptorSet desc_set[1] = { ((ImGuiTexture*)pcmd->TextureId)->descriptor_set };
+                    auto* texture = reinterpret_cast<ImGuiTexture*>(static_cast<std::uintptr_t>(pcmd->GetTexID()));
+                    VkDescriptorSet desc_set[1] = { texture->descriptor_set };
                     vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_PipelineLayout, 0, 1, desc_set, 0, NULL);
 
                     // Draw
@@ -469,12 +470,12 @@ void ImGui_ImplVulkan_DestroyFontsTexture()
     if (g_FontMemory)           { vkFreeMemory(v->Device, g_FontMemory, v->Allocator); g_FontMemory = VK_NULL_HANDLE; }
 
 	ImGuiIO& io = ImGui::GetIO();
-	auto texture = io.Fonts->TexID;
-	if(texture != (ImTextureID)nullptr)
+	const ImTextureID texture = io.Fonts->TexRef.GetTexID();
+	if(texture != ImTextureID_Invalid)
 	{
 		ImGui_ImplVulkan_DeleteTexture(texture);
-		delete (ImGuiTexture*)texture;
-		io.Fonts->TexID = nullptr;
+		delete reinterpret_cast<ImGuiTexture*>(static_cast<std::uintptr_t>(texture));
+		io.Fonts->SetTexID(ImTextureID_Invalid);
 	}
 }
 
@@ -634,7 +635,7 @@ bool ImGui_ImplVulkan_CreateFontsTexture(VkCommandBuffer command_buffer)
 
 	auto texture = new ImGuiTexture();
     texture->descriptor_set = font_descriptor_set;
-    io.Fonts->TexID = (ImTextureID)texture;
+	io.Fonts->SetTexID(static_cast<ImTextureID>(reinterpret_cast<std::uintptr_t>(texture)));
 	
     return true;
 }
@@ -1464,18 +1465,18 @@ ImTextureID ImGui_ImplVulkan_GenerateTexture(VkCommandBuffer commandBuffer, cons
             vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, use_barrier);
         }
 
-        return (ImTextureID)texture;
+		return static_cast<ImTextureID>(reinterpret_cast<std::uintptr_t>(texture));
     }
     catch (const std::exception & ex)
     {
         cemuLog_log(LogType::Force, "can't generate imgui texture: {}", ex.what());
-        return nullptr;
+		return ImTextureID_Invalid;
     }
 }
 
 void ImGui_ImplVulkan_DeleteTexture(ImTextureID id)
 {
-    auto textureInfo = (ImGuiTexture*)id;
+	auto textureInfo = reinterpret_cast<ImGuiTexture*>(static_cast<std::uintptr_t>(id));
 
     vkFreeDescriptorSets(g_VulkanInitInfo.Device, g_VulkanInitInfo.DescriptorPool, 1, &textureInfo->descriptor_set);
     vkDestroySampler(g_VulkanInitInfo.Device, textureInfo->sampler, nullptr);

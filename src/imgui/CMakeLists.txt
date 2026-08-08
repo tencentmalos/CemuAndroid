@@ -3,13 +3,6 @@ add_library(imguiImpl
 	imgui_extension.h
 )
 
-if (ENABLE_OPENGL)
-	target_sources(imguiImpl PRIVATE
-		imgui_impl_opengl3.cpp
-		imgui_impl_opengl3.h
-	)
-endif()
-
 if (ENABLE_VULKAN)
 	target_sources(imguiImpl PRIVATE
 		imgui_impl_vulkan.cpp

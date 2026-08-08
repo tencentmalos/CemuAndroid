@@ -213,18 +213,36 @@ public:
 
 	void texture_clearSlice(LatteTexture* hostTexture, sint32 sliceIndex, sint32 mipIndex) override;
 	void texture_loadSlice(LatteTexture* hostTexture, sint32 width, sint32 height, sint32 depth, void* pixelData, sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize) override;
+	LatteSurfaceOperationResult texture_loadSliceRepresentation(LatteTexture* texture, LatteTextureRepresentation representation,
+		sint32 width, sint32 height, sint32 depth, void* pixelData, sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize) override;
 	void texture_clearColorSlice(LatteTexture* hostTexture, sint32 sliceIndex, sint32 mipIndex, float r, float g, float b, float a) override;
 	void texture_clearDepthSlice(LatteTexture* hostTexture, uint32 sliceIndex, sint32 mipIndex, bool clearDepth, bool clearStencil, float depthValue, uint32 stencilValue) override;
 
-	LatteTexture* texture_createTextureEx(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth) override;
+	LatteTexture* texture_createTextureEx(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth, LatteSurfaceUsage initialUsage) override;
+	LatteSurfaceFallbackReason texture_preflightInternalResolution(Latte::E_GX2SURFFMT format,
+		Latte::E_DIM dim, bool isDepth, bool hasStencil, uint32 mipLevels,
+		const LatteSurfaceExtent& extent, LatteSurfaceScaleClass scaleClass) override;
 
 	void texture_setLatteTexture(LatteTextureView* textureView, uint32 textureUnit) override;
-	void texture_copyImageSubData(LatteTexture* src, sint32 srcMip, sint32 effectiveSrcX, sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip, sint32 effectiveDstX, sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth, sint32 effectiveCopyHeight, sint32 srcDepth) override;
+	LatteSurfaceOperationResult texture_copyImageSubData(LatteTexture* src, sint32 srcMip, sint32 effectiveSrcX,
+		sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip, sint32 effectiveDstX,
+		sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth, sint32 effectiveCopyHeight,
+		sint32 srcDepth) override;
 
 	LatteTextureReadbackInfo* texture_createReadback(LatteTextureView* textureView) override;
+	LatteTextureReadbackInfo* texture_createReadback(LatteTextureView* textureView, LatteTextureRepresentation representation) override;
+	bool texture_hasRepresentation(const LatteTexture* texture, LatteTextureRepresentation representation) const override;
+	uint64 texture_getRepresentationBytes(const LatteTexture* texture, LatteTextureRepresentation representation) const override;
+	LatteSurfaceOperationResult texture_ensureRepresentation(LatteTexture* texture, LatteTextureRepresentation representation) override;
+	LatteSurfaceOperationResult texture_resampleRepresentation(LatteTexture* texture, LatteTextureRepresentation source,
+		LatteTextureRepresentation destination, const LatteSurfaceSubresourceRange& range, LatteSurfaceResampleFilter filter) override;
+	LatteSurfaceOperationResult texture_copyImageSubDataBetweenRepresentations(LatteTexture* source, LatteTextureRepresentation sourceRepresentation,
+		sint32 sourceMip, sint32 sourceX, sint32 sourceY, sint32 sourceSlice, LatteTexture* destination,
+		LatteTextureRepresentation destinationRepresentation, sint32 destinationMip, sint32 destinationX, sint32 destinationY,
+		sint32 destinationSlice, sint32 copyWidth, sint32 copyHeight, sint32 depth) override;
 
 	// surface copy
-	void surfaceCopy_copySurfaceWithFormatConversion(LatteTexture* sourceTexture, sint32 srcMip, sint32 srcSlice, LatteTexture* destinationTexture, sint32 dstMip, sint32 dstSlice, sint32 width, sint32 height) override;
+	LatteSurfaceOperationResult surfaceCopy_copySurfaceWithFormatConversion(LatteTexture* sourceTexture, sint32 srcMip, sint32 srcSlice, LatteTexture* destinationTexture, sint32 dstMip, sint32 dstSlice, sint32 width, sint32 height) override;
 
 	// buffer cache
 	void bufferCache_init(const sint32 bufferSize) override;
@@ -496,6 +514,17 @@ private:
 	// Pipelines
 	MTL::RenderPipelineDescriptor* m_copyDepthToColorDesc;
 	std::map<MTL::PixelFormat, MTL::RenderPipelineState*> m_copyDepthToColorPipelines;
+	MTL::RenderPipelineDescriptor* m_copyColorToDepthDesc{};
+	std::map<MTL::PixelFormat, MTL::RenderPipelineState*> m_copyColorToDepthPipelines;
+	MTL::RenderPipelineDescriptor* m_resampleColorFloatDesc{};
+	MTL::RenderPipelineDescriptor* m_resampleColorUintDesc{};
+	MTL::RenderPipelineDescriptor* m_resampleColorSintDesc{};
+	MTL::RenderPipelineDescriptor* m_resampleDepthDesc{};
+	std::map<MTL::PixelFormat, MTL::RenderPipelineState*> m_resampleColorFloatPipelines;
+	std::map<MTL::PixelFormat, MTL::RenderPipelineState*> m_resampleColorUintPipelines;
+	std::map<MTL::PixelFormat, MTL::RenderPipelineState*> m_resampleColorSintPipelines;
+	std::map<MTL::PixelFormat, MTL::RenderPipelineState*> m_resampleDepthPipelines;
+	MTL::DepthStencilState* m_resampleDepthState{};
 
 	// Void vertex pipelines
 	class MetalVoidVertexPipeline* m_copyBufferToBufferPipeline;

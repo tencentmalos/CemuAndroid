@@ -50,7 +50,7 @@ public:
 	static RendererOutputShader* s_hermit_shader;
 	static RendererOutputShader* s_hermit_shader_ud;
 
-	static std::string GetOpenGlVertexSource(bool render_upside_down);
+	static std::string GetVertexSource(bool render_upside_down);
 	static std::string GetVulkanVertexSource(bool render_upside_down);
 	static std::string GetMetalVertexSource(bool render_upside_down);
 

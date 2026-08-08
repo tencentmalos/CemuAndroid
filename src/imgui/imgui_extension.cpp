@@ -3,9 +3,6 @@
 #include "Cafe/HW/Latte/Renderer/Renderer.h"
 #include "resource/IconsFontAwesome5.h"
 #include "resource/resource.h"
-#ifdef ENABLE_OPENGL
-#include "imgui_impl_opengl3.h"
-#endif
 #ifdef ENABLE_VULKAN
 #include "imgui_impl_vulkan.h"
 #endif
@@ -132,9 +129,9 @@ void ImGui_UpdateWindowInformation(bool mainWindow)
 	io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 #if BOOST_OS_WINDOWS
-	io.ImeWindowHandle = mainWindow ? windowInfo.window_main.surface : windowInfo.window_pad.surface;
+	ImGui::GetMainViewport()->PlatformHandleRaw = mainWindow ? windowInfo.window_main.surface : windowInfo.window_pad.surface;
 #else
-	io.ImeWindowHandle = nullptr;
+	ImGui::GetMainViewport()->PlatformHandleRaw = nullptr;
 #endif
 
 	io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
@@ -161,31 +158,39 @@ void ImGui_UpdateWindowInformation(bool mainWindow)
 
 	// printf("%f %f %d\n", io.MousePos.x, io.MousePos.y, io.MouseDown[0]);
 
+	bool hasController = false;
+	bool startDown = false;
+	bool activateDown = false;
+	bool cancelDown = false;
+	bool leftDown = false;
+	bool rightDown = false;
+	bool upDown = false;
+	bool downDown = false;
 	for (auto i = 0; i < InputManager::kMaxController; ++i)
 	{
 		const auto controller = instance.get_controller(i);
 		if (!controller)
 			continue;
 
-		if (controller->is_start_down())
-			io.NavInputs[ImGuiNavInput_Input] = 1.0f;
-
-		if (controller->is_a_down())
-			io.NavInputs[ImGuiNavInput_Activate] = 1.0f;
-		
-		if (controller->is_b_down())
-			io.NavInputs[ImGuiNavInput_Cancel] = 1.0f;
-		
-		if (controller->is_left_down())
-			io.NavInputs[ImGuiNavInput_DpadLeft] = 1.0f;
-		
-		if (controller->is_right_down())
-			io.NavInputs[ImGuiNavInput_DpadRight] = 1.0f;
-		
-		if (controller->is_up_down())
-			io.NavInputs[ImGuiNavInput_DpadUp] = 1.0f;
-		
-		if (controller->is_down_down())
-			io.NavInputs[ImGuiNavInput_DpadDown] = 1.0f;
+		hasController = true;
+		startDown |= controller->is_start_down();
+		activateDown |= controller->is_a_down();
+		cancelDown |= controller->is_b_down();
+		leftDown |= controller->is_left_down();
+		rightDown |= controller->is_right_down();
+		upDown |= controller->is_up_down();
+		downDown |= controller->is_down_down();
 	}
+
+	if (hasController)
+		io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
+	else
+		io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
+	io.AddKeyEvent(ImGuiKey_GamepadStart, startDown);
+	io.AddKeyEvent(ImGuiKey_GamepadFaceDown, activateDown);
+	io.AddKeyEvent(ImGuiKey_GamepadFaceRight, cancelDown);
+	io.AddKeyEvent(ImGuiKey_GamepadDpadLeft, leftDown);
+	io.AddKeyEvent(ImGuiKey_GamepadDpadRight, rightDown);
+	io.AddKeyEvent(ImGuiKey_GamepadDpadUp, upDown);
+	io.AddKeyEvent(ImGuiKey_GamepadDpadDown, downDown);
 }

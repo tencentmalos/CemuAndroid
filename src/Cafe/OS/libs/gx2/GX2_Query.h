@@ -7,4 +7,6 @@
 namespace GX2
 {
 	void GX2QueryInit();
+	void GX2PublishOcclusionQueryConsumerCounters();
+	std::string GX2GetOcclusionQueryConsumerStatus();
 };

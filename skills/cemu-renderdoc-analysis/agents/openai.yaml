@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cemu RenderDoc 图形分析"
+  short_description: "抓取并结构化分析 Cemu Android Vulkan 帧"
+  default_prompt: "Use $cemu-renderdoc-analysis to capture a warmed Cemu Android Vulkan frame and analyze it with RenderDoc MCP."

@@ -83,6 +83,26 @@ namespace coreinit
 	thread_local uint32 t_assignedCoreIndex;
 	thread_local Fiber* t_schedulerFiber;
 
+	TLS_WORKAROUND_NOINLINE uint32 GetAssignedCoreIndex()
+	{
+		return t_assignedCoreIndex;
+	}
+
+	TLS_WORKAROUND_NOINLINE void SetAssignedCoreIndex(uint32 coreIndex)
+	{
+		t_assignedCoreIndex = coreIndex;
+	}
+
+	TLS_WORKAROUND_NOINLINE Fiber* GetSchedulerFiber()
+	{
+		return t_schedulerFiber;
+	}
+
+	TLS_WORKAROUND_NOINLINE void SetSchedulerFiber(Fiber* fiber)
+	{
+		t_schedulerFiber = fiber;
+	}
+
 	GuestExecutionProfilerCounters ConsumeGuestExecutionProfilerCounters()
 	{
 		return {
@@ -1300,8 +1320,8 @@ namespace coreinit
 	// this is necessary since we can't block in __OSThreadSwitchToNext() (__OSStoreThread + thread switch must happen inside same scheduler lock)
 	void __OSThreadCoreIdle(void* unusedParam)
 	{
-		bool isMainCore = g_isMulticoreMode == false || t_assignedCoreIndex == 1;
-		sint32 coreIndex = t_assignedCoreIndex;
+		bool isMainCore = g_isMulticoreMode == false || GetAssignedCoreIndex() == 1;
+		sint32 coreIndex = GetAssignedCoreIndex();
 		__OSUnlockScheduler();
 		while (true)
 		{
@@ -1325,9 +1345,9 @@ namespace coreinit
 			else
 			{
 				// wait for semaphore (only in multicore mode)
-				g_coreRunQueueThreadCount[t_assignedCoreIndex].waitUntilNonZero();
+				g_coreRunQueueThreadCount[GetAssignedCoreIndex()].waitUntilNonZero();
 				if (!sSchedulerActive.load(std::memory_order::relaxed))
-					Fiber::Switch(*t_schedulerFiber); // switch back to original thread to exit
+					Fiber::Switch(*GetSchedulerFiber()); // switch back to original thread to exit
 			}
 		}
 	}
@@ -1349,14 +1369,14 @@ namespace coreinit
 		if (!sSchedulerActive.load(std::memory_order::relaxed))
 		{
 			__OSUnlockScheduler();
-			Fiber::Switch(*t_schedulerFiber); // switch back to original thread entry for it to exit
+			Fiber::Switch(*GetSchedulerFiber()); // switch back to original thread entry for it to exit
 		}
 		// choose core
 		static uint32 _coreCounter = 0;
 
 		sint32 coreIndex;
 		if (g_isMulticoreMode)
-			coreIndex = t_assignedCoreIndex;
+			coreIndex = GetAssignedCoreIndex();
 		else
 		{
 			coreIndex = _coreCounter;
@@ -1364,12 +1384,12 @@ namespace coreinit
 		}
 
 		// if main thread then dont forget to do update checks
-		bool isMainThread = g_isMulticoreMode == false || t_assignedCoreIndex == 1;
+		bool isMainThread = g_isMulticoreMode == false || GetAssignedCoreIndex() == 1;
 
 		// find next thread to run
 		// for main thread we force switching to the idle loop since it calls __OSCheckSystemEvents()
 		if(isMainThread)
-			Fiber::Switch(*g_idleLoopFiber[t_assignedCoreIndex]);
+			Fiber::Switch(*g_idleLoopFiber[GetAssignedCoreIndex()]);
 		else if (OSThread_t* nextThread = __OSGetNextRunableThread(coreIndex))
 		{
 			cemu_assert_debug(nextThread->state == OSThread_t::THREAD_STATE::STATE_RUNNING);
@@ -1377,11 +1397,11 @@ namespace coreinit
 		}
 		else
 		{
-			Fiber::Switch(*g_idleLoopFiber[t_assignedCoreIndex]);
+			Fiber::Switch(*g_idleLoopFiber[GetAssignedCoreIndex()]);
 		}
 
 		cemu_assert_debug(__OSHasSchedulerLock());	
-		cemu_assert_debug(g_isMulticoreMode == false || hostThread->selectedCore == t_assignedCoreIndex);
+		cemu_assert_debug(g_isMulticoreMode == false || hostThread->selectedCore == GetAssignedCoreIndex());
 
 		// received next time slice, load self again
 		__OSLoadThread(hostThread->m_thread, &hostThread->ppcInstance, hostThread->selectedCore);
@@ -1452,7 +1472,7 @@ namespace coreinit
 		SetThreadName(threadName.c_str());
 		spatial::profiler::ProfilerSetCurrentThreadName(threadName.c_str());
 		spatial::profiler::ProfilerNotifyThisThreadName();
-		t_assignedCoreIndex = (sint32)(uintptr_t)_assignedCoreIndex;
+		SetAssignedCoreIndex((sint32)(uintptr_t)_assignedCoreIndex);
 
 		enableFlushDenormalsToZero();
 
@@ -1471,13 +1491,13 @@ namespace coreinit
 		}
 #endif
 
-		t_schedulerFiber = Fiber::PrepareCurrentThread();
+		SetSchedulerFiber(Fiber::PrepareCurrentThread());
 
 		// create scheduler idle fiber and switch to it
-		g_idleLoopFiber[t_assignedCoreIndex] = new Fiber(__OSThreadCoreIdle, nullptr, nullptr);
+		g_idleLoopFiber[GetAssignedCoreIndex()] = new Fiber(__OSThreadCoreIdle, nullptr, nullptr);
 		cemu_assert_debug(PPCInterpreter_getCurrentInstance() == nullptr);
 		__OSLockScheduler();
-		Fiber::Switch(*g_idleLoopFiber[t_assignedCoreIndex]);
+		Fiber::Switch(*g_idleLoopFiber[GetAssignedCoreIndex()]);
 		// returned from scheduler loop, exit thread
 		cemu_assert_debug(!__OSHasSchedulerLock());
 	}

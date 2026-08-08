@@ -1,5 +1,30 @@
 #pragma once
 
+#include "Cafe/HW/Latte/Core/LattePerformanceMonitor.h"
+
+LatteBufferCacheUploadSource LatteBufferCache_setUploadSource(
+	LatteBufferCacheUploadSource source);
+
+class LatteBufferCacheUploadSourceScope
+{
+  public:
+	explicit LatteBufferCacheUploadSourceScope(LatteBufferCacheUploadSource source)
+		: m_previousSource(LatteBufferCache_setUploadSource(source))
+	{
+	}
+
+	~LatteBufferCacheUploadSourceScope()
+	{
+		LatteBufferCache_setUploadSource(m_previousSource);
+	}
+
+	LatteBufferCacheUploadSourceScope(const LatteBufferCacheUploadSourceScope&) = delete;
+	LatteBufferCacheUploadSourceScope& operator=(const LatteBufferCacheUploadSourceScope&) = delete;
+
+  private:
+	LatteBufferCacheUploadSource m_previousSource;
+};
+
 void LatteBufferCache_init(size_t bufferSize);
 void LatteBufferCache_UnloadAll();
 

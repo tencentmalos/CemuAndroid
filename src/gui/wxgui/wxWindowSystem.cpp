@@ -95,9 +95,6 @@ void WindowSystem::UpdateWindowTitles(bool isIdle, bool isLoading, double fps)
 	{
 		switch (g_renderer->GetType())
 		{
-		case RendererAPI::OpenGL:
-			renderer = "[OpenGL]";
-			break;
 		case RendererAPI::Vulkan:
 			renderer = "[Vulkan]";
 			break;

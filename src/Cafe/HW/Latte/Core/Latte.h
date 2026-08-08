@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+
 #include "Cafe/HW/Latte/Core/LatteConst.h"
 #include "Cafe/HW/Latte/ISA/LatteReg.h"
 #include "util/VirtualHeap/VirtualHeap.h"
@@ -122,7 +124,7 @@ void LatteTC_UnregisterTexture(LatteTexture* tex);
 uint32 LatteTexture_CalculateTextureDataHash(LatteTexture* hostTexture);
 void LatteTexture_ReloadData(LatteTexture* hostTexture);
 
-bool LatteTC_HasTextureChanged(LatteTexture* hostTexture, bool force = false);
+bool LatteTC_HasTextureChanged(LatteTexture* hostTexture, bool force = false, bool trackGuestWrite = true);
 void LatteTC_ResetTextureChangeTracker(LatteTexture* hostTexture, bool force = false);
 
 void LatteTC_MarkTextureStillInUse(LatteTexture* texture); // lets the texture garbage collector know the texture is still in use at the time of this function call
@@ -134,20 +136,82 @@ void LatteTC_UnloadAllTextures();
 
 // texture readback
 
+enum class LatteGuestFeedbackMode : uint32
+{
+	None = 0,
+	ObserveFullVisibility = 1,
+	GuardedPreviousGeneration = 2,
+};
+
+struct LatteGuestFeedbackSnapshot
+{
+	uint64 fastPath{};
+	uint64 fastPathAlreadyVisible{};
+	uint64 fastPathPreviousGeneration{};
+	uint64 fallback{};
+	uint64 generationScheduled{};
+	uint64 generationPublished{};
+	uint64 generationConsumed{};
+	uint64 generationHeld{};
+	uint32 generationAge{};
+	uint32 heldJobs{};
+	uint32 fallbackReason{};
+	bool signatureMatched{};
+};
+
 void LatteTextureReadback_Initate(LatteTextureView* textureView);
 void LatteTextureReadback_StartTransfer(LatteTextureView* textureView);
 bool LatteTextureReadback_Update(bool forceStart = false);
 void LatteTextureReadback_NotifyTextureDeletion(LatteTexture* texture);
-void LatteTextureReadback_UpdateFinishedTransfers(bool forceFinish);
+void LatteTextureReadback_UpdateFinishedTransfers(bool forceFinish,
+	LatteGuestFeedbackMode feedbackMode = LatteGuestFeedbackMode::None);
+void LatteTextureReadback_ResetFeedbackObservation();
+void LatteTextureReadback_RecordFeedbackConsumed();
+LatteGuestFeedbackSnapshot LatteTextureReadback_GetFeedbackSnapshot();
+std::string LatteTextureReadback_GetFeedbackObservationStatus();
 bool LatteTextureReadback_ReadbackToLinearBlocking(LatteTextureView* sourceView, uint8* dstPtr, uint32 dstWidth, uint32 dstHeight, uint32 dstPitch);
 
 // query
+
+enum class LatteOcclusionQueryPolicy : uint32
+{
+	Accurate = 0,
+	AlwaysVisible = 1,
+};
+
+struct LatteOcclusionQueryPolicySnapshot
+{
+	LatteOcclusionQueryPolicy requestedPolicy{LatteOcclusionQueryPolicy::AlwaysVisible};
+	LatteOcclusionQueryPolicy activePolicy{LatteOcclusionQueryPolicy::AlwaysVisible};
+	uint64 cpuQueries{};
+	uint64 gpuQueries{};
+	uint64 completedQueries{};
+	uint64 zeroResults{};
+	uint64 nonzeroResults{};
+	uint64 bypassedQueries{};
+	uint64 resultSamples{};
+};
 
 void LatteQuery_Init();
 void LatteQuery_BeginOcclusionQuery(MPTR queryMPTR);
 void LatteQuery_EndOcclusionQuery(MPTR queryMPTR);
 void LatteQuery_UpdateFinishedQueries();
 void LatteQuery_UpdateFinishedQueriesForceFinishAll();
+void LatteQuery_RequestPolicy(LatteOcclusionQueryPolicy policy);
+LatteOcclusionQueryPolicySnapshot LatteQuery_GetPolicySnapshot();
+std::string LatteQuery_GetPolicyStatus();
+void LatteQuery_PublishProfilerCounters();
+
+struct LatteQueryVisibilitySnapshot
+{
+	uint32 inFlightQueries{};
+	uint32 guestQueries{};
+	uint64 latestFinishedEventId{};
+	uint64 nextEventId{};
+	bool rendererQueryActive{};
+};
+
+LatteQueryVisibilitySnapshot LatteQuery_GetVisibilitySnapshot();
 void LatteQuery_CancelActiveGPU7Queries();
 
 // streamout
@@ -176,10 +240,6 @@ void LatteRenderTarget_updateViewport();
 #define LATTE_GLSL_DYNAMIC_UNIFORM_BLOCK_SIZE	(4096) // maximum size for uniform blocks (in vec4s). On Nvidia hardware 4096 is the maximum (64K / 16 = 4096) all other vendors have much higher limits
 
 //static uint32 glTempError;
-//#define catchOpenGLError() glFinish(); if( (glTempError = glGetError()) != 0 ) { printf("OpenGL error 0x%x: %s : %d timestamp %08x\n", glTempError, __FILE__, __LINE__, GetTickCount()); __debugbreak(); }
-
-#define catchOpenGLError()
-
 // Latte emulation control
 void Latte_Start();
 void Latte_Stop();

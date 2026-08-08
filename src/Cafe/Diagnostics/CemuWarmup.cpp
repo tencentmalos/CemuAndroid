@@ -1,6 +1,7 @@
 #include "Cafe/Diagnostics/CemuWarmup.h"
 
 #include "Cafe/CafeSystem.h"
+#include "Cafe/OS/libs/vpad/vpad.h"
 #include "input/InputManager.h"
 #include "input/emulated/ClassicController.h"
 #include "input/emulated/ProController.h"
@@ -34,8 +35,8 @@ namespace
 	struct WarmupSettings
 	{
 		uint32_t count = 6;
-		uint32_t delayMilliseconds = 35'000;
-		uint32_t intervalMilliseconds = 10'000;
+		uint32_t delayMilliseconds = 15'000;
+		uint32_t intervalMilliseconds = 5'000;
 		uint32_t pressMilliseconds = 250;
 		uint32_t settleMilliseconds = 60'000;
 	};
@@ -50,6 +51,14 @@ namespace
 		Completed,
 		Cancelled,
 		Failed,
+	};
+
+	enum class WarmupInputMode
+	{
+		Unresolved,
+		Controller0,
+		TemporaryVPAD,
+		DiagnosticVPAD,
 	};
 
 	std::string_view StateName(WarmupState state)
@@ -72,6 +81,22 @@ namespace
 			return "cancelled";
 		case WarmupState::Failed:
 			return "failed";
+		}
+		return "unknown";
+	}
+
+	std::string_view InputModeName(WarmupInputMode mode)
+	{
+		switch (mode)
+		{
+		case WarmupInputMode::Unresolved:
+			return "unresolved";
+		case WarmupInputMode::Controller0:
+			return "controller_0";
+		case WarmupInputMode::TemporaryVPAD:
+			return "temporary_vpad";
+		case WarmupInputMode::DiagnosticVPAD:
+			return "diagnostic_vpad";
 		}
 		return "unknown";
 	}
@@ -124,8 +149,11 @@ namespace
 				m_settings = settings;
 				m_completedCount = 0;
 				m_lastError.clear();
+				m_inputMode = WarmupInputMode::Unresolved;
 				m_state = WarmupState::WaitingForTitle;
 			}
+			vpad::ResetDiagnosticInputStats();
+			PrepareInputController();
 			m_stopRequested.store(false);
 			m_worker = std::thread([this, settings] {
 				Run(settings);
@@ -138,6 +166,8 @@ namespace
 			out << "interval_ms=" << settings.intervalMilliseconds << "\n";
 			out << "press_ms=" << settings.pressMilliseconds << "\n";
 			out << "settle_ms=" << settings.settleMilliseconds << "\n";
+			out << "vpad_reads=" << vpad::GetDiagnosticReadCount() << "\n";
+			out << "vpad_a_reads=" << vpad::GetDiagnosticAReadCount() << "\n";
 			return out.str();
 		}
 
@@ -147,24 +177,29 @@ namespace
 			WarmupState state;
 			uint32_t completedCount;
 			std::string lastError;
+			WarmupInputMode inputMode;
 			{
 				std::scoped_lock lock{m_stateMutex};
 				settings = m_settings;
 				state = m_state;
 				completedCount = m_completedCount;
 				lastError = m_lastError;
+				inputMode = m_inputMode;
 			}
 
 			std::ostringstream out;
 			out << "warmup_state=" << StateName(state) << "\n";
 			out << "title_running=" << (CafeSystem::IsTitleRunning() ? "true" : "false") << "\n";
 			out << "controller_ready=" << (GetController() ? "true" : "false") << "\n";
+			out << "input_mode=" << InputModeName(inputMode) << "\n";
 			out << "completed=" << completedCount << "\n";
 			out << "count=" << settings.count << "\n";
 			out << "delay_ms=" << settings.delayMilliseconds << "\n";
 			out << "interval_ms=" << settings.intervalMilliseconds << "\n";
 			out << "press_ms=" << settings.pressMilliseconds << "\n";
 			out << "settle_ms=" << settings.settleMilliseconds << "\n";
+			out << "vpad_reads=" << vpad::GetDiagnosticReadCount() << "\n";
+			out << "vpad_a_reads=" << vpad::GetDiagnosticAReadCount() << "\n";
 			if (!lastError.empty())
 				out << "last_error=" << lastError << "\n";
 			return out.str();
@@ -175,6 +210,7 @@ namespace
 			std::scoped_lock workerLock{m_workerMutex};
 			StopWorkerLocked();
 			SetAButton(false);
+			ReleaseTemporaryController();
 			{
 				std::scoped_lock lock{m_stateMutex};
 				if (m_state == WarmupState::Idle || m_state == WarmupState::Completed || m_state == WarmupState::Failed)
@@ -188,6 +224,22 @@ namespace
 		{
 			StopWorker();
 			SetAButton(false);
+			ReleaseTemporaryController();
+		}
+
+		void OnInputManagerReady()
+		{
+			std::scoped_lock workerLock{m_workerMutex};
+			bool warmupActive = false;
+			{
+				std::scoped_lock lock{m_stateMutex};
+				warmupActive = m_state == WarmupState::WaitingForTitle ||
+					m_state == WarmupState::Delaying ||
+					m_state == WarmupState::Running ||
+					m_state == WarmupState::Settling;
+			}
+			if (warmupActive)
+				PrepareInputController();
 		}
 
 	private:
@@ -201,13 +253,51 @@ namespace
 			return InputManager::instance().get_controller(0);
 		}
 
-		static bool SetAButton(bool pressed)
+		void PrepareInputController()
 		{
 			auto controller = GetController();
+			WarmupInputMode inputMode = WarmupInputMode::Controller0;
 			if (!controller)
-				return false;
-			controller->setButtonValue(kAButtonMapping, pressed);
-			return true;
+			{
+				controller = InputManager::instance().set_controller(0, EmulatedController::Type::VPAD);
+				m_temporaryController = controller;
+				inputMode = controller ? WarmupInputMode::TemporaryVPAD : WarmupInputMode::DiagnosticVPAD;
+			}
+			std::scoped_lock lock{m_stateMutex};
+			m_inputMode = inputMode;
+		}
+
+		void SetAButton(bool pressed)
+		{
+			// Mirror the synthetic press into VPADRead even when controller 0 exists. This
+			// keeps headless warmup independent of controller-profile loading order while
+			// the controller override below still covers titles using another controller
+			// type through InputManager.
+			vpad::SetDiagnosticButtonAOverride(pressed);
+			WarmupInputMode inputMode = WarmupInputMode::DiagnosticVPAD;
+			auto controller = GetController();
+			if (!controller && pressed)
+			{
+				controller = InputManager::instance().set_controller(0, EmulatedController::Type::VPAD);
+				m_temporaryController = controller;
+			}
+			if (controller)
+			{
+				controller->setButtonValue(kAButtonMapping, pressed);
+				inputMode = controller == m_temporaryController ? WarmupInputMode::TemporaryVPAD : WarmupInputMode::Controller0;
+			}
+			std::scoped_lock lock{m_stateMutex};
+			m_inputMode = inputMode;
+		}
+
+		void ReleaseTemporaryController()
+		{
+			if (!m_temporaryController)
+				return;
+			m_temporaryController->setButtonValue(kAButtonMapping, false);
+			if (GetController() == m_temporaryController)
+				InputManager::instance().delete_controller(0, false);
+			m_temporaryController.reset();
 		}
 
 		bool WaitInterruptibly(uint32_t milliseconds) const
@@ -225,7 +315,7 @@ namespace
 		void Run(WarmupSettings settings)
 		{
 			uint32_t waitedForTitle = 0;
-			while ((!CafeSystem::IsTitleRunning() || !GetController()) && waitedForTitle < kTitleReadyTimeoutMilliseconds)
+			while (!CafeSystem::IsTitleRunning() && waitedForTitle < kTitleReadyTimeoutMilliseconds)
 			{
 				if (!WaitInterruptibly(100))
 					return MarkCancelled();
@@ -233,8 +323,7 @@ namespace
 			}
 			if (!CafeSystem::IsTitleRunning())
 				return MarkFailed("title did not start within 180000ms");
-			if (!GetController())
-				return MarkFailed("controller 0 did not become ready within 180000ms");
+			SetAButton(false);
 
 			SetState(WarmupState::Delaying);
 			if (!WaitInterruptibly(settings.delayMilliseconds))
@@ -245,8 +334,7 @@ namespace
 			{
 				if (!CafeSystem::IsTitleRunning())
 					return MarkFailed("title stopped during warmup");
-				if (!SetAButton(true))
-					return MarkFailed("controller 0 became unavailable");
+				SetAButton(true);
 				if (!WaitInterruptibly(settings.pressMilliseconds))
 				{
 					SetAButton(false);
@@ -272,6 +360,7 @@ namespace
 				return MarkCancelled();
 			if (!CafeSystem::IsTitleRunning())
 				return MarkFailed("title stopped while warmup was settling");
+			ReleaseTemporaryController();
 			SetState(WarmupState::Completed);
 		}
 
@@ -298,12 +387,14 @@ namespace
 		void MarkCancelled()
 		{
 			SetAButton(false);
+			ReleaseTemporaryController();
 			SetState(WarmupState::Cancelled);
 		}
 
 		void MarkFailed(std::string error)
 		{
 			SetAButton(false);
+			ReleaseTemporaryController();
 			std::scoped_lock lock{m_stateMutex};
 			m_lastError = std::move(error);
 			m_state = WarmupState::Failed;
@@ -313,10 +404,12 @@ namespace
 		std::mutex m_workerMutex;
 		std::thread m_worker;
 		std::atomic_bool m_stopRequested{false};
+		EmulatedControllerPtr m_temporaryController;
 		WarmupSettings m_settings;
 		WarmupState m_state = WarmupState::Idle;
 		uint32_t m_completedCount = 0;
 		std::string m_lastError;
+		WarmupInputMode m_inputMode = WarmupInputMode::Unresolved;
 	};
 
 	WarmupAutomation& GetWarmupAutomation()
@@ -328,7 +421,7 @@ namespace
 
 void CemuWarmup::RegisterDebugCommands(spatial::debugbus::DebugCommandRegistry& registry)
 {
-	registry.Register("warmup_a", "Press controller 0 A slowly, then wait for gameplay to settle", [](const std::vector<std::string>& args) {
+	registry.Register("warmup_a", "Press A through controller 0 or diagnostic VPAD fallback, then wait for gameplay to settle", [](const std::vector<std::string>& args) {
 		return GetWarmupAutomation().Start(args);
 	});
 	registry.Register("warmup_status", "Report asynchronous warmup progress", [](const std::vector<std::string>& args) {
@@ -341,6 +434,11 @@ void CemuWarmup::RegisterDebugCommands(spatial::debugbus::DebugCommandRegistry& 
 			return std::string{"usage: warmup_cancel\n"};
 		return GetWarmupAutomation().Cancel();
 	});
+}
+
+void CemuWarmup::OnInputManagerReady()
+{
+	GetWarmupAutomation().OnInputManagerReady();
 }
 
 void CemuWarmup::Shutdown()

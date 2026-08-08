@@ -1,0 +1,7 @@
+[Definition]
+titleIds = 00050000101C9300
+name = BotW v208 Host Readback Deferral
+path = "The Legend of Zelda: Breath of the Wild/Host Readback Deferral"
+description = Experimental JP v208 probe that keeps the first GX2DrawDone retirement but defers Guest-memory visibility to the normal post-swap GX2DrawDone. Requires the matching Cemu Host implementation.
+version = 7
+default = 1

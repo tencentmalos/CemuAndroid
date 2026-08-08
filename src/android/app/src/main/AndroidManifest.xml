@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -27,7 +26,10 @@
         android:theme="@style/Theme.Cemu">
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:configChanges="density|keyboard|keyboardHidden|orientation|screenSize|uiMode"
+            android:exported="true"
+            android:resizeableActivity="false"
+            android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -36,12 +38,12 @@
         </activity>
         <activity
             android:name=".emulation.EmulationActivity"
-            android:configChanges="orientation|screenSize"
+            android:configChanges="density|keyboard|keyboardHidden|orientation|screenSize|uiMode"
             android:exported="true"
             android:launchMode="singleTop"
             android:parentActivityName=".MainActivity"
-            android:screenOrientation="userLandscape"
-            tools:ignore="DiscouragedApi">
+            android:resizeableActivity="false"
+            android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 

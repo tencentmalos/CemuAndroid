@@ -3,6 +3,7 @@
 #include "Cafe/HW/Latte/Core/LatteShader.h"
 #include "Cafe/HW/Latte/Core/LatteTexture.h"
 #include "Cafe/HW/Latte/Core/LatteSurfaceCopy.h"
+#include "Cafe/Diagnostics/SurfaceResolutionDiagnostics.h"
 
 #include "Cafe/HW/Latte/Renderer/Renderer.h"
 
@@ -52,8 +53,11 @@ void LatteSurfaceCopy_copySurfaceNew(const LatteSurfaceCopyParam& src, const Lat
 
 	// look up source texture
 	// todo - for non-zero slices heightInTexels matters (used to calculate the slice size). We should take this into account during lookup
+	const bool isResolve = Latte::IsMSAA(src.dim) && !Latte::IsMSAA(dst.dim);
+	const LatteSurfaceUsage sourceUsage = isResolve ? LatteSurfaceUsage::ResolveSource : LatteSurfaceUsage::CopySource;
+	const LatteSurfaceUsage destinationUsage = isResolve ? LatteSurfaceUsage::ResolveDestination : LatteSurfaceUsage::CopyDestination;
 	LatteTexture* sourceTexture = nullptr;
-	LatteTextureView* sourceView = LatteTC_GetTextureSliceViewOrTryCreate(src.physDataAddr, MPTR_NULL, src.surfaceFormat, Latte::MakeHWTileMode(src.tilemode), rect.x + rect.width, rect.y + rect.height, 1, src.pitch, src.swizzle, src.sliceIndex, 0);
+	LatteTextureView* sourceView = LatteTC_GetTextureSliceViewOrTryCreate(src.physDataAddr, MPTR_NULL, src.surfaceFormat, Latte::MakeHWTileMode(src.tilemode), rect.x + rect.width, rect.y + rect.height, 1, src.pitch, src.swizzle, src.sliceIndex, 0, sourceUsage);
 	if (sourceView == nullptr)
 	{
 		// source texture doesn't exist (yet) in texture cache
@@ -62,6 +66,7 @@ void LatteSurfaceCopy_copySurfaceNew(const LatteSurfaceCopyParam& src, const Lat
 		return;
 	}
 	sourceTexture = sourceView->baseTexture;
+	SurfaceResolutionDiagnostics::RecordUsage(*sourceTexture, sourceUsage);
 	if (sourceTexture->reloadFromDynamicTextures)
 	{
 		LatteTexture_UpdateCacheFromDynamicTextures(sourceTexture);
@@ -79,44 +84,83 @@ void LatteSurfaceCopy_copySurfaceNew(const LatteSurfaceCopyParam& src, const Lat
 	LatteTextureView* destinationView = LatteTextureViewLookupCache::lookupSliceMinSize(dst.physDataAddr, rect.x + rect.width, rect.y + rect.height, dst.pitch, 0, dst.sliceIndex, dst.surfaceFormat);
 	// todo - Instead of lookupSliceMinSize lookup the base texture by data range instead and return mip/slice index
 	if (destinationView)
+	{
 		destinationTexture = destinationView->baseTexture;
+		SurfaceResolutionDiagnostics::RecordUsage(*destinationTexture, destinationUsage);
+	}
 	// create destination texture if it doesnt exist
 	if (!destinationTexture)
 	{
-		destinationView = LatteTexture_CreateMapping(dst.physDataAddr, MPTR_NULL, rect.x + rect.width, rect.y + rect.height, 1, dst.pitch, Latte::MakeHWTileMode(dst.tilemode), dst.swizzle, 0, 1, dst.sliceIndex, 1, dst.surfaceFormat, dst.dim, Latte::IsMSAA(dst.dim) ? Latte::E_DIM::DIM_2D_MSAA : Latte::E_DIM::DIM_2D, false);
+		destinationView = LatteTexture_CreateMapping(dst.physDataAddr, MPTR_NULL, rect.x + rect.width, rect.y + rect.height, 1, dst.pitch, Latte::MakeHWTileMode(dst.tilemode), dst.swizzle, 0, 1, dst.sliceIndex, 1, dst.surfaceFormat, dst.dim, Latte::IsMSAA(dst.dim) ? Latte::E_DIM::DIM_2D_MSAA : Latte::E_DIM::DIM_2D, false, destinationUsage);
 		destinationTexture = destinationView->baseTexture;
 	}
 	// copy texture
+	bool surfaceCopySucceeded = false;
 	if (sourceTexture && destinationTexture)
 	{
 		// mark source and destination texture as still in use
 		LatteTC_MarkTextureStillInUse(destinationTexture);
 		LatteTC_MarkTextureStillInUse(sourceTexture);
 		sint32 realSrcSlice = src.sliceIndex;
-		if (LatteTexture_doesEffectiveRescaleRatioMatch(sourceTexture, sourceView->firstMip, destinationTexture, destinationView->firstMip))
+		const bool compatibleScale = LatteTexture_doesEffectiveRescaleRatioMatch(sourceTexture, sourceView->firstMip, destinationTexture, destinationView->firstMip);
+		SurfaceResolutionDiagnostics::RecordCopy(*sourceTexture, *destinationTexture, compatibleScale, isResolve);
+		bool copySucceeded = false;
+		bool destinationRepresentationTracked = false;
+		if (compatibleScale)
 		{
 			cemu_assert_debug(rect.x == 0 && rect.y == 0);
-			sint32 copyWidth = rect.width;
-			sint32 copyHeight = rect.height;
-			sint32 effectiveCopyWidth = copyWidth;
-			sint32 effectiveCopyHeight = copyHeight;
-			LatteTexture_scaleToEffectiveSize(sourceTexture, &effectiveCopyWidth, &effectiveCopyHeight, 0);
+			const sint32 copyWidth = rect.width;
+			const sint32 copyHeight = rect.height;
+			sint32 effectiveCopyX = rect.x;
+			sint32 effectiveCopyY = rect.y;
+			sint32 effectiveCopyWidth = rect.width;
+			sint32 effectiveCopyHeight = rect.height;
+			LatteTexture_scaleRectToEffectiveSize(sourceTexture, &effectiveCopyX, &effectiveCopyY, &effectiveCopyWidth, &effectiveCopyHeight, sourceView->firstMip);
 			// copy slice
 			if (sourceView->baseTexture->isDepth != destinationView->baseTexture->isDepth)
-				g_renderer->surfaceCopy_copySurfaceWithFormatConversion(sourceTexture, sourceView->firstMip, sourceView->firstSlice, destinationTexture, destinationView->firstMip, destinationView->firstSlice, copyWidth, copyHeight);
+			{
+				const auto result = g_renderer->surfaceCopy_copySurfaceWithFormatConversion(sourceTexture, sourceView->firstMip, sourceView->firstSlice, destinationTexture, destinationView->firstMip, destinationView->firstSlice, copyWidth, copyHeight);
+				copySucceeded = result.succeeded;
+				if (!copySucceeded)
+					cemuLog_log(LogType::Force, "LatteSurfaceCopy: Format-converting copy failed with reason {}", static_cast<uint32>(result.reason));
+			}
 			else
-				g_renderer->texture_copyImageSubData(sourceTexture, sourceView->firstMip, 0, 0, realSrcSlice, destinationTexture, destinationView->firstMip, 0, 0, destinationView->firstSlice, effectiveCopyWidth, effectiveCopyHeight, 1);
-			const uint64 eventCounter = LatteTexture_getNextUpdateEventCounter();
-			LatteTexture_MarkDynamicTextureAsChanged(destinationTexture->baseView, destinationView->firstSlice, destinationView->firstMip, eventCounter);
+			{
+				const auto result = g_renderer->texture_copyImageSubData(sourceTexture, sourceView->firstMip,
+					effectiveCopyX, effectiveCopyY, realSrcSlice, destinationTexture,
+					destinationView->firstMip, 0, 0, destinationView->firstSlice, effectiveCopyWidth,
+					effectiveCopyHeight, 1);
+				copySucceeded = result.succeeded;
+				if (!copySucceeded)
+					cemuLog_log(LogType::Force, "LatteSurfaceCopy: Backend copy failed with reason {}",
+						static_cast<uint32>(result.reason));
+			}
 		}
 		else
 		{
-			debug_printf("gx2CP_itHLECopySurface(): Copy texture with non-matching effective size\n");
+			LatteSurfaceOperationResult result = LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+			if (!isResolve && sourceTexture->isDepth == destinationTexture->isDepth)
+			{
+				result = LatteTexture_CopyAcrossNativeBoundary(sourceTexture, static_cast<uint32>(sourceView->firstMip), static_cast<uint32>(realSrcSlice),
+					destinationTexture, static_cast<uint32>(destinationView->firstMip), static_cast<uint32>(destinationView->firstSlice),
+					{static_cast<sint32>(rect.x), static_cast<sint32>(rect.y), static_cast<sint32>(rect.width),
+						static_cast<sint32>(rect.height)}, 0, 0);
+			}
+			copySucceeded = result.succeeded;
+			destinationRepresentationTracked = copySucceeded;
+			if (!copySucceeded)
+				cemuLog_log(LogType::Force, "LatteSurfaceCopy: Native-boundary copy failed with reason {}", static_cast<uint32>(result.reason));
 		}
-		LatteTC_ResetTextureChangeTracker(destinationTexture);
-		// flag texture as updated
-		destinationTexture->lastUpdateEventCounter = LatteTexture_getNextUpdateEventCounter();
-		destinationTexture->isUpdatedOnGPU = true; // todo - also track update flag per-slice
+		if (copySucceeded)
+		{
+			surfaceCopySucceeded = true;
+			if (!destinationRepresentationTracked)
+			{
+				LatteTexture_TrackTextureGPUWrite(destinationTexture,
+					static_cast<uint32>(destinationView->firstSlice),
+					static_cast<uint32>(destinationView->firstMip), LatteTexture_getNextUpdateEventCounter());
+			}
+		}
 	}
 	else
 		debug_printf("Source or destination texture does not exist\n");
@@ -131,7 +175,7 @@ void LatteSurfaceCopy_copySurfaceNew(const LatteSurfaceCopyParam& src, const Lat
 		cemuLog_logDebug(LogType::Force, "Texture readback after copy for Bayonetta 2 (phys: 0x{:08x})", destinationTexture->physAddress);
 		shouldReadback = true;
 	}
-	if (shouldReadback)
+	if (shouldReadback && surfaceCopySucceeded)
 	{
 		LatteTextureReadback_Initate(destinationView);
 	}

@@ -7,6 +7,7 @@
 #include "Cafe/OS/libs/coreinit/coreinit_Thread.h"
 #include "Cafe/CafeSystem.h"
 #include "Cafe/HW/Latte/Core/LattePM4.h"
+#include "Cafe/Diagnostics/GuestProfiler.h"
 
 #include "GX2_Command.h"
 #include "GX2_State.h"
@@ -22,6 +23,8 @@
 #include "GX2_Texture.h"
 
 #include <cinttypes>
+
+#include "spatial/profiler/Profiler.h"
 
 #define GX2_TV_RENDER_NONE			0
 #define GX2_TV_RENDER_480			1
@@ -48,6 +51,8 @@ uint64 lastSwapTime = 0;
 
 void gx2Export_GX2SwapScanBuffers(PPCInterpreter_t* hCPU)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("gx2.guest.swap_scan_buffers");
+	GuestProfiler::RecordGx2SwapScanBuffers(hCPU);
 	cemuLog_log(LogType::GX2, "GX2SwapScanBuffers()");
 
 	bool isPokken = false;
@@ -320,6 +325,10 @@ namespace GX2
 
 		void RPLMapped() override
 		{
+			osLib_addFunction("gx2", "hook_EnableStructuredDrawFastPath", gx2Export_hook_EnableStructuredDrawFastPath);
+			osLib_addFunction("gx2", "hook_RegisterDisplayOrdinalCounter", gx2Export_hook_RegisterDisplayOrdinalCounter);
+			osLib_addFunction("gx2", "hook_RegisterDrawDoneVisibilityDeferral", gx2Export_hook_RegisterDrawDoneVisibilityDeferral);
+			osLib_addFunction("gx2", "hook_RegisterGuestFeedbackPolicy", gx2Export_hook_RegisterGuestFeedbackPolicy);
 			osLib_addFunction("gx2", "GX2GetContextStateDisplayList", gx2Export_GX2GetContextStateDisplayList);
 
 			// swap, vsync & timing

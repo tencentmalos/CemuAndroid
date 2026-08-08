@@ -198,7 +198,7 @@ uint32 LatteTexture_CalculateTextureDataHash(LatteTexture* hostTexture)
 
 uint64 _botwLargeTexHax = 0;
 
-bool LatteTC_HasTextureChanged(LatteTexture* hostTexture, bool force)
+bool LatteTC_HasTextureChanged(LatteTexture* hostTexture, bool force, bool trackGuestWrite)
 {
 	if (hostTexture->forceInvalidate)
 	{
@@ -230,6 +230,8 @@ bool LatteTC_HasTextureChanged(LatteTexture* hostTexture, bool force)
 	if( texDataHash != hostTexture->texDataHash2 )
 	{
 		hostTexture->texDataHash2 = texDataHash;
+		if (trackGuestWrite)
+			LatteTexture_TrackGuestInvalidation(hostTexture, LatteTexture_getNextUpdateEventCounter());
 		if (hostTexture->depth == 83 && hostTexture->width == 1024 && hostTexture->height == 1024)
 		{
 			_botwLargeTexHax = LatteGPUState.frameCounter;
@@ -239,6 +241,8 @@ bool LatteTC_HasTextureChanged(LatteTexture* hostTexture, bool force)
 	if (_botwLargeTexHax != 0 && hostTexture->depth == 83 && hostTexture->width == 1024 && hostTexture->height == 1024 && _botwLargeTexHax != LatteGPUState.frameCounter)
 	{
 		_botwLargeTexHax = 0;
+		if (trackGuestWrite)
+			LatteTexture_TrackGuestInvalidation(hostTexture, LatteTexture_getNextUpdateEventCounter());
 		return true;
 	}
 	return false;
@@ -249,7 +253,7 @@ void LatteTC_ResetTextureChangeTracker(LatteTexture* hostTexture, bool force)
 	if( hostTexture->lastDataUpdateFrameCounter == LatteGPUState.frameCounter && force == false)
 		return;
 	hostTexture->lastDataUpdateFrameCounter = LatteGPUState.frameCounter;
-	LatteTC_HasTextureChanged(hostTexture, true);
+	LatteTC_HasTextureChanged(hostTexture, true, false);
 }
 
 /*

@@ -1,7 +1,10 @@
 #include "Cafe/HW/Latte/Renderer/Renderer.h"
 #include "Cafe/HW/Latte/LatteAddrLib/LatteAddrLib.h"
+#include "Cafe/Diagnostics/SurfaceResolutionDiagnostics.h"
 #include "config/ActiveSettings.h"
 #include "Cafe/CafeSystem.h"
+
+#include "spatial/profiler/Profiler.h"
 
 //#define BENCHMARK_TEXTURE_DECODING		// if defined, time it takes to decode textures will be measured and logged to log.txt
 
@@ -569,6 +572,65 @@ void decodeBC5Block_SNORM(uint8* blockStorage, float* rgOutput) // todo - can me
 	}
 }
 
+namespace
+{
+	bool LatteTextureLoader_TryDirectScaledUpload(LatteTexture* hostTexture, sint32 width,
+		sint32 height, sint32 depth, void* pixelData, sint32 sliceIndex, sint32 mipIndex,
+		uint32 guestImageSize)
+	{
+		if (width <= 0 || height <= 0 || guestImageSize == 0)
+			return false;
+		const uint64 guestTexelCount = static_cast<uint64>(width) * height;
+		if (guestTexelCount == 0 || guestImageSize % guestTexelCount != 0)
+			return false;
+		const uint64 bytesPerTexel = guestImageSize / guestTexelCount;
+		if (bytesPerTexel == 0 || bytesPerTexel > 16)
+			return false;
+		const auto hostExtent = hostTexture->GetHostExtent(static_cast<uint32>(mipIndex));
+		if (hostExtent.width == static_cast<uint32>(width) &&
+			hostExtent.height == static_cast<uint32>(height))
+		{
+			return false;
+		}
+		const uint64 hostImageSize = static_cast<uint64>(hostExtent.width) * hostExtent.height *
+			bytesPerTexel;
+		if (hostImageSize > std::numeric_limits<uint32>::max())
+			return false;
+
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("SurfaceScale.CpuUploadResample");
+		std::vector<uint8> expanded(static_cast<size_t>(hostImageSize));
+		const auto* source = static_cast<const uint8*>(pixelData);
+		for (uint32 y = 0; y < hostExtent.height; ++y)
+		{
+			const uint32 sourceY = std::min<uint32>(height - 1,
+				(static_cast<uint64>(y) * height) / hostExtent.height);
+			for (uint32 x = 0; x < hostExtent.width; ++x)
+			{
+				const uint32 sourceX = std::min<uint32>(width - 1,
+					(static_cast<uint64>(x) * width) / hostExtent.width);
+				memcpy(expanded.data() + (static_cast<uint64>(y) * hostExtent.width + x) *
+					bytesPerTexel, source + (static_cast<uint64>(sourceY) * width + sourceX) *
+					bytesPerTexel, bytesPerTexel);
+			}
+		}
+
+		const auto uploadResult = g_renderer->texture_loadSliceRepresentation(hostTexture,
+			LatteTextureRepresentation::Render, static_cast<sint32>(hostExtent.width),
+			static_cast<sint32>(hostExtent.height), depth, expanded.data(), sliceIndex, mipIndex,
+			static_cast<uint32>(hostImageSize));
+		if (!uploadResult.succeeded)
+			return false;
+		const uint64 eventCounter = LatteTexture_getNextUpdateEventCounter();
+		LatteTexture_TrackGuestDirectRenderUpload(hostTexture, sliceIndex, mipIndex, eventCounter);
+		const LatteSurfaceSubresourceRange range{static_cast<uint32>(mipIndex), 1,
+			static_cast<uint32>(sliceIndex), 1};
+		SurfaceResolutionDiagnostics::RecordRepresentationSync(*hostTexture,
+			LatteTextureRepresentation::GuestNative, LatteTextureRepresentation::Render, range,
+			LatteSurfaceOperationResult::Success(hostImageSize));
+		return true;
+	}
+}
+
 void LatteTextureLoader_loadTextureDataIntoSlice(LatteTexture* hostTexture, sint32 width, sint32 height, sint32 depth, sint32 mipLevels, void* pixelData, sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize)
 {
 	if (mipIndex == 0)
@@ -578,14 +640,51 @@ void LatteTextureLoader_loadTextureDataIntoSlice(LatteTexture* hostTexture, sint
 		cemu_assert_debug(depth == hostTexture->depth);
 	}
 	cemu_assert_debug(mipLevels == hostTexture->mipLevels);
-	if (hostTexture->overwriteInfo.hasResolutionOverwrite || hostTexture->overwriteInfo.hasFormatOverwrite)
+	if (hostTexture->overwriteInfo.hasFormatOverwrite)
 	{
 		// todo - ideally, we should scale/convert the data to the new format and resolution
 		g_renderer->texture_clearSlice(hostTexture, sliceIndex, mipIndex);
+		LatteTexture_TrackTextureGPUWrite(hostTexture, sliceIndex, mipIndex, LatteTexture_getNextUpdateEventCounter());
+	}
+	else if (hostTexture->HasHostResolutionOverride())
+	{
+		if (LatteTextureLoader_TryDirectScaledUpload(hostTexture, width, height, depth,
+			pixelData, sliceIndex, mipIndex, compressedImageSize))
+		{
+			return;
+		}
+		const bool hadGuestNative = g_renderer->texture_hasRepresentation(hostTexture, LatteTextureRepresentation::GuestNative);
+		const auto ensureResult = g_renderer->texture_ensureRepresentation(hostTexture, LatteTextureRepresentation::GuestNative);
+		if (!ensureResult.succeeded)
+		{
+			cemuLog_log(LogType::Force, "Failed to create guest-native texture representation for {:08x}", hostTexture->physAddress);
+			g_renderer->texture_clearSlice(hostTexture, sliceIndex, mipIndex);
+			LatteTexture_TrackTextureGPUWrite(hostTexture, sliceIndex, mipIndex, LatteTexture_getNextUpdateEventCounter());
+			return;
+		}
+		if (!hadGuestNative && g_renderer->texture_hasRepresentation(hostTexture, LatteTextureRepresentation::GuestNative))
+			SurfaceResolutionDiagnostics::RecordRepresentationAllocated(*hostTexture, LatteTextureRepresentation::GuestNative,
+				g_renderer->texture_getRepresentationBytes(hostTexture, LatteTextureRepresentation::GuestNative));
+		const auto uploadResult = g_renderer->texture_loadSliceRepresentation(hostTexture, LatteTextureRepresentation::GuestNative,
+			width, height, depth, pixelData, sliceIndex, mipIndex, compressedImageSize);
+		if (!uploadResult.succeeded)
+		{
+			cemuLog_log(LogType::Force, "Failed to upload guest-native texture representation for {:08x}", hostTexture->physAddress);
+			g_renderer->texture_clearSlice(hostTexture, sliceIndex, mipIndex);
+			LatteTexture_TrackTextureGPUWrite(hostTexture, sliceIndex, mipIndex, LatteTexture_getNextUpdateEventCounter());
+			return;
+		}
+		const uint64 eventCounter = LatteTexture_getNextUpdateEventCounter();
+		LatteTexture_TrackGuestUpload(hostTexture, sliceIndex, mipIndex, eventCounter);
+		const LatteSurfaceSubresourceRange range{static_cast<uint32>(mipIndex), 1, static_cast<uint32>(sliceIndex), 1};
+		const auto syncResult = LatteTexture_EnsureRepresentationCurrent(hostTexture, LatteTextureRepresentation::Render, range);
+		if (!syncResult.succeeded)
+			cemuLog_log(LogType::Force, "Failed to synchronize guest-native texture representation for {:08x}", hostTexture->physAddress);
 	}
 	else
 	{
 		g_renderer->texture_loadSlice(hostTexture, width, height, depth, pixelData, sliceIndex, mipIndex, compressedImageSize);
+		LatteTexture_TrackGuestUpload(hostTexture, sliceIndex, mipIndex, LatteTexture_getNextUpdateEventCounter());
 	}
 }
 
@@ -641,7 +740,7 @@ void LatteTextureLoader_UpdateTextureSliceData(LatteTexture* tex, uint32 sliceIn
 	LARGE_INTEGER benchmark_freq;
 	QueryPerformanceCounter(&benchmark_begin);
 #endif
-	if (tex->overwriteInfo.hasFormatOverwrite == false && tex->overwriteInfo.hasResolutionOverwrite == false)
+	if (tex->overwriteInfo.hasFormatOverwrite == false && tex->HasHostResolutionOverride() == false)
 	{
 		texDecoder->decode(&textureLoader, pixelData);
 	}
@@ -691,7 +790,6 @@ void LatteTextureLoader_UpdateTextureSliceData(LatteTexture* tex, uint32 sliceIn
 	}
 	// clean up
 	g_renderer->texture_releaseTextureUploadBuffer(pixelData);
-	catchOpenGLError();
 }
 
 template<typename copyType>

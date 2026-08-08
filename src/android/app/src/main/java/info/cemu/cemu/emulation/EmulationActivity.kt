@@ -1,7 +1,9 @@
 package info.cemu.cemu.emulation
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.WindowManager
@@ -115,6 +117,8 @@ class EmulationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        logWindowState("onCreate savedState=${savedInstanceState != null}")
+
         inputManager = InputDelegateManager(this)
 
         setupHotkeys()
@@ -124,6 +128,7 @@ class EmulationActivity : AppCompatActivity() {
         setFullscreen()
 
         val gamePath = getGamePath()
+        Log.i(TAG, "launch requested path=${gamePath.substringAfterLast('/').takeLast(160)}")
         LastGameStore.record(this, gamePath)
 
         setContent {
@@ -140,7 +145,22 @@ class EmulationActivity : AppCompatActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        Log.i(
+            TAG,
+            "onNewIntent action=${intent.action} data=${intent.data?.lastPathSegment?.takeLast(160)} " +
+                "hasLaunchPath=${intent.hasExtra(EXTRA_LAUNCH_PATH)}",
+        )
+    }
+
+    override fun onStart() {
+        super.onStart()
+        logWindowState("onStart")
+    }
+
     override fun onPause() {
+        logWindowState("onPause")
         super.onPause()
 
         inputManager.onPause()
@@ -150,6 +170,22 @@ class EmulationActivity : AppCompatActivity() {
         super.onResume()
 
         inputManager.onResume(display.rotation)
+        logWindowState("onResume")
+    }
+
+    override fun onStop() {
+        logWindowState("onStop")
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        logWindowState("onDestroy")
+        super.onDestroy()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        logWindowState("onWindowFocusChanged hasFocus=$hasFocus")
     }
 
     private fun setupHotkeys() {
@@ -171,10 +207,24 @@ class EmulationActivity : AppCompatActivity() {
     }
 
     private fun onQuit() {
+        Log.i(TAG, "onQuit finish requested")
         finish()
     }
 
+    private fun logWindowState(event: String) {
+        val configuration = resources.configuration
+        val bounds = windowManager.currentWindowMetrics.bounds
+        Log.i(
+            TAG,
+            "$event taskId=$taskId taskRoot=$isTaskRoot finishing=$isFinishing " +
+                "changingConfig=$isChangingConfigurations lifecycle=${lifecycle.currentState} " +
+                "orientation=${configuration.orientation} rotation=${display?.rotation} " +
+                "bounds=${bounds.width()}x${bounds.height()}",
+        )
+    }
+
     companion object {
+        private const val TAG = "CemuEmulation"
         const val EXTRA_LAUNCH_PATH: String = BuildConfig.APPLICATION_ID + ".LaunchPath"
     }
 }

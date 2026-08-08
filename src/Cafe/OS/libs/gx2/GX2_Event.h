@@ -1,5 +1,16 @@
 #pragma once
 
+#include <string>
+
+struct PPCInterpreter_t;
+
+struct GX2GuestFeedbackPolicySnapshot
+{
+	bool enabled{};
+	bool legacyDeferralEnabled{};
+	uint32 mode{};
+};
+
 namespace GX2
 {
 	void GX2Init_event();
@@ -9,6 +20,11 @@ namespace GX2
 	void GX2WaitForVsync();
 	void GX2WaitForFlip();
 	bool GX2DrawDone();
+	bool GX2WaitDisplayOrdinal(uint32 targetOrdinal, uint32 feedbackFrameId);
+	std::string GX2GetDisplayOrdinalDependencyStatus();
+	std::string GX2GetDrawDoneVisibilityDeferralStatus();
+	std::string GX2GetGuestFeedbackStatus();
+	GX2GuestFeedbackPolicySnapshot GX2GetGuestFeedbackPolicySnapshot();
 
 	enum class GX2CallbackEventType
 	{
@@ -25,3 +41,7 @@ namespace GX2
 	void __GX2NotifyEvent(GX2CallbackEventType eventType);
 
 }
+
+void gx2Export_hook_RegisterDisplayOrdinalCounter(PPCInterpreter_t* hCPU);
+void gx2Export_hook_RegisterDrawDoneVisibilityDeferral(PPCInterpreter_t* hCPU);
+void gx2Export_hook_RegisterGuestFeedbackPolicy(PPCInterpreter_t* hCPU);

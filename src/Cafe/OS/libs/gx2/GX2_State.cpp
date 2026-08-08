@@ -174,7 +174,6 @@ namespace GX2
 		//		titleId == 0x0005000010110E00ULL)
 		//	{
 		//		// force disable half space clipping
-		//		if (g_renderer && g_renderer->GetType() == RendererAPI::OpenGL && LatteGPUState.glVendor != GLVENDOR_NVIDIA)
 		//			enableHalfZ = false;
 		//	}
 		//}

@@ -4,15 +4,17 @@
 class LatteTextureReadbackInfoVk : public LatteTextureReadbackInfo
 {
 public:
-	LatteTextureReadbackInfoVk(VkDevice device, LatteTextureView* textureView);
+	LatteTextureReadbackInfoVk(VkDevice device, LatteTextureView* textureView,
+		LatteTextureRepresentation representation = LatteTextureRepresentation::Render);
 	~LatteTextureReadbackInfoVk();
 
-	static uint32 GetImageSize(LatteTextureView* textureView);
+	static uint32 GetImageSize(LatteTextureView* textureView, LatteTextureRepresentation representation);
 
 	void StartTransfer() override;
 
 	bool IsFinished() override;
 	void ForceFinish() override;
+	uint64 GetOrderedCompletionPoint() const override { return m_associatedCommandBufferId; }
 
 	uint8* GetData() override
 	{
@@ -38,4 +40,5 @@ private:
 	uint8* m_buffer_ptr = nullptr;
 	uint32 m_buffer_offset = 0;
 	uint64 m_associatedCommandBufferId = 0;
+	LatteTextureRepresentation m_representation{LatteTextureRepresentation::Render};
 };

@@ -67,18 +67,23 @@ struct GraphicPackEntry
 
 enum GraphicAPI
 {
-	kOpenGL = 0,
-	kVulkan,
-	kMetal,
-	COUNT
+	// Value 0 used to mean OpenGL. Keep the remaining serialized values stable.
+	kVulkan = 1,
+	kMetal = 2,
+	COUNT = 3
 };
+
+constexpr bool IsValidGraphicAPI(GraphicAPI api)
+{
+	return api == kVulkan || api == kMetal;
+}
 
 #if defined(ENABLE_VULKAN)
 constexpr GraphicAPI kDefaultGraphicsAPI = kVulkan;
 #elif defined(ENABLE_METAL)
 constexpr GraphicAPI kDefaultGraphicsAPI = kMetal;
-#elif defined(ENABLE_OPENGL)
-constexpr GraphicAPI kDefaultGraphicsAPI = kOpenGL;
+#else
+#error "At least one graphics backend must be enabled"
 #endif
 
 enum AudioChannels
@@ -470,6 +475,10 @@ struct CemuConfig
 	ConfigValue<float> userDisplayGamma { 2.2f }; // 0 = sRGB, >0 gamma
 
 	ConfigValue<bool> vk_accurate_barriers{ true };
+	// Independent scale domains. Render surfaces may trade raster cost for resolution;
+	// static textures remain a separate opt-in path and presentation owns output size.
+	ConfigValueBounds<uint32> render_surface_scale_percent{50, 100, 200};
+	ConfigValueBounds<uint32> static_texture_scale_factor{1, 1, 2};
 
 	struct
 	{

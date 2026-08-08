@@ -333,7 +333,7 @@ bool ImGui_ImplMetal_CreateFontsTexture(id<MTLDevice> device)
     id <MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
     [texture replaceRegion:MTLRegionMake2D(0, 0, (NSUInteger)width, (NSUInteger)height) mipmapLevel:0 withBytes:pixels bytesPerRow:(NSUInteger)width * 4];
     bd->SharedMetalContext.fontTexture = texture;
-    io.Fonts->SetTexID((__bridge void*)bd->SharedMetalContext.fontTexture); // ImTextureID == void*
+    io.Fonts->SetTexID(static_cast<ImTextureID>(reinterpret_cast<std::uintptr_t>((__bridge void*)bd->SharedMetalContext.fontTexture)));
 
     return (bd->SharedMetalContext.fontTexture != nil);
 }
@@ -343,7 +343,7 @@ void ImGui_ImplMetal_DestroyFontsTexture()
     ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
     ImGuiIO& io = ImGui::GetIO();
     bd->SharedMetalContext.fontTexture = nil;
-    io.Fonts->SetTexID(nullptr);
+    io.Fonts->SetTexID(ImTextureID_Invalid);
 }
 
 bool ImGui_ImplMetal_CreateDeviceObjects(id<MTLDevice> device)

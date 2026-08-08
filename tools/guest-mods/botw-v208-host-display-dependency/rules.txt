@@ -1,0 +1,7 @@
+[Definition]
+titleIds = 00050000101C9300
+name = BotW v208 Host Display Dependency
+path = "The Legend of Zelda: Breath of the Wild/Host Display Dependency"
+description = Experimental JP v208 probe that translates the registered VSYNC counter fence into a Cemu Host event dependency. Requires the matching Cemu Host implementation.
+version = 7
+default = 1

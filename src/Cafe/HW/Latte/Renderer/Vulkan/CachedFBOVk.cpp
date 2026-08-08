@@ -37,6 +37,12 @@ void CachedFBOVk::CreateRenderPass()
 	}
 
 	m_vkrObjRenderPass = new VKRObjectRenderPass(attachmentInfo);
+	if (attachmentInfo.depthAttachment.viewObj &&
+		VulkanRenderer::GetInstance()->SupportsAttachmentStoreOpNone())
+	{
+		m_vkrObjRenderPassNoDepthStore = new VKRObjectRenderPass(
+			attachmentInfo, Latte::GPU_LIMITS::NUM_COLOR_ATTACHMENTS, true);
+	}
 }
 
 CachedFBOVk::~CachedFBOVk()
@@ -44,6 +50,11 @@ CachedFBOVk::~CachedFBOVk()
 	while (!m_usedByPipelines.empty())
 		delete m_usedByPipelines[0];
 	auto vkr = VulkanRenderer::GetInstance();
+	if (m_vkrObjRenderPassNoDepthStore)
+	{
+		vkr->ReleaseDestructibleObject(m_vkrObjRenderPassNoDepthStore);
+		m_vkrObjRenderPassNoDepthStore = nullptr;
+	}
 	vkr->ReleaseDestructibleObject(m_vkrObjFramebuffer);
 	m_vkrObjFramebuffer = nullptr;
 	vkr->ReleaseDestructibleObject(m_vkrObjRenderPass);

@@ -38,6 +38,58 @@ fragment float4 fragmentCopyDepthToColor(VertexOut in [[stage_in]], texture2d<fl
     return float4(src.read(uint2(in.position.xy)).r, 0.0, 0.0, 0.0);
 }
 
+struct SurfaceCopyDepthOut {
+    float depth [[depth(any)]];
+};
+
+fragment SurfaceCopyDepthOut fragmentCopyColorToDepth(VertexOut in [[stage_in]],
+                                                       texture2d<float, access::read> src [[texture(GET_TEXTURE_BINDING(0))]]) {
+    SurfaceCopyDepthOut out;
+    out.depth = src.read(uint2(in.position.xy)).r;
+    return out;
+}
+
+struct SurfaceResampleParams {
+    uint2 sourceExtent;
+    uint2 destinationExtent;
+};
+
+fragment float4 fragmentResampleColorFloat(VertexOut in [[stage_in]],
+                                            texture2d<float> src [[texture(GET_TEXTURE_BINDING(0))]],
+                                            sampler surfaceSampler [[sampler(GET_SAMPLER_BINDING(0))]]) {
+    return src.sample(surfaceSampler, in.texCoord);
+}
+
+fragment uint4 fragmentResampleColorUint(VertexOut in [[stage_in]],
+                                         texture2d<uint, access::read> src [[texture(GET_TEXTURE_BINDING(0))]],
+                                         constant SurfaceResampleParams& params [[buffer(GET_BUFFER_BINDING(0))]]) {
+    uint2 destinationCoord = min(uint2(in.position.xy), params.destinationExtent - 1);
+    uint2 sourceCoord = min(((destinationCoord * 2 + 1) * params.sourceExtent) / (params.destinationExtent * 2),
+                            params.sourceExtent - 1);
+    return src.read(sourceCoord);
+}
+
+fragment int4 fragmentResampleColorSint(VertexOut in [[stage_in]],
+                                        texture2d<int, access::read> src [[texture(GET_TEXTURE_BINDING(0))]],
+                                        constant SurfaceResampleParams& params [[buffer(GET_BUFFER_BINDING(0))]]) {
+    uint2 destinationCoord = min(uint2(in.position.xy), params.destinationExtent - 1);
+    uint2 sourceCoord = min(((destinationCoord * 2 + 1) * params.sourceExtent) / (params.destinationExtent * 2),
+                            params.sourceExtent - 1);
+    return src.read(sourceCoord);
+}
+
+struct SurfaceDepthOut {
+    float depth [[depth(any)]];
+};
+
+fragment SurfaceDepthOut fragmentResampleDepth(VertexOut in [[stage_in]],
+                                               depth2d<float> src [[texture(GET_TEXTURE_BINDING(0))]],
+                                               sampler surfaceSampler [[sampler(GET_SAMPLER_BINDING(0))]]) {
+    SurfaceDepthOut out;
+    out.depth = src.sample(surfaceSampler, in.texCoord);
+    return out;
+}
+
 //struct RestrideParams {
 //    uint oldStride;
 //    uint newStride;

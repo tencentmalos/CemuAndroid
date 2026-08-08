@@ -1,0 +1,7 @@
+[Definition]
+titleIds = 00050000101C9300
+name = BotW v208 Structured Draw Fast Path
+path = "The Legend of Zelda: Breath of the Wild/Structured Draw Fast Path"
+description = Experimental JP v208 probe that replaces ordinary GX2Draw HLE PM4 sequences with one Cemu-only structured draw packet. Requires the matching Cemu Host implementation.
+version = 7
+default = 1

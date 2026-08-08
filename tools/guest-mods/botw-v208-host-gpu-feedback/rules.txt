@@ -1,0 +1,7 @@
+[Definition]
+titleIds = 00050000101C9300
+name = BotW v208 Host GPU Feedback
+path = "The Legend of Zelda: Breath of the Wild/Host GPU Feedback"
+description = JP v208 guarded previous-generation GPU feedback path. It defers only the verified first GX2DrawDone texture batch, keeps query visibility, and falls back to full synchronization on any mismatch.
+version = 7
+default = 0

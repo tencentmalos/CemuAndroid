@@ -1,5 +1,7 @@
 #include "Cafe/HW/Latte/Core/Latte.h"
 #include "Cafe/HW/Latte/Core/LatteDraw.h"
+#include "Cafe/HW/Latte/Core/LattePerformanceMonitor.h"
+#include "Cafe/Diagnostics/GuestProfiler.h"
 #include "Cafe/OS/common/OSCommon.h"
 #include "Cafe/HW/Latte/Core/LattePM4.h"
 #include "Cafe/OS/libs/coreinit/coreinit.h"
@@ -231,6 +233,16 @@ namespace GX2
 
 	void GX2Command_SubmitCommandBuffer(uint32be* buffer, uint32 sizeInU32s, MEMPTR<uint32be>* completionGPUReadPointer, bool triggerMarkerInterrupt)
 	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("gx2.guest.submit_command_buffer");
+		GuestProfiler::RecordGx2Submission(PPCInterpreter_getCurrentInstance(), sizeInU32s);
+		LattePerformanceMonitor_recordGuestCommandSubmission(sizeInU32s);
+		static std::atomic<uint64> submitCount{};
+		static std::atomic<uint64> submittedWords{};
+		const uint64 currentSubmitCount = submitCount.fetch_add(1, std::memory_order_relaxed) + 1;
+		const uint64 currentSubmittedWords = submittedWords.fetch_add(sizeInU32s, std::memory_order_relaxed) + sizeInU32s;
+		SPATIAL_PROFILER_COUNTER_SET("cemu.guest.gx2_submits", currentSubmitCount, "Cemu Guest Host", "submissions");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.guest.gx2_words_total", currentSubmittedWords, "Cemu Guest Host", "words");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.guest.gx2_words_last", sizeInU32s, "Cemu Guest Host", "words");
 		uint32be cmd[10];
 		uint32 cmdLen = 4;
 		cmd[0] = pm4HeaderType3(IT_INDIRECT_BUFFER_PRIV, 3);
@@ -347,6 +359,33 @@ namespace GX2
 		{
 			GX2Command_Flush(reservedFreeSpaceInU32, true);
 		}
+	}
+
+	GuestGpuTagEmitResult GX2EmitGuestGpuTag(bool begin, uint32 sectionId,
+		uint32 guestThreadId, uint32 guestLr, uint32 generation)
+	{
+		const uint32 coreIndex = coreinit::OSGetCoreId();
+		auto& coreCBState = s_perCoreCBState[coreIndex];
+		if (!coreCBState.currentWritePtr)
+			return GuestGpuTagEmitResult::NoCommandBuffer;
+		// A Guest display list owns a fixed-size allocation. Appending Cemu-only
+		// metadata can overflow it, so the first implementation only annotates
+		// the main command stream. Calls of an annotated display list still
+		// inherit the tag that surrounds IT_INDIRECT_BUFFER_PRIV.
+		if (coreCBState.isDisplayList)
+			return GuestGpuTagEmitResult::DisplayList;
+
+		GX2ReserveCmdSpace(IT_HLE_GUEST_GPU_TAG_WORDS + 1);
+		if (!coreCBState.currentWritePtr)
+			return GuestGpuTagEmitResult::NoCommandBuffer;
+		gx2WriteGather_submit(
+			pm4HeaderType3(IT_HLE_GUEST_GPU_TAG, IT_HLE_GUEST_GPU_TAG_WORDS),
+			begin ? IT_HLE_GUEST_GPU_TAG_BEGIN : 0u,
+			sectionId,
+			guestThreadId,
+			guestLr,
+			generation);
+		return GuestGpuTagEmitResult::Emitted;
 	}
 
 	void GX2WriteGather_beginDisplayList(PPCInterpreter_t* hCPU, MPTR buffer, uint32 maxSize)
@@ -539,6 +578,7 @@ namespace GX2
 
     void GX2CommandResetToDefaultState()
     {
+		GuestProfiler::Reset();
 		s_commandState->commandPoolBase = nullptr;
 		s_commandState->commandPoolSizeInU32s = 0;
 		s_commandState->gpuCommandReadPtr = nullptr;

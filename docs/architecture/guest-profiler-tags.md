@@ -16,6 +16,8 @@ Cemu 的 HLE export。`dumpsys`/debugbus 只负责启停、状态和取证，不
 该方案已经在 AYANEO Pocket DS 的 BotW v208 实际 gameplay 中验证通过；构建、warmup、
 配对计数、Tracy Guest lane 与清理证据见
 [`../verification/guest-profiler-tags-android.md`](../verification/guest-profiler-tags-android.md)。
+BotW v208 的 20 个 PPC detour、codecave wrapper、绝对地址和版本保护见
+[`../bettervr/botw-v208-guest-profiler-patch.md`](../bettervr/botw-v208-guest-profiler-patch.md)。
 
 ```mermaid
 flowchart TD
@@ -175,3 +177,19 @@ Guest tag 表示 begin/end 之间的 **Host 墙钟区间**，包括：
 Foundation 外部 scope 模型的前提下增加“启动时注册 tag 名、运行时只传 ID”的控制面；不要
 在每帧 HLE 调用里传任意字符串。XR、其他模拟器和 PC/Android 共用同一 Foundation API，
 平台层只负责 profiler 连接与端口转发。
+
+## 8. GPU command stream 语义标记
+
+Guest CPU tag 的 begin/end 发生在 Espresso 执行线程，不能说明相应 GX2 命令何时被
+`LatteThread` 消费。渲染相关 section `21..32` 因此会额外写入有序的 Cemu-only PM4 标记，
+并在独立的 `Cemu Guest GPU Command Stream` lane 生成 `GpuCommand/<section>` scope。
+
+现有 `coreinit.hook_ProfileSectionBegin/End` 会自动完成这层桥接；新 Mod 也可显式调用
+`gx2.hook_GpuTagBegin/End`。分析时必须区分：
+
+- `Cemu Guest 0xXXXXXXXX`：Guest CPU 墙钟区间；
+- `Cemu Guest GPU Command Stream`：对应命令在 Host 消费端覆盖的区间；
+- Vulkan GPU zone：Host 已录制命令在物理 GPU 上执行的区间。
+
+三者允许重叠，不能直接相加。完整 packet、display-list 安全边界、真机数据和 FrameGraph
+衔接方案见 [`guest-semantic-framegraph.md`](guest-semantic-framegraph.md)。

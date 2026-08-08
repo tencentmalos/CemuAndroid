@@ -8,5 +8,6 @@ namespace spatial::debugbus
 namespace CemuWarmup
 {
 	void RegisterDebugCommands(spatial::debugbus::DebugCommandRegistry& registry);
+	void OnInputManagerReady();
 	void Shutdown();
 }

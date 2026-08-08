@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+#include <string>
+
 #define PERFORMANCE_MONITOR_TRACK_CYCLES	(5) // one cycle lasts one second
 
 // todo - replace PPCTimer with HighResolutionTimer.h
@@ -141,6 +145,133 @@ typedef struct
 }performanceMonitor_t;
 
 extern performanceMonitor_t performanceMonitor;
+
+enum class LatteCommandPacketCategory : std::uint8_t
+{
+	Draw,
+	RegisterContext,
+	RegisterResource,
+	RegisterConstant,
+	RegisterSampler,
+	RegisterConfig,
+	RegisterOther,
+	IndirectBuffer,
+	Synchronization,
+	Surface,
+	Filler,
+	Other,
+	Count,
+};
+
+enum class LatteCommandHostTimeCategory : std::uint8_t
+{
+	ConsumeSubmission,
+	DrawTranslate,
+	DrawSequenceBegin,
+	DrawSequenceEnd,
+	SequenceShader,
+	SequenceFramebuffer,
+	SequenceTextures,
+	SequenceApplyRenderTarget,
+	SequenceViewportScissor,
+	FullDrawPrelude,
+	FullDrawUniforms,
+	FullDrawIndices,
+	FullDrawBuffers,
+	FullDrawPipeline,
+	FullDrawDescriptors,
+	FullDrawHostState,
+	FullDrawApi,
+	SequenceEndTrackUpdates,
+	SequenceEndReadback,
+	SequenceEndSubmit,
+	Count,
+};
+
+enum class LatteDrawPassEndReason : std::uint8_t
+{
+	CommandStreamEnd,
+	ResourceChange,
+	ContextChange,
+	SamplerChange,
+	UnsupportedCommand,
+	Streamout,
+	Explicit,
+	Count,
+};
+
+enum class LatteVulkanSubmitReason : std::uint8_t
+{
+	DrawThreshold,
+	Readback,
+	OcclusionQuery,
+	CommandProcessorIdle,
+	ExplicitFlush,
+	CompletionWait,
+	FrameBoundary,
+	SwapchainAcquire,
+	Present,
+	TextureDump,
+	SwapchainRecreate,
+	Shutdown,
+	Other,
+	Count,
+};
+
+enum class LatteVulkanRenderPassEndReason : std::uint8_t
+{
+	FramebufferChange,
+	SelfDependency,
+	GenericBarrier,
+	Query,
+	Readback,
+	SurfaceCopy,
+	CommandBufferSubmit,
+	ImGui,
+	Clear,
+	Present,
+	TextureOperation,
+	BufferOperation,
+	DepthStoreUpgrade,
+	Other,
+	Count,
+};
+
+enum class LatteBufferCacheUploadSource : std::uint8_t
+{
+	Vertex,
+	VertexUniform,
+	GeometryUniform,
+	PixelUniform,
+	Other,
+	Count,
+};
+
+void LattePerformanceMonitor_recordGuestCommandSubmission(uint32 words);
+void LattePerformanceMonitor_recordHostCommandSubmission(uint32 words);
+void LattePerformanceMonitor_recordHostCommandPacket(LatteCommandPacketCategory category, uint32 words);
+void LattePerformanceMonitor_recordHostCommandTime(LatteCommandHostTimeCategory category, uint64 nanoseconds);
+void LattePerformanceMonitor_recordHostRegisterPacketOutcome(bool changed, uint32 words);
+void LattePerformanceMonitor_recordHostDrawPass();
+void LattePerformanceMonitor_recordHostDraw(bool fastDraw);
+void LattePerformanceMonitor_recordHostDrawPassEnd(LatteDrawPassEndReason reason);
+void LattePerformanceMonitor_recordHostContextDrawPassBreak(uint32 registerStart, uint32 registerEnd);
+void LattePerformanceMonitor_recordHostVulkanSubmit(LatteVulkanSubmitReason reason,
+	uint32 recordedDrawPasses, uint64 cpuNanoseconds);
+void LattePerformanceMonitor_recordHostVulkanRenderPassEnd(LatteVulkanRenderPassEndReason reason,
+	uint32 drawCount);
+void LattePerformanceMonitor_recordHostVulkanDepthStoreOmittedPass();
+void LattePerformanceMonitor_recordHostVulkanSelfDependencySplit(bool hasNonPixelDependency);
+void LattePerformanceMonitor_recordHostBufferCacheUpload(LatteBufferCacheUploadSource source,
+	uint32 bytes);
+void LattePerformanceMonitor_recordHostBufferCacheUploadBatch(uint32 regions,
+	uint32 copyCommands);
+void LattePerformanceMonitor_recordHostBufferCacheCopy(uint32 bytes);
+void LattePerformanceMonitor_recordHostVertexBufferBind(uint32 bytes);
+void LattePerformanceMonitor_recordHostUniformRingBankBind(uint32 bytes, bool reused);
+void LattePerformanceMonitor_recordHostUniformRingBankUpload(uint32 bytes);
+std::string LattePerformanceMonitor_getCommandTranslationStatus();
+void LattePerformanceMonitor_resetCommandTranslationStatus();
 
 void LattePerformanceMonitor_frameEnd();
 void LattePerformanceMonitor_frameBegin();

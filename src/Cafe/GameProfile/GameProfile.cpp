@@ -221,9 +221,10 @@ bool GameProfile::Load(uint64_t title_id)
 		else if (boost::iequals(iniParser.GetCurrentSectionName(), "Graphics"))
 		{
 			gameProfileIntegerOption_t graphicsApi;
-			gameProfile_loadIntegerOption(&iniParser, "graphics_api", &graphicsApi, -1, 0, 1);
-			if (graphicsApi.value != -1)
-				m_graphics_api = (GraphicAPI)graphicsApi.value;
+			gameProfile_loadIntegerOption(&iniParser, "graphics_api", &graphicsApi, -1, 0, 2);
+			const GraphicAPI api = static_cast<GraphicAPI>(graphicsApi.value);
+			if (IsValidGraphicAPI(api))
+				m_graphics_api = api;
 
 			gameProfile_loadEnumOption(iniParser, "accurateShaderMul", m_accurateShaderMul);
 #ifdef ENABLE_METAL

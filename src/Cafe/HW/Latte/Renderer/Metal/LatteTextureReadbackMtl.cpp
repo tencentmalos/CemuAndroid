@@ -15,16 +15,18 @@ void LatteTextureReadbackInfoMtl::StartTransfer()
 
 	auto* baseTexture = (LatteTextureMtl*)m_textureView->baseTexture;
 
-	cemu_assert_debug(m_textureView->firstSlice == 0);
-	cemu_assert_debug(m_textureView->firstMip == 0);
 	cemu_assert_debug(m_textureView->baseTexture->dim != Latte::E_DIM::DIM_3D);
+	const uint32 mip = static_cast<uint32>(m_textureView->firstMip);
+	const uint32 slice = static_cast<uint32>(m_textureView->firstSlice);
+	const auto extent = baseTexture->GetRepresentationExtent(m_representation, mip);
 
-	size_t bytesPerRow = GetMtlTextureBytesPerRow(baseTexture->format, baseTexture->isDepth, baseTexture->width);
-	size_t bytesPerImage = GetMtlTextureBytesPerImage(baseTexture->format, baseTexture->isDepth, baseTexture->height, bytesPerRow);
+	size_t bytesPerRow = GetMtlTextureBytesPerRow(baseTexture->format, baseTexture->isDepth, extent.width);
+	size_t bytesPerImage = GetMtlTextureBytesPerImage(baseTexture->format, baseTexture->isDepth, extent.height, bytesPerRow);
 
 	auto blitCommandEncoder = m_mtlr->GetBlitCommandEncoder();
 
-	blitCommandEncoder->copyFromTexture(baseTexture->GetTexture(), 0, 0, MTL::Origin{0, 0, 0}, MTL::Size{(uint32)baseTexture->width, (uint32)baseTexture->height, 1}, m_mtlr->GetTextureReadbackBuffer(), m_bufferOffset, bytesPerRow, bytesPerImage);
+	blitCommandEncoder->copyFromTexture(baseTexture->GetTexture(m_representation), slice, mip, MTL::Origin{0, 0, 0},
+		MTL::Size{extent.width, extent.height, 1}, m_mtlr->GetTextureReadbackBuffer(), m_bufferOffset, bytesPerRow, bytesPerImage);
 
 	m_commandBuffer = m_mtlr->GetCurrentCommandBuffer()->retain();
 	// TODO: uncomment?

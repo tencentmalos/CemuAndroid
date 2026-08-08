@@ -4,6 +4,9 @@
 #include "audio/IAudioAPI.h"
 //#include "ax.h"
 #include "config/CemuConfig.h"
+#if BOOST_PLAT_ANDROID
+#include "util/Fiber/Fiber.h"
+#endif
 
 namespace snd_core
 {
@@ -426,7 +429,7 @@ namespace snd_core
 		}
 	}
 
-	void AXOut_reset()
+	static void AXOut_resetOnHostStack()
 	{
 		std::unique_lock lock(g_audioMutex);
 		if (g_tvAudio)
@@ -446,7 +449,16 @@ namespace snd_core
 		}
 	}
 
-	void AXOut_updateDevicePlayState(bool isPlaying)
+	void AXOut_reset()
+	{
+#if BOOST_PLAT_ANDROID
+		Fiber::RunOnThreadFiber(AXOut_resetOnHostStack);
+#else
+		AXOut_resetOnHostStack();
+#endif
+	}
+
+	static void AXOut_updateDevicePlayStateOnHostStack(bool isPlaying)
 	{
 		std::shared_lock lock(g_audioMutex);
 		if (g_tvAudio)
@@ -472,6 +484,15 @@ namespace snd_core
 			else
 				g_portalAudio->Stop();
 		}
+	}
+
+	void AXOut_updateDevicePlayState(bool isPlaying)
+	{
+#if BOOST_PLAT_ANDROID
+		Fiber::RunOnThreadFiber([isPlaying]() { AXOut_updateDevicePlayStateOnHostStack(isPlaying); });
+#else
+		AXOut_updateDevicePlayStateOnHostStack(isPlaying);
+#endif
 	}
 
 	// called periodically to check for AX updates

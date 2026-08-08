@@ -562,7 +562,7 @@ void VKRMemoryManager::DeleteBuffer(VkBuffer& buffer, VkDeviceMemory& deviceMem)
 	deviceMem = VK_NULL_HANDLE;
 }
 
-VkImageMemAllocation* VKRMemoryManager::imageMemoryAllocate(VkImage image)
+VkImageMemAllocation* VKRMemoryManager::imageMemoryAllocate(VkImage image, bool recoverable)
 {
 	VkMemoryRequirements memRequirements;
 	vkGetImageMemoryRequirements(m_vkr->GetLogicalDevice(), image, &memRequirements);
@@ -603,11 +603,19 @@ VkImageMemAllocation* VKRMemoryManager::imageMemoryAllocate(VkImage image)
 		}
 		if (!mem.isValid())
 		{
+			if (recoverable)
+				return nullptr;
 			m_vkr->UnrecoverableError("Ran out of VRAM for textures");
 		}
 	}
 
-	vkBindImageMemory(m_vkr->GetLogicalDevice(), image, texHeap->getChunkMem(mem.chunkIndex), mem.offset);
+	if (vkBindImageMemory(m_vkr->GetLogicalDevice(), image, texHeap->getChunkMem(mem.chunkIndex), mem.offset) != VK_SUCCESS)
+	{
+		texHeap->freeMem(mem);
+		if (recoverable)
+			return nullptr;
+		m_vkr->UnrecoverableError("Failed to bind texture image memory");
+	}
 
 	return new VkImageMemAllocation(typeFilter, mem, allocationSize);
 }

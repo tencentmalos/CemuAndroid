@@ -3,6 +3,8 @@
 #include "Cafe/HW/Latte/Core/LatteTexture.h"
 #include "util/math/vector2.h"
 
+struct LatteDecompilerShader;
+
 class LatteCachedFBO
 {
 public:

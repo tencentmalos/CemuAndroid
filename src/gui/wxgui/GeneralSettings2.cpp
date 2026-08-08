@@ -359,10 +359,6 @@ wxPanel* GeneralSettings2::AddGraphicsPage(wxNotebook* notebook)
 		sint32 api_size = 0;
 		wxString choices[size_t(GraphicAPI::COUNT)];
 
-#ifdef ENABLE_OPENGL
-		choices[api_size++] = "OpenGL";
-		m_api_map.push_back(GraphicAPI::kOpenGL);
-#endif
 #ifdef ENABLE_VULKAN
 		if (g_vulkan_available)
 		{
@@ -1746,28 +1742,6 @@ void GeneralSettings2::HandleGraphicsApiSelection()
 	auto api = m_api_map[m_graphic_api->GetSelection()];
 	switch (api)
 	{
-#ifdef ENABLE_OPENGL
-	case GraphicAPI::kOpenGL:
-	{
-		// OpenGL
-		m_vsync->AppendString(_("Off"));
-		m_vsync->AppendString(_("On"));
-		if (selection == 0)
-			m_vsync->Select(0);
-		else
-			m_vsync->Select(1);
-
-		m_graphic_device->Clear();
-		m_graphic_device->Disable();
-
-		m_gx2drawdone_sync->Enable();
-		m_async_compile->Disable();
-#ifdef ENABLE_METAL
-		m_force_mesh_shaders->Disable();
-#endif
-		break;
-	}
-#endif
 #ifdef ENABLE_VULKAN
 	case GraphicAPI::kVulkan:
 	{

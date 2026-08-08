@@ -444,14 +444,14 @@ void swkbd::render(bool mainWindow)
 	ImVec2 position = { io.DisplaySize.x / 2.0f, io.DisplaySize.y / 3.0f };
 	ImVec2 pivot = { 0.5f, 0.5f };
 
-	const auto button_len = font->GetCharAdvance('W');
+	const auto button_len = font->GetFontBaked(font->LegacySize)->GetCharAdvance('W');
 	const float len = button_len * std::max(4, std::max(swkbdInternalState->maxTextLength, (sint32)swkbdInternalState->keyboardArg.receiverArg.stringBufSize));
 
 	ImVec2 box_size = { std::min(io.DisplaySize.x * 0.9f, len + 90), 0 };
 	ImGui::SetNextWindowPos(position, ImGuiCond_Always, pivot);
 	ImGui::SetNextWindowSize(box_size, ImGuiCond_Always);
 	ImGui::SetNextWindowBgAlpha(0.9f);
-	ImGui::PushFont(font);
+	ImGui::PushFont(font, font ? font->LegacySize : 0.0f);
 	if (ImGui::Begin("Keyboard Input", nullptr, kPopupFlags))
 	{
 		ImGui::Text("%s", _utf8WrapperPtr(ICON_FA_KEYBOARD));
@@ -483,7 +483,7 @@ void swkbd::render(bool mainWindow)
 	ImGui::SetNextWindowPos(position, ImGuiCond_Always, pivot);
 	//ImGui::SetNextWindowSize({ io.DisplaySize.x * 0.9f , 0.0f}, ImGuiCond_Always);
 	ImGui::SetNextWindowBgAlpha(0.9f);
-	ImGui::PushFont(textFont);
+	ImGui::PushFont(textFont, textFont ? textFont->LegacySize : 0.0f);
 
 	if (ImGui::Begin(fmt::format("Software keyboard##SoftwareKeyboard{}",mainWindow).c_str(), nullptr, kPopupFlags))
 	{
@@ -555,7 +555,7 @@ void swkbd::render(bool mainWindow)
 	}
 	ImGui::End();
 
-	if (io.NavInputs[ImGuiNavInput_Cancel] > 0)
+	if (ImGui::IsKeyDown(ImGuiKey_GamepadFaceRight))
 	{
 		if(!swkbdInternalState->cancelState)
 			swkbd::keyInput(BACKSPACE_KEYCODE);
@@ -564,7 +564,7 @@ void swkbd::render(bool mainWindow)
 	else
 		swkbdInternalState->cancelState = false;
 
-	if (io.NavInputs[ImGuiNavInput_Input] > 0)
+	if (ImGui::IsKeyDown(ImGuiKey_GamepadStart))
 	{
 		if (!swkbdInternalState->returnState)
 			swkbd::keyInput(RETURN_KEYCODE);

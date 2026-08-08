@@ -2,6 +2,8 @@
 #include "WindowSystem.h"
 #include "Cafe/OS/libs/gx2/GX2.h"
 #include "Cafe/GameProfile/GameProfile.h"
+#include "Cafe/Diagnostics/SurfaceResolutionDiagnostics.h"
+#include "Cafe/HW/Latte/Core/LatteSurfaceScaleState.h"
 #include "Cafe/HW/Espresso/Interpreter/PPCInterpreterInternal.h"
 #include "Cafe/HW/Espresso/Recompiler/PPCRecompiler.h"
 #include "Cafe/HW/Espresso/Debugger/Debugger.h"
@@ -942,6 +944,10 @@ namespace CafeSystem
 	void LaunchForegroundTitle()
 	{
 		PPCTimer_waitForInit();
+		LatteSurfaceScaleState::BeginTitle(
+			GetConfig().render_surface_scale_percent.GetValue(),
+			GetConfig().static_texture_scale_factor.GetValue());
+		SurfaceResolutionDiagnostics::BeginTitle();
 		// start system
 		sSystemRunning = true;
 		WindowSystem::NotifyGameLoaded();
@@ -1121,6 +1127,8 @@ namespace CafeSystem
 			return;
 		coreinit::OSSchedulerEnd();
 		Latte_Stop();
+		LatteSurfaceScaleState::EndTitle();
+		SurfaceResolutionDiagnostics::EndTitle();
 		// reset Cafe OS userspace modules
 		snd_core::reset();
 		coreinit::OSAlarm_Shutdown();

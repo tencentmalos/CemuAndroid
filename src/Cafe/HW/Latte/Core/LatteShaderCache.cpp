@@ -9,9 +9,6 @@
 #include "WindowSystem.h"
 
 #include "Cafe/HW/Latte/Renderer/Renderer.h"
-#ifdef ENABLE_OPENGL
-#include "Cafe/HW/Latte/Renderer/OpenGL/RendererShaderGL.h"
-#endif
 #ifdef ENABLE_VULKAN
 #include "Cafe/HW/Latte/Renderer/Vulkan/RendererShaderVk.h"
 #include "Cafe/HW/Latte/Renderer/Vulkan/VulkanPipelineStableCache.h"
@@ -284,11 +281,6 @@ void LatteShaderCache_finish()
 		RendererShaderVk::ShaderCacheLoading_end();
 		return;
 #endif
-#ifdef ENABLE_OPENGL
-	case RendererAPI::OpenGL:
-		RendererShaderGL::ShaderCacheLoading_end();
-		return;
-#endif
 #ifdef ENABLE_METAL
 	case RendererAPI::Metal:
 		RendererShaderMtl::ShaderCacheLoading_end();
@@ -380,11 +372,6 @@ void LatteShaderCache_Load()
 		RendererShaderVk::ShaderCacheLoading_begin(cacheTitleId);
 		break;
 #endif
-#ifdef ENABLE_OPENGL
-	case RendererAPI::OpenGL:
-		RendererShaderGL::ShaderCacheLoading_begin(cacheTitleId);
-		break;
-#endif
 #ifdef ENABLE_METAL
 	case RendererAPI::Metal:
 		RendererShaderMtl::ShaderCacheLoading_begin(cacheTitleId);
@@ -427,7 +414,7 @@ void LatteShaderCache_Load()
 	auto loadBackgroundTexture = [](bool isTV, ImTextureID& out)
 	{
 		TGAFILE file{};
-		out = nullptr;
+		out = ImTextureID_Invalid;
 
 		std::string fileName = isTV ? "bootTvTex.tga" : "bootDRCTex.tga";
 
@@ -578,7 +565,7 @@ void LatteShaderCache_ShowProgress(const std::function <bool(void)>& loadUpdateF
 			ImGui::SetNextWindowBgAlpha(0.8f);
 			ImGui::PushStyleColor(ImGuiCol_PlotHistogram, textColor);
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-			ImGui::PushFont(progress_font);
+			ImGui::PushFont(progress_font, progress_font ? progress_font->LegacySize : 0.0f);
 
 			std::string titleText = "Shader progress";
 
@@ -627,10 +614,10 @@ void LatteShaderCache_ShowProgress(const std::function <bool(void)>& loadUpdateF
 				ImGui::SetNextWindowPos(position, ImGuiCond_Always, pivot);
 				ImGui::SetNextWindowBgAlpha(0.8f);
 				ImGui::PushStyleColor(ImGuiCol_WindowBg, 0);
-				ImGui::PushFont(shader_count_font);
+				ImGui::PushFont(shader_count_font, shader_count_font ? shader_count_font->LegacySize : 0.0f);
 				if (ImGui::Begin("Shader count", nullptr, kPopupFlags))
 				{
-					const float offset = shader_count_font->FallbackAdvanceX * 25.f;
+					const float offset = ImGui::GetFontBaked()->FallbackAdvanceX * 25.f;
 					ImGui::Text("Vertex shaders");
 					ImGui::SameLine(offset);
 					ImGui::Text("%d", shaderCacheScreenStats.vertexShaderCount);
@@ -975,11 +962,6 @@ void LatteShaderCache_Close()
 #ifdef ENABLE_VULKAN
 	case RendererAPI::Vulkan:
 		RendererShaderVk::ShaderCacheLoading_Close();
-		break;
-#endif
-#ifdef ENABLE_OPENGL
-	case RendererAPI::OpenGL:
-		RendererShaderGL::ShaderCacheLoading_Close();
 		break;
 #endif
 #ifdef ENABLE_METAL

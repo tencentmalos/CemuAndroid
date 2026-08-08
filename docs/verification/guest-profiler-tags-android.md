@@ -70,6 +70,11 @@ press_ms=250
 settle_ms=60000
 ```
 
+以上是 2026-08-01 采集时的历史参数。2026-08-02 起当前默认值已缩短为
+`delay_ms=15000`、`interval_ms=5000`，其余参数不变；RelWithDebInfo 覆盖安装后已用
+无参数 `warmup_a` 读取回执确认新默认值，并用等价显式参数完成 6/6 次 A 和 gameplay
+截图验证。
+
 最终 `warmup_state=completed`，截图人工确认处于初始神庙内的可操作 gameplay，而不是
 标题、菜单或加载画面。状态层同时确认：
 
@@ -115,7 +120,7 @@ Profiler MCP 使用 Tracy 0.10.0 协议采集：
 
 ```text
 capture_profile(
-  url="android://localabstract:azahar-tracy",
+  url="android://localabstract:cemu-tracy",
   protocol="tracy",
   duration_seconds=210,
   keep_session=true
@@ -158,6 +163,79 @@ Tracy live capture 可能在 scope 尚未结束时断开。当前 MCP 对未闭�
 `latte.command_buffer.decode`，不是 Guest 时钟换算错误。判断单个 Guest span 时使用
 `find_top_slices` 的已闭合实例，并用 `begin - end == active_spans` 复核运行时配对。
 
+### 6.2 2026-08-02 稳定 gameplay 热点
+
+第二轮采集先用 15 秒初始等待、5 秒 A 间隔完成 warmup，并在 60 秒 settle 后截图确认
+Link 已进入初始神庙的可操作场景。随后保持同一进程和场景不动，采集 60 秒 Tracy：
+
+| 指标 | 结果 |
+|---|---:|
+| Frame | 598，约 9.97 FPS |
+| CPU zone | 3,219,277 |
+| GPU context | 1 |
+| GPU zone | 2,321,540 |
+| 解析到 GPU time | 2,321,113 |
+| CPU submit fallback | 427 |
+| 未配对 GPU timestamp | 30 |
+| Guest lane | 3 |
+
+导入诊断显示 live LZ4 event 已完整解码。GPU time 覆盖率超过 99.98%；少量 fallback 和
+30 个未配对 timestamp 位于采集边界，不能据此推断 GPU zone 整体失真。
+
+稳定窗口的闭合 CPU scope 分布如下。不同线程和父子 scope 会重叠，`total` 不能直接相加：
+
+| 侧别 | scope | total ms | p50 ms | p90 ms | p99 ms | 闭合 max ms |
+|---|---|---:|---:|---:|---:|---:|
+| Guest | `PPCSystemTaskPostCalc` | 11,685.6 | 19.442 | 21.219 | 25.562 | 29.408 |
+| Guest | `PPCSystemStateMachine` | 边界污染 | 17.166 | 20.147 | 29.535 | 边界污染 |
+| Guest | `PPCActorJob0_1` | 6,069.6 | 0.098 | 0.223 | 2.828 | 7.184 |
+| Guest | `PPCActorJob1_1` | 3,183.7 | 0.052 | 0.239 | 1.500 | 15.418 |
+| Guest | `PPCPhysicsPostBgBaseProcMgr` | 1,913.1 | 2.955 | 3.990 | 5.604 | 19.542 |
+| Host | `latte.sync.wait_reg_mem` | 12,756.9 | 21.354 | 23.779 | 28.585 | 34.054 |
+| Host | `vulkan.command_buffer.wait_for_fence` | 12,947.2 | 2.781 | 7.125 | 8.565 | 11.441 |
+| Host | `vulkan.submit` | 6,507.6 | 0.825 | 1.728 | 2.511 | 3.508 |
+
+最长帧为 frame 69，耗时 132.149 ms。该帧的关键切片为：
+
+| scope / 侧别 | frame 69 内耗时 |
+|---|---:|
+| Host `latte.command_buffer.decode`，裁剪后 total / self | 109.202 / 4.990 ms |
+| Host `latte.sync.wait_reg_mem` | 30.455 ms |
+| Guest `PPCSystemStateMachine`，total / self | 25.057 / 20.336 ms |
+| Guest `PPCSystemTaskPostCalc` | 18.008 ms |
+| Host `vulkan.command_buffer.wait_for_fence` | 15.782 ms |
+| GPU `vulkan.draw` | 41.943 ms |
+
+同帧 CPU/GPU 比为 3.151，Profiler MCP 判定主导侧为 CPU。当前证据支持以下优先级：
+
+1. Guest `PPCSystemTaskPostCalc` 与 Host `latte.sync.wait_reg_mem` 都稳定占用约 20 ms，首先
+   检查 Guest 帧尾与 Latte command processor / GPU 同步之间的交接；相似周期只说明强
+   相关，仍需按绝对时间验证因果。
+2. Vulkan readback / fence wait 是 Host 的主要阻塞来源。`wait_for_fence` 在 60 秒内累计
+   12.95 秒，说明优化目标不只是 Guest 算法，也包括同步与 readback 频率。
+3. GPU 在最长帧仍需约 41.9 ms；全窗口 `vulkan.draw` GPU time 累计 28.19 秒，折合每帧
+   约 47.0 ms。即使完全消除 CPU 瓶颈，当前 1920x1080 场景也还达不到稳定 30 FPS。
+4. Actor job 确有开销，但分布在 3 条 Guest lane；`PPCActorJob0_1` 的单次 p50 仅
+   0.098 ms，属于高频并行次级热点，不应先于帧尾同步处理。
+5. warmup 后 recompiler 只出现 22 次、累计 116 ms，说明本窗口不是由持续 JIT 编译主导。
+
+全局 aggregate 中 `latte.command_buffer.decode` 和 `PPCSystemStateMachine` 各有一个跨 live
+capture 边界的未闭合实例，产生约 `2.302e11 ms` 的伪时长。本节已排除该 total/max，使用
+闭合分位数和 frame-local 裁剪结果。控制侧本轮没有观察到 `profiler_connected=true`，因此
+预定的 `guest_profiler_reset` 未执行；Guest `calls` counter 是累计值，不能当 60 秒绝对值。
+但 counter 首末差与 trace 内闭合 zone 数一致，Guest timeline、Host CPU 和 GPU 热点不受
+此限制。
+
+本轮 trace 保存为：
+
+```text
+_out/performance/20260802-guest-profile/botw-guest-stable.tracy
+```
+
+文件由 MCP Tracy writer 生成，大小 199,962,092 字节，可由当前 MCP 重新载入；它保留 CPU
+zone、counter 和 GPU zone，但不是 live stream 的 byte-exact 副本，CPU hierarchy 与硬件
+采样没有写入该派生文件。
+
 ## 7. 验收矩阵
 
 | 项目 | 结果 |
@@ -192,3 +270,66 @@ a21a874eed0be97ae98c11432dc0840cb566a3cffdf0ffabd293fc712b2e5abe
 `cmp` 返回相同，因此没有覆盖恢复配置，也没有卸载应用或清除数据。当前设备上保留的是
 RelWithDebInfo APK 和用户原配置，临时 Guest profiler pack 已移除；需要再次采集时必须由
 暂存脚本重新生成并审计。
+
+## 9. Guest→Host 与帧尾 HLE 归属复测
+
+后续复测使用 AYANEO Pocket DS、Android RelWithDebInfo、Vulkan、BotW v208，Render 与
+Static Texture 均为 1x。先建立并丢弃一条启动期 Tracy 连接以注册 Vulkan GPU context，
+随后完整执行 15 秒延迟、6 次每 5 秒 A、60 秒 settle；`warmup_status=completed` 且截图
+确认位于初始神庙可操作场景后，执行 `guest_profiler_reset`，最后才采正式 session `s28`。
+该 15 秒窗口用于 HLE 调用归属复测，不替代最长帧结论所要求的连续 20 秒验收窗口。
+
+| 项目 | 结果 |
+| --- | --- |
+| APK SHA-256 | `8e420abe76e8b9c90e48087c7ed8e957709e87819c8e0c04adb456dc5794f88c` |
+| capture 参数 | 15 秒 |
+| frame-set 帧 | 147 |
+| CPU / GPU zone | 1,402,942 / 575,875 |
+| GPU time zone | 575,875 |
+| Guest lane | 3 |
+| 断开 Tracy 状态层 | 12.0 FPS / 83.16 ms |
+| draws | 3,861，其中 fast 2,844 |
+| settings SHA-256 | `893ffdac05f7805562b068bd1a6f58bebec7851eab2f0e40cdc67f2f79779df7`，覆盖安装前后未变 |
+
+正式 trace：
+
+```text
+_out/performance/20260802-guest-host-transfer/botw-1x-frame-end-attribution.tracy
+SHA-256 44b50c6d219f0e32f4002acdf269459df13fddddee7533b6d4d70caa4edd9541
+```
+
+新 counter 证明每个 Guest 帧固定出现：一次 `GX2SetGPUFence`、一次
+`GX2SwapScanBuffers`、两次 `GX2DrawDone`。DrawDone 的两个 LR 各出现 149 次，严格
+交替为 `0x031FAA14`、`0x031FAB24`；swap 固定为 `0x031FAB20`，fence 固定为
+`0x031FAB04`。这与 BetterVR 在 `0x031FAA10` NOP 第一处 DrawDone、并在
+`0x031FAB1C` 包装 swap + 单次 post-swap DrawDone 的补丁位置一致。
+
+session 内 298 个 `gx2.guest.draw_done` scope 累计 6,887.7 ms，平均 23.1 ms/次；Host
+记录 299 次 `latte.sync.async_operations`，累计 3,161.0 ms。frame #70 为 98.352 ms，
+关键数据为：
+
+| 侧别 | scope | frame #70 |
+| --- | --- | ---: |
+| Guest HLE/PPC Core | 第一、第二次完整 `gx2.guest.draw_done` | 25.274 / 21.975 ms |
+| Guest lane | `PPCSystemTaskPostCalc` | 18.327 ms |
+| Guest lane | `PPCSystemStateMachine` | 16.814 ms |
+| Host Latte | `latte.sync.async_readback` | 25.117 ms |
+| Host Latte | `latte.sync.wait_reg_mem` | 19.889 ms |
+| Host Latte | command ring 等待 Guest | 15.433 ms |
+| Host Latte | 4,031 次 `vulkan.draw.prepare` | 19.369 ms |
+| Host GPU | covered time | 8.389 ms |
+
+Guest HLE 与 Latte scope 位于不同线程并存在重叠，不能把表中时间直接相加。本轮新增的
+结论是调用因果：两次 DrawDone 触发 full-sync/readback，一次 fence 触发
+`WAIT_REG_MEM`；GPU 本身不是 1x 场景的首要限制。
+
+命令提交也已按 active Guest section 归属。正式窗口中 8,940 次 submission 的 command
+word 差值约 20.81M，其中 DrawTV 99.41%、DrawDRC 0.51%、未归属 0.07%。这些 words
+是共享 indirect buffer 长度，不是 Guest→Host memcpy 流量。完整解释、Mermaid 时序和
+后续 A/B 条件见 [`../architecture/cemu-frame-performance.md`](../architecture/cemu-frame-performance.md)。
+
+复测结束后已核对设备 pack 仅含 hash 匹配的 `rules.txt` 与
+`patch_guest_profiler.asm`，随后删除精确目录
+`customGraphicPacks/BotW_v208_Guest_Profiler` 并停止 Cemu。settings 与采集前备份 hash
+一致，没有执行恢复、卸载或清数据；设备上已有的 RenderDoc adb forward 属于其他图形
+工作流，本轮未修改。

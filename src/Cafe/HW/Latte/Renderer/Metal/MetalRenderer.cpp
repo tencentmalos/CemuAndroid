@@ -23,6 +23,7 @@
 #include "Cafe/HW/Latte/Core/LatteConst.h"
 #include "config/CemuConfig.h"
 #include "spatial/imgui/Layer.hpp"
+#include "spatial/profiler/Profiler.h"
 
 #define IMGUI_IMPL_METAL_CPP
 #include "imgui/imgui_extension.h"
@@ -256,10 +257,33 @@ MetalRenderer::MetalRenderer() : Renderer(RendererAPI::Metal)
     // Pipelines
     NS_STACK_SCOPED MTL::Function* vertexFullscreenFunction = utilityLibrary->newFunction(ToNSString("vertexFullscreen"));
     NS_STACK_SCOPED MTL::Function* fragmentCopyDepthToColorFunction = utilityLibrary->newFunction(ToNSString("fragmentCopyDepthToColor"));
+	NS_STACK_SCOPED MTL::Function* fragmentCopyColorToDepthFunction = utilityLibrary->newFunction(ToNSString("fragmentCopyColorToDepth"));
+	NS_STACK_SCOPED MTL::Function* fragmentResampleColorFloatFunction = utilityLibrary->newFunction(ToNSString("fragmentResampleColorFloat"));
+	NS_STACK_SCOPED MTL::Function* fragmentResampleColorUintFunction = utilityLibrary->newFunction(ToNSString("fragmentResampleColorUint"));
+	NS_STACK_SCOPED MTL::Function* fragmentResampleColorSintFunction = utilityLibrary->newFunction(ToNSString("fragmentResampleColorSint"));
+	NS_STACK_SCOPED MTL::Function* fragmentResampleDepthFunction = utilityLibrary->newFunction(ToNSString("fragmentResampleDepth"));
 
     m_copyDepthToColorDesc = MTL::RenderPipelineDescriptor::alloc()->init();
     m_copyDepthToColorDesc->setVertexFunction(vertexFullscreenFunction);
     m_copyDepthToColorDesc->setFragmentFunction(fragmentCopyDepthToColorFunction);
+	m_copyColorToDepthDesc = MTL::RenderPipelineDescriptor::alloc()->init();
+	m_copyColorToDepthDesc->setVertexFunction(vertexFullscreenFunction);
+	m_copyColorToDepthDesc->setFragmentFunction(fragmentCopyColorToDepthFunction);
+
+	auto createResampleDescriptor = [&](MTL::Function* fragmentFunction) {
+		auto* descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
+		descriptor->setVertexFunction(vertexFullscreenFunction);
+		descriptor->setFragmentFunction(fragmentFunction);
+		return descriptor;
+	};
+	m_resampleColorFloatDesc = createResampleDescriptor(fragmentResampleColorFloatFunction);
+	m_resampleColorUintDesc = createResampleDescriptor(fragmentResampleColorUintFunction);
+	m_resampleColorSintDesc = createResampleDescriptor(fragmentResampleColorSintFunction);
+	m_resampleDepthDesc = createResampleDescriptor(fragmentResampleDepthFunction);
+	NS_STACK_SCOPED MTL::DepthStencilDescriptor* depthStateDescriptor = MTL::DepthStencilDescriptor::alloc()->init();
+	depthStateDescriptor->setDepthCompareFunction(MTL::CompareFunctionAlways);
+	depthStateDescriptor->setDepthWriteEnabled(true);
+	m_resampleDepthState = m_device->newDepthStencilState(depthStateDescriptor);
 
     // Void vertex pipelines
     if (m_isAppleGPU)
@@ -280,6 +304,22 @@ MetalRenderer::~MetalRenderer()
     m_copyDepthToColorDesc->release();
     for (const auto [pixelFormat, pipeline] : m_copyDepthToColorPipelines)
         pipeline->release();
+	m_copyColorToDepthDesc->release();
+	for (const auto& [pixelFormat, pipeline] : m_copyColorToDepthPipelines)
+		pipeline->release();
+	m_resampleColorFloatDesc->release();
+	m_resampleColorUintDesc->release();
+	m_resampleColorSintDesc->release();
+	m_resampleDepthDesc->release();
+	for (const auto& [pixelFormat, pipeline] : m_resampleColorFloatPipelines)
+		pipeline->release();
+	for (const auto& [pixelFormat, pipeline] : m_resampleColorUintPipelines)
+		pipeline->release();
+	for (const auto& [pixelFormat, pipeline] : m_resampleColorSintPipelines)
+		pipeline->release();
+	for (const auto& [pixelFormat, pipeline] : m_resampleDepthPipelines)
+		pipeline->release();
+	m_resampleDepthState->release();
 
     delete m_outputShaderCache;
     delete m_pipelineCache;
@@ -635,12 +675,12 @@ ImTextureID MetalRenderer::GenerateTexture(const std::vector<uint8>& data, const
 		// TODO: do a GPU copy?
 		texture->replaceRegion(MTL::Region(0, 0, size.x, size.y), 0, 0, tmp.data(), size.x * 4, 0);
 
-		return (ImTextureID)texture;
+		return static_cast<ImTextureID>(reinterpret_cast<std::uintptr_t>(texture));
 	}
 	catch (const std::exception& ex)
 	{
 		cemuLog_log(LogType::Force, "can't generate imgui texture: {}", ex.what());
-		return nullptr;
+		return ImTextureID_Invalid;
 	}
 }
 
@@ -648,7 +688,7 @@ void MetalRenderer::DeleteTexture(ImTextureID id)
 {
     EnsureImGuiBackend();
 
-    ((MTL::Texture*)id)->release();
+	reinterpret_cast<MTL::Texture*>(static_cast<std::uintptr_t>(id))->release();
 }
 
 void MetalRenderer::DeleteFontTextures()
@@ -759,8 +799,9 @@ void MetalRenderer::texture_clearSlice(LatteTexture* hostTexture, sint32 sliceIn
     }
 }
 
-MTL::BlitOption GetBlitOptionForTexture(const LatteTextureMtl* texture) {
-    switch (texture->GetTexture()->pixelFormat()) {
+MTL::BlitOption GetBlitOptionForTexture(const LatteTextureMtl* texture,
+	LatteTextureRepresentation representation = LatteTextureRepresentation::Render) {
+    switch (texture->GetTexture(representation)->pixelFormat()) {
         case MTL::PixelFormatDepth16Unorm:
         case MTL::PixelFormatDepth32Float:
             return MTL::BlitOptionDepthFromDepthStencil;
@@ -787,7 +828,21 @@ bool IsDepthStencilFormat(MTL::PixelFormat format) {
 // TODO: do a cpu copy on Apple Silicon?
 void MetalRenderer::texture_loadSlice(LatteTexture* hostTexture, sint32 width, sint32 height, sint32 depth, void* pixelData, sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize)
 {
+	const auto result = texture_loadSliceRepresentation(hostTexture, LatteTextureRepresentation::Render,
+		width, height, depth, pixelData, sliceIndex, mipIndex, compressedImageSize);
+	if (!result.succeeded)
+		cemuLog_log(LogType::Force, "Metal texture upload failed for {:08x}", hostTexture->physAddress);
+}
+
+LatteSurfaceOperationResult MetalRenderer::texture_loadSliceRepresentation(LatteTexture* hostTexture,
+	LatteTextureRepresentation representation, sint32 width, sint32 height, sint32 depth, void* pixelData,
+	sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize)
+{
     auto textureMtl = (LatteTextureMtl*)hostTexture;
+	const auto ensureResult = textureMtl->EnsureRepresentation(representation);
+	if (!ensureResult.succeeded)
+		return ensureResult;
+	auto* targetTexture = textureMtl->GetTexture(representation);
 
     uint32 offsetZ = 0;
     if (textureMtl->Is3DTexture())
@@ -814,14 +869,15 @@ void MetalRenderer::texture_loadSlice(LatteTexture* hostTexture, sint32 width, s
     bufferAllocator.FlushReservation(allocation);
 
     // Copy the data from the temporary buffer to the texture
-	if (IsDepthStencilFormat(textureMtl->GetTexture()->pixelFormat())) {
+	if (IsDepthStencilFormat(targetTexture->pixelFormat())) {
         // Metal doesn't allow copying depth and stencil data at the same time, so we need to do two copies for combined depth/stencil formats
-        blitCommandEncoder->copyFromBuffer(allocation.mtlBuffer, allocation.bufferOffset, bytesPerRow, 0, MTL::Size(width, height, 1), textureMtl->GetTexture(), sliceIndex, mipIndex, MTL::Origin(0, 0, offsetZ), MTL::BlitOptionDepthFromDepthStencil);
-        blitCommandEncoder->copyFromBuffer(allocation.mtlBuffer, allocation.bufferOffset, bytesPerRow, 0, MTL::Size(width, height, 1), textureMtl->GetTexture(), sliceIndex, mipIndex, MTL::Origin(0, 0, offsetZ), MTL::BlitOptionStencilFromDepthStencil);
+		blitCommandEncoder->copyFromBuffer(allocation.mtlBuffer, allocation.bufferOffset, bytesPerRow, 0, MTL::Size(width, height, 1), targetTexture, sliceIndex, mipIndex, MTL::Origin(0, 0, offsetZ), MTL::BlitOptionDepthFromDepthStencil);
+		blitCommandEncoder->copyFromBuffer(allocation.mtlBuffer, allocation.bufferOffset, bytesPerRow, 0, MTL::Size(width, height, 1), targetTexture, sliceIndex, mipIndex, MTL::Origin(0, 0, offsetZ), MTL::BlitOptionStencilFromDepthStencil);
     } else {
-        blitCommandEncoder->copyFromBuffer(allocation.mtlBuffer, allocation.bufferOffset, bytesPerRow, 0, MTL::Size(width, height, 1), textureMtl->GetTexture(), sliceIndex, mipIndex, MTL::Origin(0, 0, offsetZ), GetBlitOptionForTexture(textureMtl));
+		blitCommandEncoder->copyFromBuffer(allocation.mtlBuffer, allocation.bufferOffset, bytesPerRow, 0, MTL::Size(width, height, 1), targetTexture, sliceIndex, mipIndex, MTL::Origin(0, 0, offsetZ), GetBlitOptionForTexture(textureMtl, representation));
     }
     //}
+	return LatteSurfaceOperationResult::Success(compressedImageSize);
 }
 
 void MetalRenderer::texture_clearColorSlice(LatteTexture* hostTexture, sint32 sliceIndex, sint32 mipIndex, float r, float g, float b, float a)
@@ -877,9 +933,37 @@ void MetalRenderer::texture_clearDepthSlice(LatteTexture* hostTexture, uint32 sl
     m_performanceMonitor.m_clears++;
 }
 
-LatteTexture* MetalRenderer::texture_createTextureEx(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth)
+LatteTexture* MetalRenderer::texture_createTextureEx(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth, LatteSurfaceUsage initialUsage)
 {
-    return new LatteTextureMtl(this, dim, physAddress, physMipAddress, format, width, height, depth, pitch, mipLevels, swizzle, tileMode, isDepth);
+    return new LatteTextureMtl(this, dim, physAddress, physMipAddress, format, width, height, depth, pitch, mipLevels, swizzle, tileMode, isDepth, initialUsage);
+}
+
+LatteSurfaceFallbackReason MetalRenderer::texture_preflightInternalResolution(
+	Latte::E_GX2SURFFMT format, Latte::E_DIM dim, bool, bool hasStencil, uint32 mipLevels,
+	const LatteSurfaceExtent& extent, LatteSurfaceScaleClass scaleClass)
+{
+	constexpr uint32 kMax2DExtent = 16384;
+	constexpr uint32 kMaxArrayLayers = 2048;
+	if (dim != Latte::E_DIM::DIM_2D && dim != Latte::E_DIM::DIM_2D_ARRAY)
+		return LatteSurfaceFallbackReason::DimensionUnsupported;
+	if (extent.width == 0 || extent.height == 0 || extent.width > kMax2DExtent ||
+		extent.height > kMax2DExtent || extent.depth > kMaxArrayLayers || mipLevels == 0 ||
+		mipLevels > 15)
+	{
+		return LatteSurfaceFallbackReason::DimensionUnsupported;
+	}
+	if (scaleClass == LatteSurfaceScaleClass::ScalableRenderFamily)
+	{
+		if (!FormatIsRenderable(format))
+			return LatteSurfaceFallbackReason::FormatUnsupported;
+		if (hasStencil)
+			return LatteSurfaceFallbackReason::BackendOperationUnsupported;
+	}
+	else if (GetMtlPixelFormatInfo(format, false).pixelFormat == MTL::PixelFormatInvalid)
+	{
+		return LatteSurfaceFallbackReason::FormatUnsupported;
+	}
+	return LatteSurfaceFallbackReason::None;
 }
 
 void MetalRenderer::texture_setLatteTexture(LatteTextureView* textureView, uint32 textureUnit)
@@ -887,7 +971,10 @@ void MetalRenderer::texture_setLatteTexture(LatteTextureView* textureView, uint3
     m_state.m_textures[textureUnit] = static_cast<LatteTextureViewMtl*>(textureView);
 }
 
-void MetalRenderer::texture_copyImageSubData(LatteTexture* src, sint32 srcMip, sint32 effectiveSrcX, sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip, sint32 effectiveDstX, sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth, sint32 effectiveCopyHeight, sint32 srcDepth_)
+LatteSurfaceOperationResult MetalRenderer::texture_copyImageSubData(LatteTexture* src, sint32 srcMip,
+	sint32 effectiveSrcX, sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip,
+	sint32 effectiveDstX, sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth,
+	sint32 effectiveCopyHeight, sint32 srcDepth_)
 {
     // Source size seems to apply to the destination texture as well, therefore we need to adjust it when block size doesn't match
     Uvec2 srcBlockTexelSize = GetMtlPixelFormatInfo(src->format, src->isDepth).blockTexelSize;
@@ -973,33 +1060,315 @@ void MetalRenderer::texture_copyImageSubData(LatteTexture* src, sint32 srcMip, s
             }
         }
     }
+	return LatteSurfaceOperationResult::Success();
+}
+
+bool MetalRenderer::texture_hasRepresentation(const LatteTexture* texture, LatteTextureRepresentation representation) const
+{
+	return static_cast<const LatteTextureMtl*>(texture)->HasRepresentation(representation);
+}
+
+uint64 MetalRenderer::texture_getRepresentationBytes(const LatteTexture* texture, LatteTextureRepresentation representation) const
+{
+	return static_cast<const LatteTextureMtl*>(texture)->GetRepresentationBytes(representation);
+}
+
+LatteSurfaceOperationResult MetalRenderer::texture_ensureRepresentation(LatteTexture* texture, LatteTextureRepresentation representation)
+{
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("SurfaceScale.Metal.EnsureRepresentation");
+	return static_cast<LatteTextureMtl*>(texture)->EnsureRepresentation(representation);
+}
+
+LatteSurfaceOperationResult MetalRenderer::texture_copyImageSubDataBetweenRepresentations(LatteTexture* source,
+	LatteTextureRepresentation sourceRepresentation, sint32 sourceMip, sint32 sourceX, sint32 sourceY, sint32 sourceSlice,
+	LatteTexture* destination, LatteTextureRepresentation destinationRepresentation, sint32 destinationMip, sint32 destinationX,
+	sint32 destinationY, sint32 destinationSlice, sint32 copyWidth, sint32 copyHeight, sint32 depth)
+{
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("SurfaceScale.Metal.NativeBoundaryCopy");
+	auto* sourceMtl = static_cast<LatteTextureMtl*>(source);
+	auto* destinationMtl = static_cast<LatteTextureMtl*>(destination);
+	auto sourceEnsure = sourceMtl->EnsureRepresentation(sourceRepresentation);
+	if (!sourceEnsure.succeeded)
+		return sourceEnsure;
+	auto destinationEnsure = destinationMtl->EnsureRepresentation(destinationRepresentation);
+	if (!destinationEnsure.succeeded)
+		return destinationEnsure;
+	auto* sourceTexture = sourceMtl->GetTexture(sourceRepresentation);
+	auto* destinationTexture = destinationMtl->GetTexture(destinationRepresentation);
+	if (!sourceTexture || !destinationTexture || sourceTexture->pixelFormat() != destinationTexture->pixelFormat())
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::FormatUnsupported);
+	if (source->Is3DTexture() || destination->Is3DTexture())
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::DimensionUnsupported);
+	auto* encoder = GetBlitCommandEncoder();
+	for (sint32 layer = 0; layer < depth; ++layer)
+	{
+		encoder->copyFromTexture(sourceTexture, sourceSlice + layer, sourceMip, MTL::Origin(sourceX, sourceY, 0),
+			MTL::Size(copyWidth, copyHeight, 1), destinationTexture, destinationSlice + layer, destinationMip,
+			MTL::Origin(destinationX, destinationY, 0));
+	}
+	return LatteSurfaceOperationResult::Success();
+}
+
+LatteSurfaceOperationResult MetalRenderer::texture_resampleRepresentation(LatteTexture* texture,
+	LatteTextureRepresentation sourceRepresentation, LatteTextureRepresentation destinationRepresentation,
+	const LatteSurfaceSubresourceRange& range, LatteSurfaceResampleFilter filter)
+{
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("SurfaceScale.Metal.Resample");
+	if (sourceRepresentation == destinationRepresentation || texture->RepresentationsAlias())
+		return LatteSurfaceOperationResult::Success();
+	if (texture->Is3DTexture() || texture->dim == Latte::E_DIM::DIM_1D || texture->IsCompressedFormat())
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::DimensionUnsupported);
+	auto* textureMtl = static_cast<LatteTextureMtl*>(texture);
+	auto sourceEnsure = textureMtl->EnsureRepresentation(sourceRepresentation);
+	if (!sourceEnsure.succeeded)
+		return sourceEnsure;
+	auto destinationEnsure = textureMtl->EnsureRepresentation(destinationRepresentation);
+	if (!destinationEnsure.succeeded)
+		return destinationEnsure;
+	auto* sourceTexture = textureMtl->GetTexture(sourceRepresentation);
+	auto* destinationTexture = textureMtl->GetTexture(destinationRepresentation);
+	const auto formatInfo = GetMtlPixelFormatInfo(texture->format, texture->isDepth);
+	if (formatInfo.hasStencil)
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+	if (!FormatIsRenderable(texture->format))
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::FormatUnsupported);
+
+	MTL::RenderPipelineDescriptor* descriptor{};
+	std::map<MTL::PixelFormat, MTL::RenderPipelineState*>* pipelines{};
+	if (texture->isDepth)
+	{
+		descriptor = m_resampleDepthDesc;
+		pipelines = &m_resampleDepthPipelines;
+	}
+	else if (formatInfo.dataType == MetalDataType::UINT)
+	{
+		descriptor = m_resampleColorUintDesc;
+		pipelines = &m_resampleColorUintPipelines;
+	}
+	else if (formatInfo.dataType == MetalDataType::INT)
+	{
+		descriptor = m_resampleColorSintDesc;
+		pipelines = &m_resampleColorSintPipelines;
+	}
+	else
+	{
+		descriptor = m_resampleColorFloatDesc;
+		pipelines = &m_resampleColorFloatPipelines;
+	}
+	auto& pipeline = (*pipelines)[destinationTexture->pixelFormat()];
+	if (!pipeline)
+	{
+		if (texture->isDepth)
+			descriptor->setDepthAttachmentPixelFormat(destinationTexture->pixelFormat());
+		else
+			descriptor->colorAttachments()->object(0)->setPixelFormat(destinationTexture->pixelFormat());
+		NS::Error* error = nullptr;
+		pipeline = m_device->newRenderPipelineState(descriptor, &error);
+		if (!pipeline)
+		{
+			if (error)
+				cemuLog_log(LogType::Force, "Failed to create Metal surface resample pipeline: {}", error->localizedDescription()->utf8String());
+			return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+		}
+	}
+
+	struct SurfaceResampleParams
+	{
+		uint32 sourceExtent[2];
+		uint32 destinationExtent[2];
+	};
+	for (uint32 mip = range.firstMip; mip < range.firstMip + range.mipCount; ++mip)
+	{
+		const auto sourceExtent = texture->GetRepresentationExtent(sourceRepresentation, mip);
+		const auto destinationExtent = texture->GetRepresentationExtent(destinationRepresentation, mip);
+		for (uint32 slice = range.firstSlice; slice < range.firstSlice + range.sliceCount; ++slice)
+		{
+			auto* sourceView = sourceTexture->newTextureView(sourceTexture->pixelFormat(), MTL::TextureType2D,
+				NS::Range::Make(mip, 1), NS::Range::Make(slice, 1));
+			if (!sourceView)
+				return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+			NS_STACK_SCOPED MTL::RenderPassDescriptor* renderPass = MTL::RenderPassDescriptor::alloc()->init();
+			if (texture->isDepth)
+			{
+				auto* attachment = renderPass->depthAttachment();
+				attachment->setTexture(destinationTexture);
+				attachment->setLevel(mip);
+				attachment->setSlice(slice);
+				attachment->setLoadAction(MTL::LoadActionDontCare);
+				attachment->setStoreAction(MTL::StoreActionStore);
+			}
+			else
+			{
+				auto* attachment = renderPass->colorAttachments()->object(0);
+				attachment->setTexture(destinationTexture);
+				attachment->setLevel(mip);
+				attachment->setSlice(slice);
+				attachment->setLoadAction(MTL::LoadActionDontCare);
+				attachment->setStoreAction(MTL::StoreActionStore);
+			}
+			auto* encoder = GetTemporaryRenderCommandEncoder(renderPass);
+			encoder->setRenderPipelineState(pipeline);
+			if (texture->isDepth)
+				encoder->setDepthStencilState(m_resampleDepthState);
+			encoder->setViewport(MTL::Viewport{0.0, 0.0, static_cast<double>(destinationExtent.width),
+				static_cast<double>(destinationExtent.height), 0.0, 1.0});
+			encoder->setScissorRect(MTL::ScissorRect{0, 0, destinationExtent.width, destinationExtent.height});
+			encoder->setFragmentTexture(sourceView, GET_HELPER_TEXTURE_BINDING(0));
+			encoder->setFragmentSamplerState(filter == LatteSurfaceResampleFilter::Linear ? m_linearSampler : m_nearestSampler,
+				GET_HELPER_SAMPLER_BINDING(0));
+			const SurfaceResampleParams params{{sourceExtent.width, sourceExtent.height},
+				{destinationExtent.width, destinationExtent.height}};
+			encoder->setFragmentBytes(&params, sizeof(params), GET_HELPER_BUFFER_BINDING(0));
+			encoder->drawPrimitives(MTL::PrimitiveTypeTriangle, static_cast<NS::UInteger>(0), static_cast<NS::UInteger>(3));
+			m_recordedDrawcalls++;
+			EndEncoding();
+			sourceView->release();
+		}
+	}
+	return LatteSurfaceOperationResult::Success();
 }
 
 LatteTextureReadbackInfo* MetalRenderer::texture_createReadback(LatteTextureView* textureView)
 {
-    size_t uploadSize = static_cast<LatteTextureMtl*>(textureView->baseTexture)->GetTexture()->allocatedSize();
+	return texture_createReadback(textureView, LatteTextureRepresentation::Render);
+}
+
+LatteTextureReadbackInfo* MetalRenderer::texture_createReadback(LatteTextureView* textureView,
+	LatteTextureRepresentation representation)
+{
+	auto* texture = static_cast<LatteTextureMtl*>(textureView->baseTexture);
+	if (!texture->HasRepresentation(representation))
+		return nullptr;
+	const auto extent = texture->GetRepresentationExtent(representation, static_cast<uint32>(textureView->firstMip));
+	const size_t bytesPerRow = GetMtlTextureBytesPerRow(texture->format, texture->isDepth, extent.width);
+	const size_t uploadSize = GetMtlTextureBytesPerImage(texture->format, texture->isDepth, extent.height, bytesPerRow);
+	if (uploadSize > TEXTURE_READBACK_SIZE)
+		return nullptr;
 
     if ((m_readbackBufferWriteOffset + uploadSize) > TEXTURE_READBACK_SIZE)
 	{
 		m_readbackBufferWriteOffset = 0;
 	}
 
-    auto* result = new LatteTextureReadbackInfoMtl(this, textureView, m_readbackBufferWriteOffset);
+	auto* result = new LatteTextureReadbackInfoMtl(this, textureView, m_readbackBufferWriteOffset, representation);
     m_readbackBufferWriteOffset += uploadSize;
 
 	return result;
 }
 
-void MetalRenderer::surfaceCopy_copySurfaceWithFormatConversion(LatteTexture* sourceTexture, sint32 srcMip, sint32 srcSlice, LatteTexture* destinationTexture, sint32 dstMip, sint32 dstSlice, sint32 width, sint32 height)
+LatteSurfaceOperationResult MetalRenderer::surfaceCopy_copySurfaceWithFormatConversion(LatteTexture* sourceTexture, sint32 srcMip, sint32 srcSlice, LatteTexture* destinationTexture, sint32 dstMip, sint32 dstSlice, sint32 width, sint32 height)
 {
-    // scale copy size to effective size
+	if (!LatteTexture_doesEffectiveRescaleRatioMatch(sourceTexture, srcMip, destinationTexture, dstMip))
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::CopyScaleConflict);
+	if (sourceTexture->GetBPP() != destinationTexture->GetBPP())
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::FormatUnsupported);
+	if (sourceTexture->isDepth == destinationTexture->isDepth || sourceTexture->Is3DTexture() ||
+		destinationTexture->Is3DTexture() || sourceTexture->dim == Latte::E_DIM::DIM_1D ||
+		destinationTexture->dim == Latte::E_DIM::DIM_1D)
+	{
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::DimensionUnsupported);
+	}
+	const auto sourceFormatInfo = GetMtlPixelFormatInfo(sourceTexture->format, sourceTexture->isDepth);
+	const auto destinationFormatInfo = GetMtlPixelFormatInfo(destinationTexture->format, destinationTexture->isDepth);
+	if (sourceFormatInfo.hasStencil || destinationFormatInfo.hasStencil)
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+
+	// Scale copy size to the shared effective extent. The conversion itself is a texel-exact
+	// fullscreen draw because Metal blits do not define depth/color reinterpretation.
+	sint32 effectiveCopyX = 0;
+	sint32 effectiveCopyY = 0;
 	sint32 effectiveCopyWidth = width;
 	sint32 effectiveCopyHeight = height;
-	LatteTexture_scaleToEffectiveSize(sourceTexture, &effectiveCopyWidth, &effectiveCopyHeight, 0);
-	//sint32 sourceEffectiveWidth, sourceEffectiveHeight;
-	//sourceTexture->GetEffectiveSize(sourceEffectiveWidth, sourceEffectiveHeight, srcMip);
+	LatteTexture_scaleRectToEffectiveSize(sourceTexture, &effectiveCopyX, &effectiveCopyY, &effectiveCopyWidth, &effectiveCopyHeight, srcMip);
+	if (effectiveCopyX != 0 || effectiveCopyY != 0 || effectiveCopyWidth <= 0 || effectiveCopyHeight <= 0)
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::DimensionUnsupported);
 
-    texture_copyImageSubData(sourceTexture, srcMip, 0, 0, srcSlice, destinationTexture, dstMip, 0, 0, dstSlice, effectiveCopyWidth, effectiveCopyHeight, 1);
+	auto* sourceMtl = static_cast<LatteTextureMtl*>(sourceTexture);
+	auto* destinationMtl = static_cast<LatteTextureMtl*>(destinationTexture);
+	auto* source = sourceMtl->GetTexture();
+	auto* destination = destinationMtl->GetTexture();
+	if (!source || !destination)
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::AllocationFailed);
+	auto* sourceView = source->newTextureView(source->pixelFormat(), MTL::TextureType2D,
+		NS::Range::Make(static_cast<NS::UInteger>(srcMip), 1),
+		NS::Range::Make(static_cast<NS::UInteger>(srcSlice), 1));
+	if (!sourceView)
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+
+	MTL::RenderPipelineState* pipeline{};
+	if (sourceTexture->isDepth)
+	{
+		auto& cachedPipeline = m_copyDepthToColorPipelines[destination->pixelFormat()];
+		if (!cachedPipeline)
+		{
+			m_copyDepthToColorDesc->colorAttachments()->object(0)->setPixelFormat(destination->pixelFormat());
+			NS::Error* error = nullptr;
+			cachedPipeline = m_device->newRenderPipelineState(m_copyDepthToColorDesc, &error);
+			if (!cachedPipeline)
+			{
+				if (error)
+					cemuLog_log(LogType::Force, "Failed to create Metal depth-to-color copy pipeline: {}",
+						error->localizedDescription()->utf8String());
+				sourceView->release();
+				return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+			}
+		}
+		pipeline = cachedPipeline;
+	}
+	else
+	{
+		auto& cachedPipeline = m_copyColorToDepthPipelines[destination->pixelFormat()];
+		if (!cachedPipeline)
+		{
+			m_copyColorToDepthDesc->setDepthAttachmentPixelFormat(destination->pixelFormat());
+			NS::Error* error = nullptr;
+			cachedPipeline = m_device->newRenderPipelineState(m_copyColorToDepthDesc, &error);
+			if (!cachedPipeline)
+			{
+				if (error)
+					cemuLog_log(LogType::Force, "Failed to create Metal color-to-depth copy pipeline: {}",
+						error->localizedDescription()->utf8String());
+				sourceView->release();
+				return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+			}
+		}
+		pipeline = cachedPipeline;
+	}
+
+	NS_STACK_SCOPED MTL::RenderPassDescriptor* renderPass = MTL::RenderPassDescriptor::alloc()->init();
+	if (destinationTexture->isDepth)
+	{
+		auto* attachment = renderPass->depthAttachment();
+		attachment->setTexture(destination);
+		attachment->setLevel(dstMip);
+		attachment->setSlice(dstSlice);
+		attachment->setLoadAction(MTL::LoadActionDontCare);
+		attachment->setStoreAction(MTL::StoreActionStore);
+	}
+	else
+	{
+		auto* attachment = renderPass->colorAttachments()->object(0);
+		attachment->setTexture(destination);
+		attachment->setLevel(dstMip);
+		attachment->setSlice(dstSlice);
+		attachment->setLoadAction(MTL::LoadActionDontCare);
+		attachment->setStoreAction(MTL::StoreActionStore);
+	}
+	auto* encoder = GetTemporaryRenderCommandEncoder(renderPass);
+	encoder->setRenderPipelineState(pipeline);
+	if (destinationTexture->isDepth)
+		encoder->setDepthStencilState(m_resampleDepthState);
+	encoder->setViewport(MTL::Viewport{0.0, 0.0, static_cast<double>(effectiveCopyWidth),
+		static_cast<double>(effectiveCopyHeight), 0.0, 1.0});
+	encoder->setScissorRect(MTL::ScissorRect{0, 0, static_cast<NS::UInteger>(effectiveCopyWidth),
+		static_cast<NS::UInteger>(effectiveCopyHeight)});
+	encoder->setFragmentTexture(sourceView, GET_HELPER_TEXTURE_BINDING(0));
+	encoder->drawPrimitives(MTL::PrimitiveTypeTriangle, static_cast<NS::UInteger>(0),
+		static_cast<NS::UInteger>(3));
+	m_recordedDrawcalls++;
+	EndEncoding();
+	sourceView->release();
+	return LatteSurfaceOperationResult::Success();
 }
 
 void MetalRenderer::bufferCache_init(const sint32 bufferSize)
@@ -1590,6 +1959,9 @@ void MetalRenderer::draw_handleSpecialState5()
 	encoderState.m_buffers[METAL_SHADER_TYPE_FRAGMENT][GET_HELPER_BUFFER_BINDING(0)] = {nullptr};
 
 	renderCommandEncoder->drawPrimitives(MTL::PrimitiveTypeTriangle,  NS::UInteger(0),  NS::UInteger(3));
+	LatteTexture_TrackTextureGPUWrite(colorBuffer->baseTexture,
+		static_cast<uint32>(colorBuffer->firstSlice), static_cast<uint32>(colorBuffer->firstMip),
+		LatteTexture_getNextUpdateEventCounter());
 }
 
 Renderer::IndexAllocation MetalRenderer::indexData_reserveIndexMemory(uint32 size)

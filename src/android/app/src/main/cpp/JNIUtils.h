@@ -1,6 +1,7 @@
 #pragma once
 
 #include <jni.h>
+#include "util/Fiber/Fiber.h"
 
 namespace JNIUtils
 {
@@ -209,7 +210,7 @@ namespace JNIUtils
 
 	inline void FiberSafeJNICall(std::invocable<JNIEnv*> auto func)
 	{
-		std::jthread([&]() {
+		Fiber::RunOnThreadFiber([&]() {
 			func(GetEnv());
 		});
 	}

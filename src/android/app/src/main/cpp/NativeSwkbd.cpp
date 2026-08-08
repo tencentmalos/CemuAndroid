@@ -46,7 +46,7 @@ namespace NativeSwkbd
 
 			JNIUtils::FiberSafeJNICall([&](JNIEnv* env) {
 				jstring j_initialText = JNIUtils::ToJString(env, initialText);
-				JNIUtils::GetEnv()->CallStaticVoidMethod(*m_emulationActivityClass, m_showSoftwareKeyboardMethodID, j_initialText, maxLength);
+				env->CallStaticVoidMethod(*m_emulationActivityClass, m_showSoftwareKeyboardMethodID, j_initialText, maxLength);
 				env->DeleteLocalRef(j_initialText);
 			});
 		}

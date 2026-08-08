@@ -44,7 +44,7 @@ ARM 目标可使用仓库脚本：
 BUILD_TYPE=release ./build_arm.sh
 ```
 
-更完整的构建、验证和故障排查流程放在 repo-local skills：`skills/cemu-android-build-validation/SKILL.md` 与 `skills/cemu-android-analysis/SKILL.md`。CPU/GPU Tracy 采集、FPS 概要面板和跨平台 debugbus 验证使用 `skills/cemu-android-performance/SKILL.md`。Wii U 标题版本检查、汉化资源烘焙和 WUA 打包使用 `skills/cemu-wua-packaging/SKILL.md`。Guest 游戏逆向与 Mod 使用 `skills/cemu-guest-game-patching/SKILL.md`；运行中 RPX 提取/IDA 建库、Guest 真机断点、IDA 静态/动态联合校准分别使用 `skills/cemu-guest-executable-ida/SKILL.md`、`skills/cemu-guest-runtime-debug/SKILL.md`、`skills/cemu-guest-ida-correlation/SKILL.md`。
+更完整的构建、验证和故障排查流程放在 repo-local skills：`skills/cemu-android-build-validation/SKILL.md` 与 `skills/cemu-android-analysis/SKILL.md`。CPU/GPU Tracy 采集、FPS 概要面板和跨平台 debugbus 验证使用 `skills/cemu-android-performance/SKILL.md`；Android Vulkan 的 gameplay 抓帧、RenderDoc 远程回放和结构化图形分析使用 `skills/cemu-renderdoc-analysis/SKILL.md`。Wii U 标题版本检查、汉化资源烘焙和 WUA 打包使用 `skills/cemu-wua-packaging/SKILL.md`。Guest 游戏逆向与 Mod 使用 `skills/cemu-guest-game-patching/SKILL.md`；运行中 RPX 提取/IDA 建库、Guest 真机断点、IDA 静态/动态联合校准分别使用 `skills/cemu-guest-executable-ida/SKILL.md`、`skills/cemu-guest-runtime-debug/SKILL.md`、`skills/cemu-guest-ida-correlation/SKILL.md`。
 
 ## 编码风格与命名约定
 
@@ -68,6 +68,6 @@ foundation 是 Cemu 的跨平台硬依赖，不得重新增加启用宏、CMake 
 
 本分支子模块 URL 应指向 `git@github.com:tencentmalos/...`。改动 `.gitmodules` 后必须运行 `git submodule sync --recursive`，并用 `git submodule status --recursive` 检查指针。涉及签名配置时使用环境变量 `ANDROID_STORE_FILE`、`ANDROID_KEY_STORE_PASSWORD`、`ANDROID_KEY_ALIAS`，不得提交密钥或本地配置。
 
-当前 AYANEO Pocket DS 开发机提供厂商固件内置的部分 Root 通道：先用 `adb shell xsu id` 复核返回 `uid=0(root)` 与 `u:r:xsud:s0`，再以 `adb shell xsu <单条命令>` 执行确有必要的文件部署或系统诊断。它不是 Magisk，也不提供普通应用的 `su` 授权、Magisk Module 或 Zygisk；不得据此假设设备具备完整应用级 Root。复杂 root 操作必须先把逐行审核过的脚本放入 `/data/local/tmp`，再显式通过 `xsu` 执行，不得把网络下载内容直接管道到 root shell。不要为调试用途刷写或锁定 `boot`、`init_boot`、`vbmeta`、Bootloader，也不要执行宽范围删除；操作前确认设备序列号和精确目标，完成后清理临时文件并报告改动。完整评估目前位于 `~/workspace/ayaneo_device/docs/AYANEO_Pocket_DS_Root_Assessment.md`。
+Android 设备 Root 操作统一使用 `~/workspace/devices` 中的设备适配框架，不得在本仓直接执行裸 `adb shell xsu` 或复制厂商后端。AYANEO Pocket DS 操作前先完整阅读 `~/workspace/devices/skills/ayaneo-root/SKILL.md`，并从 devices 仓库执行 `skills/ayaneo-root/scripts/root.sh probe`；新连接或固件变化时再用 `skills/ayaneo-root/scripts/root.sh exec -- id` 验证 Root 上下文，实际命令统一走 `skills/ayaneo-root/scripts/root.sh exec -- "<逐行审核过的命令>"`，多设备在线时必须传 `--serial SERIAL`。每次 Root 操作都要重新 `probe`，确认 manufacturer、model、build、adapter 与 Bootloader 状态匹配目标设备；已验证的 Pocket DS Root 上下文为 `uid=0(root)`、`u:r:xsud:s0`。适配器负责把命令放入 `/data/local/tmp`、通过 `/product/bin/xsu` 执行并清理 Host/设备临时文件，不得绕过该流程。除非用户明确授权已通过只读检查解析出的精确破坏性目标，否则不得传 `--allow-destructive`；不得把网络下载内容直接送入 Root shell，也不得为调试刷写 `boot`、`init_boot`、`vendor_boot`、`vbmeta`、ABL 或修改 Bootloader。完整设备评估位于 `~/workspace/devices/ayaneo/docs/AYANEO_Pocket_DS_Root_Assessment.md`；不支持的新设备按 `~/workspace/devices/docs/ADDING_DEVICE_SUPPORT.md` 新增 Adapter 和专用 Skill，禁止套用其他机型的 Root 方法。
 
 新增或沉淀本项目专用工作流时，优先放入 `skills/` 下的 repo-local skill，并在本文件中加入入口说明。文档、诊断和验证输出应足够具体，能让下一位维护者复现命令和判断依据。

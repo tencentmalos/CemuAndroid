@@ -8,6 +8,8 @@
 #include "input/InputManager.h"
 #include "WindowSystem.h"
 
+#include <atomic>
+
 #ifdef PUBLIC_RELASE
 #define vpadbreak() 
 #else
@@ -49,6 +51,53 @@
 #define VPAD_TP_854x480					2
 
 extern bool isLaunchTypeELF;
+
+namespace
+{
+	constexpr uint32 kVPADButtonA = 0x00008000;
+	std::atomic_bool s_diagnosticButtonA{false};
+	std::atomic<uint32> s_diagnosticLastHold{0};
+	std::atomic<uint64> s_diagnosticReadCount{0};
+	std::atomic<uint64> s_diagnosticAReadCount{0};
+
+	void ApplyDiagnosticButtonAOverride(VPADStatus_t& status)
+	{
+		const uint32 hold = s_diagnosticButtonA.load(std::memory_order_acquire) ? kVPADButtonA : 0;
+		const uint32 previousHold = s_diagnosticLastHold.exchange(hold, std::memory_order_acq_rel);
+		status.hold |= hold;
+		status.trig |= hold & ~previousHold;
+		if ((status.hold & kVPADButtonA) == 0)
+			status.release |= previousHold & ~hold;
+	}
+
+	void RecordDiagnosticInputStats(const VPADStatus_t& status)
+	{
+		s_diagnosticReadCount.fetch_add(1, std::memory_order_relaxed);
+		if ((static_cast<uint32>(status.hold) & kVPADButtonA) != 0)
+			s_diagnosticAReadCount.fetch_add(1, std::memory_order_relaxed);
+	}
+}
+
+void vpad::SetDiagnosticButtonAOverride(bool pressed)
+{
+	s_diagnosticButtonA.store(pressed, std::memory_order_release);
+}
+
+void vpad::ResetDiagnosticInputStats()
+{
+	s_diagnosticReadCount.store(0, std::memory_order_relaxed);
+	s_diagnosticAReadCount.store(0, std::memory_order_relaxed);
+}
+
+uint64 vpad::GetDiagnosticReadCount()
+{
+	return s_diagnosticReadCount.load(std::memory_order_relaxed);
+}
+
+uint64 vpad::GetDiagnosticAReadCount()
+{
+	return s_diagnosticAReadCount.load(std::memory_order_relaxed);
+}
 
 VPADDir g_vpadGyroDirOverwrite[VPAD_MAX_CONTROLLERS] =
 {
@@ -250,6 +299,8 @@ namespace vpad
 					status->vpadErr = -1;
 				return 0;
 			}
+			ApplyDiagnosticButtonAOverride(*status);
+			RecordDiagnosticInputStats(*status);
 			if (error)
 				*error = VPAD_READ_ERR_NONE;
 			return 1;
@@ -286,12 +337,16 @@ namespace vpad
 				}
 			}
 			controller->VPADRead(*status, vpad::g_vpad.controller_data[channel].btn_repeat);
+			ApplyDiagnosticButtonAOverride(*status);
+			RecordDiagnosticInputStats(*status);
 			if (error)
 				*error = VPAD_READ_ERR_NONE;
 			return 1;
 		}
 		else
 		{
+			ApplyDiagnosticButtonAOverride(*status);
+			RecordDiagnosticInputStats(*status);
 			if (error)
 				*error = VPAD_READ_ERR_NONE;
 

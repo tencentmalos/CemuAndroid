@@ -1,0 +1,7 @@
+[Definition]
+titleIds = 00050000101C9300
+name = BotW v208 Host GPU Feedback Observer
+path = "The Legend of Zelda: Breath of the Wild/Host GPU Feedback Observer"
+description = JP v208 probe that observes the first GX2DrawDone readback generation and signature while preserving full texture/query visibility. Requires the matching Cemu Host implementation.
+version = 7
+default = 1

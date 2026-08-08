@@ -23,6 +23,7 @@ namespace TCL
 	// called from GPU for timestamp EOP event
 	void TCLGPUNotifyNewRetirementTimestamp()
 	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("latte.completion.retirement.signal_guest");
 		// gpuRetireMarker is updated via event eop command
 		__OSLockScheduler();
 		coreinit::OSSignalEventAllInternal(s_updateRetirementEvent.GetPtr());
@@ -51,6 +52,7 @@ namespace TCL
 	{
 		if (id == TCLTimestampId::TIMESTAMP_LAST_BUFFER_RETIRED)
 		{
+			SPATIAL_PROFILER_AUTO_SCOPE_NAME("gx2.guest.retirement.wait_event");
 			while ( true )
 			{
 				stdx::atomic_ref<uint64be> retireTimestamp(s_tclStatePPC->gpuRetireMarker);
@@ -98,6 +100,7 @@ namespace TCL
 
 		if (hasSpace(tclRingBufferA_readIndex.load(std::memory_order_acquire)))
 			return;
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("tcl.guest.wait_for_ring_space");
 		const auto waitStart = std::chrono::steady_clock::now();
 		while (!hasSpace(tclRingBufferA_readIndex.load(std::memory_order_acquire)))
 		{
@@ -146,12 +149,20 @@ namespace TCL
 
 	int TCLSubmitToRing(uint32be* cmd, uint32 cmdLen, betype<TCLSubmissionFlag>* controlFlags, uint64be* timestampValueOut)
 	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("tcl.guest.submit_to_ring");
 		TCLSubmissionFlag flags = *controlFlags;
 		cemu_assert_debug(timestampValueOut); // handle case where this is null
 
 		// make sure there is enough space to submit all commands at one
 		uint32 totalCommandLength = cmdLen;
 		totalCommandLength += 6; // space needed for TCLSubmitRetireMarker
+		static std::atomic<uint64> submitCount{};
+		static std::atomic<uint64> submittedWords{};
+		const uint64 currentSubmitCount = submitCount.fetch_add(1, std::memory_order_relaxed) + 1;
+		const uint64 currentSubmittedWords = submittedWords.fetch_add(totalCommandLength, std::memory_order_relaxed) + totalCommandLength;
+		SPATIAL_PROFILER_COUNTER_SET("cemu.guest.tcl_submits", currentSubmitCount, "Cemu Guest Host", "submissions");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.guest.tcl_words_total", currentSubmittedWords, "Cemu Guest Host", "words");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.guest.tcl_words_last", totalCommandLength, "Cemu Guest Host", "words");
 
 		TCLWaitForRBSpace(totalCommandLength);
 

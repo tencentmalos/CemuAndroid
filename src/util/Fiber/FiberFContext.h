@@ -1,6 +1,7 @@
 #pragma once
 
 #include <async_simple/uthread/internal/thread_impl.h>
+#include <functional>
 
 namespace fcontext = async_simple::uthread::internal;
 
@@ -11,7 +12,9 @@ class Fiber
 	~Fiber();
 
 	static Fiber* PrepareCurrentThread(void* privateData = nullptr);
+	static void SetThreadInitCallback(std::function<void()> callback);
 	static void Switch(Fiber& targetFiber);
+	static void RunOnThreadFiber(std::function<void()> callback);
 	static void* GetFiberPrivateData();
 
   private:

@@ -124,6 +124,8 @@ XMLConfigParser CemuConfig::Load(XMLConfigParser& parser)
 	// graphics
 	auto graphic = parser.get("Graphic");
 	graphic_api = graphic.get("api", kDefaultGraphicsAPI);
+	if (!IsValidGraphicAPI(graphic_api.GetValue()))
+		graphic_api = kDefaultGraphicsAPI;
 	graphic.get("device", legacy_graphic_device_uuid);
 	if (graphic.get("vkDevice").valid())
 		graphic.get("vkDevice", vk_graphic_device_uuid);
@@ -144,6 +146,16 @@ XMLConfigParser CemuConfig::Load(XMLConfigParser& parser)
 	fullscreen_scaling = graphic.get("FullscreenScaling", kKeepAspectRatio);
 	async_compile = graphic.get("AsyncCompile", async_compile);
 	vk_accurate_barriers = graphic.get("vkAccurateBarriers", true); // this used to be "VulkanAccurateBarriers" but because we changed the default to true in 1.27.1 the option name had to be changed
+	const uint32 legacyInternalResolutionFactor = graphic.get<uint32>("InternalResolutionFactor", 1);
+	render_surface_scale_percent = graphic.get<uint32>("RenderSurfaceScalePercent",
+		legacyInternalResolutionFactor == 2 ? 200 : 100);
+	if (render_surface_scale_percent.GetValue() != 50 &&
+		render_surface_scale_percent.GetValue() != 100 &&
+		render_surface_scale_percent.GetValue() != 200)
+	{
+		render_surface_scale_percent = 100;
+	}
+	static_texture_scale_factor = graphic.get<uint32>("StaticTextureScaleFactor", 1);
 #ifdef ENABLE_METAL
 	force_mesh_shaders = graphic.get("ForceMeshShaders", false);
 #endif
@@ -384,6 +396,10 @@ XMLConfigParser CemuConfig::Save(XMLConfigParser& parser)
 	graphic.set("FullscreenScaling", fullscreen_scaling);
 	graphic.set("AsyncCompile", async_compile.GetValue());
 	graphic.set("vkAccurateBarriers", vk_accurate_barriers);
+	// Preserve the old key for older builds while the percent key remains authoritative here.
+	graphic.set("InternalResolutionFactor", render_surface_scale_percent.GetValue() == 200 ? 2 : 1);
+	graphic.set("RenderSurfaceScalePercent", render_surface_scale_percent.GetValue());
+	graphic.set("StaticTextureScaleFactor", static_texture_scale_factor.GetValue());
 
 	auto overlay_node = graphic.set("Overlay");
 	overlay_node.set("Position", overlay.position);

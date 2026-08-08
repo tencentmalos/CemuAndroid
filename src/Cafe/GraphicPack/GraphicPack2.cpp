@@ -303,7 +303,10 @@ GraphicPack2::GraphicPack2(fs::path rulesPath, IniParser& rules)
 		if (boost::iequals(*option_rendererFilter, "vulkan"))
 			m_renderer_api = RendererAPI::Vulkan;
 		else if (boost::iequals(*option_rendererFilter, "opengl"))
-			m_renderer_api = RendererAPI::OpenGL;
+		{
+			m_renderer_api = RendererAPI::MAX;
+			cemuLog_log(LogType::Force, "{}: rendererFilter 'opengl' is no longer supported", _pathToUtf8(m_rulesPath));
+		}
 		else if (boost::iequals(*option_rendererFilter, "metal"))
 			m_renderer_api = RendererAPI::Metal;
 		else
@@ -1182,7 +1185,7 @@ RendererOutputShader* GraphicPack2::GetOuputShader(bool render_upside_down)
 			return m_output_shader_ud.get();
 
 		if (!m_output_shader_source.empty())
-			m_output_shader_ud = std::make_unique<RendererOutputShader>(RendererOutputShader::GetOpenGlVertexSource(render_upside_down), m_output_shader_source);
+			m_output_shader_ud = std::make_unique<RendererOutputShader>(RendererOutputShader::GetVertexSource(render_upside_down), m_output_shader_source);
 
 		return m_output_shader_ud.get();
 	}
@@ -1192,7 +1195,7 @@ RendererOutputShader* GraphicPack2::GetOuputShader(bool render_upside_down)
 			return m_output_shader.get();
 
 		if (!m_output_shader_source.empty())
-			m_output_shader = std::make_unique<RendererOutputShader>(RendererOutputShader::GetOpenGlVertexSource(render_upside_down), m_output_shader_source);
+			m_output_shader = std::make_unique<RendererOutputShader>(RendererOutputShader::GetVertexSource(render_upside_down), m_output_shader_source);
 
 		return m_output_shader.get();
 	}
@@ -1206,7 +1209,7 @@ RendererOutputShader* GraphicPack2::GetUpscalingShader(bool render_upside_down)
 			return m_upscaling_shader_ud.get();
 
 		if (!m_upscaling_shader_source.empty())
-			m_upscaling_shader_ud = std::make_unique<RendererOutputShader>(RendererOutputShader::GetOpenGlVertexSource(render_upside_down), m_upscaling_shader_source);
+			m_upscaling_shader_ud = std::make_unique<RendererOutputShader>(RendererOutputShader::GetVertexSource(render_upside_down), m_upscaling_shader_source);
 
 		return m_upscaling_shader_ud.get();
 	}
@@ -1216,7 +1219,7 @@ RendererOutputShader* GraphicPack2::GetUpscalingShader(bool render_upside_down)
 			return m_upscaling_shader.get();
 
 		if (!m_upscaling_shader_source.empty())
-			m_upscaling_shader = std::make_unique<RendererOutputShader>(RendererOutputShader::GetOpenGlVertexSource(render_upside_down), m_upscaling_shader_source);
+			m_upscaling_shader = std::make_unique<RendererOutputShader>(RendererOutputShader::GetVertexSource(render_upside_down), m_upscaling_shader_source);
 
 		return m_upscaling_shader.get();
 	}
@@ -1230,7 +1233,7 @@ RendererOutputShader* GraphicPack2::GetDownscalingShader(bool render_upside_down
 			return m_downscaling_shader_ud.get();
 
 		if (!m_downscaling_shader_source.empty())
-			m_downscaling_shader_ud = std::make_unique<RendererOutputShader>(RendererOutputShader::GetOpenGlVertexSource(render_upside_down), m_downscaling_shader_source);
+			m_downscaling_shader_ud = std::make_unique<RendererOutputShader>(RendererOutputShader::GetVertexSource(render_upside_down), m_downscaling_shader_source);
 
 		return m_downscaling_shader_ud.get();
 	}
@@ -1240,7 +1243,7 @@ RendererOutputShader* GraphicPack2::GetDownscalingShader(bool render_upside_down
 			return m_downscaling_shader.get();
 
 		if (!m_downscaling_shader_source.empty())
-			m_downscaling_shader = std::make_unique<RendererOutputShader>(RendererOutputShader::GetOpenGlVertexSource(render_upside_down), m_downscaling_shader_source);
+			m_downscaling_shader = std::make_unique<RendererOutputShader>(RendererOutputShader::GetVertexSource(render_upside_down), m_downscaling_shader_source);
 
 		return m_downscaling_shader.get();
 	}

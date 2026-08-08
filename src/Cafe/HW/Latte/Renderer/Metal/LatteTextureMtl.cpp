@@ -2,24 +2,20 @@
 #include "Cafe/HW/Latte/Renderer/Metal/LatteTextureViewMtl.h"
 #include "Cafe/HW/Latte/Renderer/Metal/MetalRenderer.h"
 #include "Cafe/HW/Latte/Renderer/Metal/LatteToMtl.h"
+#include "Cafe/Diagnostics/SurfaceResolutionDiagnostics.h"
 
 LatteTextureMtl::LatteTextureMtl(class MetalRenderer* mtlRenderer, Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle,
-	Latte::E_HWTILEMODE tileMode, bool isDepth)
-	: LatteTexture(dim, physAddress, physMipAddress, format, width, height, depth, pitch, mipLevels, swizzle, tileMode, isDepth), m_mtlr(mtlRenderer)
+	Latte::E_HWTILEMODE tileMode, bool isDepth, LatteSurfaceUsage initialUsage)
+	: LatteTexture(dim, physAddress, physMipAddress, format, width, height, depth, pitch, mipLevels, swizzle, tileMode, isDepth, initialUsage), m_mtlr(mtlRenderer)
 {
     NS_STACK_SCOPED MTL::TextureDescriptor* desc = MTL::TextureDescriptor::alloc()->init();
     desc->setStorageMode(MTL::StorageModePrivate);
     //desc->setCpuCacheMode(MTL::CPUCacheModeWriteCombined);
 
-	sint32 effectiveBaseWidth = width;
-	sint32 effectiveBaseHeight = height;
-	sint32 effectiveBaseDepth = depth;
-	if (overwriteInfo.hasResolutionOverwrite)
-	{
-		effectiveBaseWidth = overwriteInfo.width;
-		effectiveBaseHeight = overwriteInfo.height;
-		effectiveBaseDepth = overwriteInfo.depth;
-	}
+	const auto hostExtent = GetHostExtent();
+	sint32 effectiveBaseWidth = static_cast<sint32>(hostExtent.width);
+	sint32 effectiveBaseHeight = static_cast<sint32>(hostExtent.height);
+	sint32 effectiveBaseDepth = static_cast<sint32>(hostExtent.depth);
 	effectiveBaseWidth = std::max(1, effectiveBaseWidth);
 	effectiveBaseHeight = std::max(1, effectiveBaseHeight);
 	effectiveBaseDepth = std::max(1, effectiveBaseDepth);
@@ -83,11 +79,92 @@ LatteTextureMtl::LatteTextureMtl(class MetalRenderer* mtlRenderer, Latte::E_DIM 
 	desc->setUsage(usage);
 
 	m_texture = mtlRenderer->GetDevice()->newTexture(desc);
+	if (!m_texture && HasHostResolutionOverride())
+	{
+		ApplyResolutionFallback(LatteSurfaceFallbackReason::AllocationFailed);
+		desc->setWidth(std::max<uint32>(1, GetHostExtent().width));
+		desc->setHeight(std::max<uint32>(1, GetHostExtent().height));
+		m_texture = mtlRenderer->GetDevice()->newTexture(desc);
+	}
+	if (!m_texture)
+		throw std::runtime_error("Failed to allocate Metal texture");
 }
 
 LatteTextureMtl::~LatteTextureMtl()
 {
 	m_texture->release();
+	if (m_guestNativeTexture)
+	{
+		SurfaceResolutionDiagnostics::RecordRepresentationReleased(*this, LatteTextureRepresentation::GuestNative,
+			GetRepresentationBytes(LatteTextureRepresentation::GuestNative));
+		m_guestNativeTexture->release();
+	}
+}
+
+MTL::Texture* LatteTextureMtl::CreateRepresentationTexture(const LatteSurfaceExtent& extent)
+{
+	NS_STACK_SCOPED MTL::TextureDescriptor* desc = MTL::TextureDescriptor::alloc()->init();
+	desc->setStorageMode(MTL::StorageModePrivate);
+	uint32 representationWidth = std::max<uint32>(1, extent.width);
+	uint32 representationHeight = std::max<uint32>(1, extent.height);
+	const uint32 representationDepth = std::max<uint32>(1, extent.depth);
+	MTL::TextureType textureType;
+	switch (dim)
+	{
+	case Latte::E_DIM::DIM_1D:
+		textureType = MTL::TextureType1D;
+		representationHeight = 1;
+		break;
+	case Latte::E_DIM::DIM_2D:
+	case Latte::E_DIM::DIM_2D_MSAA:
+		textureType = MTL::TextureType2D;
+		break;
+	case Latte::E_DIM::DIM_2D_ARRAY:
+		textureType = MTL::TextureType2DArray;
+		break;
+	case Latte::E_DIM::DIM_3D:
+		textureType = MTL::TextureType3D;
+		break;
+	case Latte::E_DIM::DIM_CUBEMAP:
+		textureType = MTL::TextureTypeCubeArray;
+		break;
+	default:
+		return nullptr;
+	}
+	desc->setTextureType(textureType);
+	desc->setWidth(representationWidth);
+	desc->setHeight(representationHeight);
+	desc->setMipmapLevelCount(std::max<uint32>(1, std::min<uint32>(mipLevels, maxPossibleMipLevels)));
+	if (textureType == MTL::TextureType3D)
+		desc->setDepth(representationDepth);
+	else if (textureType == MTL::TextureTypeCubeArray)
+		desc->setArrayLength(representationDepth / 6);
+	else if (textureType == MTL::TextureType2DArray)
+		desc->setArrayLength(representationDepth);
+	desc->setPixelFormat(GetMtlPixelFormat(format, isDepth));
+	MTL::TextureUsage usage = MTL::TextureUsageShaderRead | MTL::TextureUsagePixelFormatView;
+	if (FormatIsRenderable(format))
+		usage |= MTL::TextureUsageRenderTarget;
+	desc->setUsage(usage);
+	return m_mtlr->GetDevice()->newTexture(desc);
+}
+
+LatteSurfaceOperationResult LatteTextureMtl::EnsureRepresentation(LatteTextureRepresentation representation)
+{
+	if (representation == LatteTextureRepresentation::Render || RepresentationsAlias())
+		return LatteSurfaceOperationResult::Success(GetRepresentationBytes(LatteTextureRepresentation::Render));
+	if (m_guestNativeTexture)
+		return LatteSurfaceOperationResult::Success(GetRepresentationBytes(representation));
+	m_guestNativeTexture = CreateRepresentationTexture(GetGuestExtent());
+	if (!m_guestNativeTexture)
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::AllocationFailed);
+	return LatteSurfaceOperationResult::Success(GetRepresentationBytes(representation));
+}
+
+uint64 LatteTextureMtl::GetRepresentationBytes(LatteTextureRepresentation representation) const
+{
+	auto* texture = GetTexture(representation);
+	return texture ? texture->allocatedSize() : 0;
 }
 
 LatteTextureView* LatteTextureMtl::CreateView(Latte::E_DIM dim, Latte::E_GX2SURFFMT format, sint32 firstMip, sint32 mipCount, sint32 firstSlice, sint32 sliceCount)

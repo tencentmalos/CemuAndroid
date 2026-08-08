@@ -599,11 +599,11 @@ core/network/profiler/XR 后若出现过大的传递依赖，
 > `127.0.0.1:45987`（可用 `CEMU_DEBUGBUS_PORT` 覆盖），实际通过多客户端、同连接
 > 多命令和断开重连 smoke test；Tracy 端点为 `tcp:8086`。Android
 > `assembleRelWithDebInfo` 通过，产物为 debuggable APK，native `.so` 已包含
-> `localabstract:azahar-tracy` 和关键 CPU/GPU/counter 标记。正式包已在 AYANEO
+> `localabstract:cemu-tracy` 和关键 CPU/GPU/counter 标记。正式包已在 AYANEO
 > Pocket DS 上通过 Profiler MCP 的 Tracy 0.10 协议完成 40 秒实采：514 帧、351394
 > 个 CPU zones、49327 个解析到真实 GPU time 的 Vulkan zones，五组概要 counters
 > 均有样本。`open_last_game` 与异步 `warmup_a` 已用于在采集连接建立后进入 BOTW。
-> 针对 Android 慢加载，warmup 默认改为 35 秒启动缓冲、6 次 250ms A（间隔 10 秒）
+> 针对 Android 慢加载，warmup 默认改为 15 秒启动缓冲、6 次 250ms A（间隔 5 秒）
 > 和 60 秒稳定等待；只有稳定窗口结束才报告 completed，并已肉眼确认进入实际游戏
 > 场景。FPS 概要面板已迁移为 foundation `Statistics` layer，并在
 > BOTW v208 / DLC v80 的 Vulkan 真机画面上确认可见。Cemu 自带
@@ -616,7 +616,7 @@ core/network/profiler/XR 后若出现过大的传递依赖，
 > `docs/architecture/cemu-frame-performance.md`。
 
 - **C5-T1 screenshot 实装** — Kotlin 侧提供 capture 回调（PixelCopy 或复用 cemu 现有截图路径），native 注册为 host action。返回落盘路径供 `adb pull`。
-- **C5-T2 profiler 命令（实现并完成 Android 实采）** — 链接 `spatial::foundation_debugbus_profiler`（依赖 C2 提供的真 `spatial::foundation_profiler`），`RegisterProfilerCommands(registry)`。`profiler_backend` / `profiler_endpoint` / `profiler_port` 已在真机可用；Profiler MCP 使用 `android://localabstract:azahar-tracy`、`protocol=tracy` 完成 CPU/GPU/counter 采集。
+- **C5-T2 profiler 命令（实现并完成 Android 实采）** — 链接 `spatial::foundation_debugbus_profiler`（依赖 C2 提供的真 `spatial::foundation_profiler`），`RegisterProfilerCommands(registry)`。`profiler_backend` / `profiler_endpoint` / `profiler_port` 已在真机可用；Profiler MCP 使用 `android://localabstract:cemu-tracy`、`protocol=tracy` 完成 CPU/GPU/counter 采集。
 - **C5-T3 calibration — 推迟到 C6 之后**（无 XR 时标定图没有验收对象）。
 - **C5-T4 TCP transport（桌面已实现）** — 使用 foundation network/debugbus，默认仅绑定 loopback；Android 保持 dumpsys transport，不引入平台分叉的 profiler 实现。
 - **C5-T5 快速启动与 warmup（实现并完成 Android 真机验证）** — `open_last_game` 由各平台 host 复用共享命令入口；`warmup_a` / `warmup_status` / `warmup_cancel` 为共享 C++ 实现，等待标题与 controller 0 就绪后慢速触发 A 键，并在最后一次输入后进入可观测的 `settling` 状态，不阻塞 App 生命周期 debugbus。Android 记录最近一次正常启动路径，桌面读取 recent launch list。退出标准：空闲态可打开上次游戏、运行态拒绝重复启动、稳定等待后 warmup 完成、不影响 Tracy 采集，并以截图确认已进入实际可操作游戏画面；不得只凭 `title_running` 或按键计数推断。

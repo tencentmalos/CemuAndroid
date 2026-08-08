@@ -46,7 +46,12 @@ class DebugDumpService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // The dump endpoint is useful only while this application process is alive. Restarting
+        // it after a native crash creates a headless process before EmulationActivity and lets
+        // device window runtimes cache the wrong orientation/configuration for game rendering.
+        return START_NOT_STICKY
+    }
 
     override fun dump(fd: FileDescriptor?, writer: PrintWriter, args: Array<out String>?) {
         val dumpArgs = args?.toList().orEmpty()

@@ -1,8 +1,12 @@
 #include "Cafe/HW/Latte/Core/LatteOverlay.h"
 #include "Cafe/HW/Latte/Core/LattePerformanceMonitor.h"
 #include "Cafe/HW/Latte/Core/Latte.h"
+#include "Cafe/Diagnostics/SurfaceResolutionDiagnostics.h"
+#include "Cafe/HW/Latte/Core/LatteSurfaceScaleState.h"
 #include "Cafe/HW/Latte/Renderer/Renderer.h"
 #include "Cafe/CafeSystem.h"
+#include "Cafe/OS/libs/gx2/GX2_Event.h"
+#include "Cafe/OS/libs/gx2/GX2_Query.h"
 #include "Cafe/Account/Account.h"
 #include "config/CemuConfig.h"
 #include "config/ActiveSettings.h"
@@ -77,7 +81,7 @@ void LatteOverlay_renderOverlay(ImVec2& position, ImVec2& pivot, sint32 directio
 	auto& config = GetConfig();
 
 	const auto font = ImGui_GetFont(fontSize);
-	ImGui::PushFont(font);
+	ImGui::PushFont(font, font ? font->LegacySize : 0.0f);
 
 	const ImVec4 color = ImGui::ColorConvertU32ToFloat4(config.overlay.text_color);
 	ImGui::PushStyleColor(ImGuiCol_Text, color);
@@ -164,14 +168,35 @@ const char* GetRendererName()
 
 	switch (g_renderer->GetType())
 	{
-	case RendererAPI::OpenGL:
-		return "OpenGL";
 	case RendererAPI::Vulkan:
 		return "Vulkan";
 	case RendererAPI::Metal:
 		return "Metal";
 	default:
 		return "Unknown";
+	}
+}
+
+const char* GetFeedbackFallbackName(uint32 reason)
+{
+	switch (reason)
+	{
+	case 0:
+		return "none";
+	case 1:
+		return "observe";
+	case 2:
+		return "first frame";
+	case 3:
+		return "signature";
+	case 4:
+		return "generation";
+	case 5:
+		return "completion";
+	case 6:
+		return "partial publish";
+	default:
+		return "unknown";
 	}
 }
 }
@@ -186,7 +211,7 @@ void LatteOverlay_renderStatusLayer(bool pad_view)
 	if (!font)
 		return;
 
-	ImGui::PushFont(font);
+	ImGui::PushFont(font, font ? font->LegacySize : 0.0f);
 	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertU32ToFloat4(config.overlay.text_color));
 
 	constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_SizingStretchProp |
@@ -209,12 +234,59 @@ void LatteOverlay_renderStatusLayer(bool pad_view)
 			WindowSystem::GetPadWindowPhysSize(resolutionWidth, resolutionHeight);
 		else
 			WindowSystem::GetWindowPhysSize(resolutionWidth, resolutionHeight);
-		const std::string resolution = resolutionWidth > 0 && resolutionHeight > 0
+		const std::string outputResolution = resolutionWidth > 0 && resolutionHeight > 0
 			? fmt::format("{}x{}", resolutionWidth, resolutionHeight)
 			: "--";
+		const auto presentSource = SurfaceResolutionDiagnostics::GetPresentSource(pad_view);
+		const auto scaleRuntime = LatteSurfaceScaleState::GetSnapshot(
+			config.render_surface_scale_percent.GetValue(),
+			config.static_texture_scale_factor.GetValue());
+		const auto renderScaleText = [](uint32 percent) {
+			return percent == 50 ? std::string{"0.5x"} : fmt::format("{}x", percent / 100);
+		};
+		const std::string internalResolution = scaleRuntime.renderPendingRestart
+			? fmt::format("{} ({} pending)", renderScaleText(scaleRuntime.activeRenderScalePercent),
+				renderScaleText(scaleRuntime.configuredRenderScalePercent))
+			: renderScaleText(scaleRuntime.activeRenderScalePercent);
+		const std::string textureResolution = scaleRuntime.staticTexturePendingRestart
+			? fmt::format("{}x ({}x pending)", scaleRuntime.activeStaticTextureScaleFactor,
+				scaleRuntime.configuredStaticTextureScaleFactor)
+			: fmt::format("{}x", scaleRuntime.activeStaticTextureScaleFactor);
+		const std::string sourceResolution = presentSource.valid
+			? fmt::format("{}x{} -> {}x{}{}",
+				presentSource.guestExtent.width, presentSource.guestExtent.height,
+				presentSource.hostExtent.width, presentSource.hostExtent.height,
+				presentSource.graphicPackFixed ? " (pack)" : "")
+			: "--";
+		const auto feedbackPolicy = GX2::GX2GetGuestFeedbackPolicySnapshot();
+		const auto feedback = LatteTextureReadback_GetFeedbackSnapshot();
+		const auto queryPolicy = LatteQuery_GetPolicySnapshot();
+		std::string patchStatus = "Off";
+		std::string feedbackStatus = "--";
+		if (feedbackPolicy.legacyDeferralEnabled)
+		{
+			patchStatus = "Readback deferral ON";
+			feedbackStatus = "unguarded";
+		}
+		else if (feedbackPolicy.enabled && feedbackPolicy.mode == 1)
+		{
+			patchStatus = feedback.fastPath > 0 ? "GPU feedback ON" : "GPU feedback warmup";
+			feedbackStatus = feedback.fallbackReason == 0
+				? fmt::format("hit / age {}", feedback.generationAge)
+				: fmt::format("fallback / {}", GetFeedbackFallbackName(feedback.fallbackReason));
+		}
+		else if (feedbackPolicy.enabled)
+		{
+			patchStatus = "GPU feedback observe";
+			feedbackStatus = feedback.signatureMatched ? "signature hit / full sync" : "signature miss / full sync";
+		}
 
 		DrawStatusGroup("Game", titleName.empty() ? "--" : titleName.c_str());
 		DrawStatusProperty("Version", titleVersion.c_str());
+		DrawStatusGroup("Patch", patchStatus.c_str());
+		DrawStatusProperty("Feedback", feedbackStatus.c_str());
+		DrawStatusProperty("Occlusion", queryPolicy.activePolicy == LatteOcclusionQueryPolicy::AlwaysVisible
+			? "bypassed / visible" : "accurate (debug)");
 		DrawStatusGap();
 		DrawStatusGroup("Rate", fps.c_str());
 		DrawStatusProperty("Frame", frameTime.c_str());
@@ -223,7 +295,10 @@ void LatteOverlay_renderStatusLayer(bool pad_view)
 		DrawStatusProperty("Memory", memory.c_str());
 		DrawStatusGap();
 		DrawStatusGroup("GPU", GetRendererName());
-		DrawStatusProperty("Resolution", resolution.c_str());
+		DrawStatusProperty("Internal", internalResolution.c_str());
+		DrawStatusProperty("Texture", textureResolution.c_str());
+		DrawStatusProperty("Source", sourceResolution.c_str());
+		DrawStatusProperty("Output", outputResolution.c_str());
 		DrawStatusProperty("Draws", draws.c_str());
 
 		ImGui::EndTable();
@@ -239,7 +314,7 @@ void LatteOverlay_getStatusLayerCanvasSize(bool pad_view, sint32& width, sint32&
 	const float dpiScale = pad_view ? WindowSystem::GetPadDPIScale() : WindowSystem::GetWindowDPIScale();
 	const float contentScale = static_cast<float>(config.overlay.text_scale) / 100.0f * dpiScale;
 	width = std::max<sint32>(1, static_cast<sint32>(300.0f * contentScale));
-	height = std::max<sint32>(1, static_cast<sint32>(172.0f * contentScale));
+	height = std::max<sint32>(1, static_cast<sint32>(258.0f * contentScale));
 }
 
 void LatteOverlay_RenderNotifications(ImVec2& position, ImVec2& pivot, sint32 direction, float fontSize, bool pad)
@@ -247,7 +322,7 @@ void LatteOverlay_RenderNotifications(ImVec2& position, ImVec2& pivot, sint32 di
 	auto& config = GetConfig();
 
 	const auto font = ImGui_GetFont(fontSize);
-	ImGui::PushFont(font);
+	ImGui::PushFont(font, font ? font->LegacySize : 0.0f);
 
 	const ImVec4 color = ImGui::ColorConvertU32ToFloat4(config.notification.text_color);
 	ImGui::PushStyleColor(ImGuiCol_Text, color);
@@ -748,4 +823,7 @@ void LatteOverlay_updateStats(double fps, sint32 drawcalls, sint32 fastDrawcalls
 
 	SPATIAL_PROFILER_COUNTER_SET("cemu.cpu_usage_milli_percent", static_cast<std::int64_t>(g_state.cpu_usage * 1000.0f), "Cemu CPU", "milli-percent");
 	SPATIAL_PROFILER_COUNTER_SET("cemu.ram_bytes", static_cast<std::int64_t>(ramUsageBytes), "Cemu Memory", "bytes");
+	LatteQuery_PublishProfilerCounters();
+	GX2::GX2PublishOcclusionQueryConsumerCounters();
+	SurfaceResolutionDiagnostics::PublishProfilerCounters();
 }

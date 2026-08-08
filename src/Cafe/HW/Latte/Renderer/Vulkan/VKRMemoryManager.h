@@ -293,7 +293,7 @@ public:
 
 	// image memory allocation
 	void imageMemoryFree(VkImageMemAllocation* imageMemAllocation);
-	VkImageMemAllocation* imageMemoryAllocate(VkImage image);
+	VkImageMemAllocation* imageMemoryAllocate(VkImage image, bool recoverable = false);
 
 	// buffer management
 	size_t GetTotalMemoryForBufferType(VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, size_t minimumBufferSize = 16 * 1024 * 1024);

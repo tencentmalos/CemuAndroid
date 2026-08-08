@@ -159,10 +159,6 @@ int Latte_ThreadEntry()
 
 	sLatteThreadFinishedInit = true;
 
-	// register debug handler
-	if (cemuLog_isLoggingEnabled(LogType::OpenGLLogging))
-		g_renderer->EnableDebugMode();
-
 	// wait till a game is started
 	while( true )
 	{

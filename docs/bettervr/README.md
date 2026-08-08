@@ -21,6 +21,8 @@
 | --- | --- | --- |
 | `BotW-BetterVR-README.md` | `/Users/bytedance/workspace/BotW-BetterVR/README.md` | BetterVR 功能、安装、技术概览与构建说明的原文快照 |
 | `BotW-BetterVR-Stereo-and-Hooking.md` | `/Users/bytedance/workspace/BotW-BetterVR/docs/` | 基于 `27262df`（v0.9.17）的中文立体渲染与 Hook 分析 |
+| `botw-v208-guest-profiler-patch.md` | 本仓库 | v208 PPC profiler 的 20 个 detour、codecave wrapper、HLE/Foundation/Tracy 生效机制与地址表 |
+| `../architecture/cemu-graphic-pack-asm.md` | 本仓库 | Cemu `patch_*.asm` 声明、PPC assembler、codecave、import/callback、能力边界与金手指差异 |
 | `../architecture/botw-bettervr-android.md` | 本仓库 | Android 迁移边界与现有真机结论 |
 | `../architecture/guest-reverse-debug-mod-pipeline.md` | 本仓库 | 从 Guest 二进制提取、IDA 标定、GDB 动态校准到 Mod/profiler 真机验证的通用链路 |
 | `../verification/20260801-C5/bettervr-device-probe.md` | 本仓库 | BotW v208 真机 graphic-pack 探针证据 |

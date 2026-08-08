@@ -6,6 +6,11 @@ add_library(CemuCafe
   CafeSystem.h
   Diagnostics/CemuDiagnostics.cpp
   Diagnostics/CemuDiagnostics.h
+  Diagnostics/SurfaceResolutionDiagnostics.cpp
+  Diagnostics/SurfaceResolutionDiagnostics.h
+  Diagnostics/ReflectionDebugDump.h
+	HW/Latte/Core/LatteSurfaceScaleState.cpp
+	HW/Latte/Core/LatteSurfaceScaleState.h
   Diagnostics/GuestExecutableDump.cpp
   Diagnostics/GuestExecutableDump.h
   Diagnostics/GuestDebugger.cpp
@@ -115,6 +120,8 @@ add_library(CemuCafe
   HW/Latte/Core/LatteCommandProcessor.cpp
   HW/Latte/Core/LatteConst.h
   HW/Latte/Core/LatteDraw.h
+	HW/Latte/Core/LatteFrameGraphShadow.cpp
+	HW/Latte/Core/LatteFrameGraphShadow.h
   HW/Latte/Core/LatteGSCopyShaderParser.cpp
   HW/Latte/Core/Latte.h
   HW/Latte/Core/LatteIndices.cpp
@@ -499,28 +506,6 @@ add_library(CemuCafe
   TitleList/TitleList.h
 )
 
-if (ENABLE_OPENGL)
-  target_sources(CemuCafe PRIVATE
-    HW/Latte/Renderer/OpenGL/CachedFBOGL.h
-    HW/Latte/Renderer/OpenGL/LatteShaderGL.cpp
-    HW/Latte/Renderer/OpenGL/LatteTextureGL.cpp
-    HW/Latte/Renderer/OpenGL/LatteTextureGL.h
-    HW/Latte/Renderer/OpenGL/LatteTextureViewGL.cpp
-    HW/Latte/Renderer/OpenGL/LatteTextureViewGL.h
-    HW/Latte/Renderer/OpenGL/OpenGLQuery.cpp
-    HW/Latte/Renderer/OpenGL/OpenGLRendererCore.cpp
-    HW/Latte/Renderer/OpenGL/OpenGLRenderer.cpp
-    HW/Latte/Renderer/OpenGL/OpenGLRenderer.h
-    HW/Latte/Renderer/OpenGL/OpenGLRendererStreamout.cpp
-    HW/Latte/Renderer/OpenGL/OpenGLRendererUniformData.cpp
-    HW/Latte/Renderer/OpenGL/OpenGLSurfaceCopy.cpp
-    HW/Latte/Renderer/OpenGL/OpenGLTextureReadback.h
-    HW/Latte/Renderer/OpenGL/RendererShaderGL.cpp
-    HW/Latte/Renderer/OpenGL/RendererShaderGL.h
-    HW/Latte/Renderer/OpenGL/TextureReadbackGL.cpp
-  )
-endif()
-
 if (ENABLE_VULKAN)
   target_sources(CemuCafe PRIVATE
     HW/Latte/Renderer/Vulkan/CachedFBOVk.cpp
@@ -640,10 +625,13 @@ endif()
 target_sources(CemuCafe PRIVATE
   Diagnostics/CemuWarmup.cpp
   Diagnostics/CemuWarmup.h
+  Diagnostics/RenderDocGuestFrameCapture.cpp
+  Diagnostics/RenderDocGuestFrameCapture.h
 )
 target_link_libraries(CemuCafe PRIVATE
   spatial::foundation_debugbus_profiler
   spatial::foundation_profiler
+  spatial::foundation_meta_reflection
 )
 if(ANDROID)
   target_link_libraries(CemuCafe PRIVATE spatial::foundation_debugbus_dumpsys)
@@ -722,6 +710,18 @@ if (ENABLE_LIBUSB)
 endif()
 
 target_include_directories(CemuCafe PUBLIC "../")
+
+if (CEMU_BUILD_INTERNAL_TESTS)
+  add_executable(CemuSurfaceRepresentationTests
+	HW/Latte/Core/LatteSurfaceScaleState.cpp
+    HW/Latte/Core/tests/SurfaceRepresentationHarness.cpp
+  )
+  cemu_use_precompiled_header(CemuSurfaceRepresentationTests)
+  target_include_directories(CemuSurfaceRepresentationTests PRIVATE "../")
+  target_link_libraries(CemuSurfaceRepresentationTests PRIVATE CemuCommon)
+  set_target_properties(CemuSurfaceRepresentationTests PROPERTIES UNITY_BUILD OFF)
+  add_test(NAME CemuSurfaceRepresentationTests COMMAND CemuSurfaceRepresentationTests)
+endif()
 
 if (glslang_VERSION VERSION_LESS "15.0.0")
 	set(glslang_target "glslang::SPIRV")

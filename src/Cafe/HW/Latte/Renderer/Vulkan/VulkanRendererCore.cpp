@@ -16,7 +16,90 @@
 
 #include "spatial/profiler/Profiler.h"
 
+#include <chrono>
+
 extern bool hasValidFramebufferAttached;
+
+namespace
+{
+	const char* GetRenderPassEndDebugLabel(LatteVulkanRenderPassEndReason reason)
+	{
+		switch (reason)
+		{
+		case LatteVulkanRenderPassEndReason::FramebufferChange: return "cemu.render_pass.end.framebuffer_change";
+		case LatteVulkanRenderPassEndReason::SelfDependency: return "cemu.render_pass.end.self_dependency";
+		case LatteVulkanRenderPassEndReason::GenericBarrier: return "cemu.render_pass.end.barrier";
+		case LatteVulkanRenderPassEndReason::Query: return "cemu.render_pass.end.query";
+		case LatteVulkanRenderPassEndReason::Readback: return "cemu.render_pass.end.readback";
+		case LatteVulkanRenderPassEndReason::SurfaceCopy: return "cemu.render_pass.end.surface_copy";
+		case LatteVulkanRenderPassEndReason::CommandBufferSubmit: return "cemu.render_pass.end.submit";
+		case LatteVulkanRenderPassEndReason::ImGui: return "cemu.render_pass.end.imgui";
+		case LatteVulkanRenderPassEndReason::Clear: return "cemu.render_pass.end.clear";
+		case LatteVulkanRenderPassEndReason::Present: return "cemu.render_pass.end.present";
+		case LatteVulkanRenderPassEndReason::TextureOperation: return "cemu.render_pass.end.texture_operation";
+		case LatteVulkanRenderPassEndReason::BufferOperation: return "cemu.render_pass.end.buffer_operation";
+		case LatteVulkanRenderPassEndReason::DepthStoreUpgrade: return "cemu.render_pass.end.depth_store_upgrade";
+		case LatteVulkanRenderPassEndReason::Other: return "cemu.render_pass.end.other";
+		case LatteVulkanRenderPassEndReason::Count: break;
+		}
+		return "cemu.render_pass.end.unknown";
+	}
+
+	bool CurrentDrawWritesDepthOrStencil()
+	{
+		const auto& depthControl = LatteGPUState.contextNew.DB_DEPTH_CONTROL;
+		if (depthControl.get_Z_WRITE_ENABLE())
+			return true;
+		if (!depthControl.get_STENCIL_ENABLE())
+			return false;
+
+		auto stencilOpsMayWrite = [](auto zPass, auto zFail, auto fail) {
+			return static_cast<uint32>(zPass) != 0 || static_cast<uint32>(zFail) != 0 ||
+				static_cast<uint32>(fail) != 0;
+		};
+		const bool frontMayWrite =
+			LatteGPUState.contextNew.DB_STENCILREFMASK.get_STENCILWRITEMASK_F() != 0 &&
+			stencilOpsMayWrite(depthControl.get_STENCIL_ZPASS_F(), depthControl.get_STENCIL_ZFAIL_F(),
+				depthControl.get_STENCIL_FAIL_F());
+		if (frontMayWrite || !depthControl.get_BACK_STENCIL_ENABLE())
+			return frontMayWrite;
+		return LatteGPUState.contextNew.DB_STENCILREFMASK_BF.get_STENCILWRITEMASK_B() != 0 &&
+			stencilOpsMayWrite(depthControl.get_STENCIL_ZPASS_B(), depthControl.get_STENCIL_ZFAIL_B(),
+				depthControl.get_STENCIL_FAIL_B());
+	}
+
+	class RendererHostStageTimer
+	{
+	public:
+		explicit RendererHostStageTimer(LatteCommandHostTimeCategory category)
+			: m_category(category), m_start(std::chrono::steady_clock::now())
+		{
+		}
+
+		~RendererHostStageTimer()
+		{
+			RecordUntil(std::chrono::steady_clock::now());
+		}
+
+		void SwitchTo(LatteCommandHostTimeCategory category)
+		{
+			const auto now = std::chrono::steady_clock::now();
+			RecordUntil(now);
+			m_category = category;
+			m_start = now;
+		}
+
+	private:
+		void RecordUntil(std::chrono::steady_clock::time_point end)
+		{
+			const uint64 nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(end - m_start).count();
+			LattePerformanceMonitor_recordHostCommandTime(m_category, nanoseconds);
+		}
+
+		LatteCommandHostTimeCategory m_category;
+		std::chrono::steady_clock::time_point m_start;
+	};
+}
 
 // includes only states that may change during minimal drawcalls
 uint64 VulkanRenderer::draw_calculateMinimalGraphicsPipelineHash(const LatteFetchShader* fetchShader, const LatteContextRegister& lcr)
@@ -347,6 +430,9 @@ uint32 VulkanRenderer::uniformData_uploadUniformDataBufferGetOffset(std::span<ui
 			return m_uniformVarBufferReadIndex > m_uniformVarBufferWriteIndex || m_uniformVarBufferReadIndex == 0;
 		});
 		m_uniformVarBufferWriteIndex = 0;
+		m_uniformVarBufferGeneration++;
+		if (m_uniformVarBufferGeneration == 0)
+			m_uniformVarBufferGeneration = 1;
 	}
 
 	auto ringBufRemaining = [&]() {
@@ -933,21 +1019,16 @@ VkDescriptorSetInfo* VulkanRenderer::draw_getOrCreateDescriptorSet(PipelineInfo*
 
 	// descriptor for uniform buffers
 
-	VkDescriptorBufferInfo uniformBufferInfo{};
-	uniformBufferInfo.buffer = m_useHostMemoryForCache ? m_importedMem : m_bufferCache;
-	uniformBufferInfo.offset = 0; // fixed offset is always zero since we only use dynamic offsets
-
-	if (m_vendor == GfxVendor::AMD)
+	std::array<VkDescriptorBufferInfo, LATTE_NUM_MAX_UNIFORM_BUFFERS>
+		uniformBufferInfos{};
+	for (const auto& buffer : shader->list_quickBufferList)
 	{
-		// on AMD we enable robust buffer access and map the remaining range of the buffer
-		uniformBufferInfo.range = VK_WHOLE_SIZE;
-	}
-	else
-	{
-		// on other vendors (which may not allow large range values) we disable robust buffer access and use a fixed size
-		// update: starting with their Vulkan 1.2 drivers Nvidia now also prevents out-of-bounds access. Unlike on AMD, we can't use VK_WHOLE_SIZE due to 64KB size limit of uniforms
-		// as a workaround we set the size to the allowed maximum. A proper solution would be to use SSBOs for large uniforms / uniforms with unknown size?
-		uniformBufferInfo.range = 1024 * 16 * 4; // XCX
+		if (buffer.index >= uniformBufferInfos.size())
+			continue;
+		auto& info = uniformBufferInfos[buffer.index];
+		info.buffer = m_uniformVarBuffer;
+		info.offset = 0; // fixed offset is always zero since we only use dynamic offsets
+		info.range = std::max<uint32>(buffer.size, 16);
 	}
 
 	for (sint32 i = 0; i < LATTE_NUM_MAX_UNIFORM_BUFFERS; i++)
@@ -961,7 +1042,7 @@ VkDescriptorSetInfo* VulkanRenderer::draw_getOrCreateDescriptorSet(PipelineInfo*
 			write_descriptor.dstArrayElement = 0;
 			write_descriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			write_descriptor.descriptorCount = 1;
-			write_descriptor.pBufferInfo = &uniformBufferInfo;
+			write_descriptor.pBufferInfo = &uniformBufferInfos[i];
 			descriptorWrites.emplace_back(write_descriptor);
 			performanceMonitor.vk.numDescriptorDynUniformBuffers.increment();
 			dsInfo->statsNumDynUniformBuffers++;
@@ -1032,6 +1113,7 @@ void VulkanRenderer::sync_inputTexturesChanged(bool withinFeedbackLoopRenderPass
 	// barrier here
 	if (writeFlushRequired)
 	{
+		CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.sync.input_texture_hazard", m_state.currentCommandBuffer);
 		VkMemoryBarrier memoryBarrier{};
 		memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
 		memoryBarrier.srcAccessMask = 0;
@@ -1095,6 +1177,7 @@ void VulkanRenderer::sync_RenderPassLoadTextures(CachedFBOVk* fboVk)
 	// barrier here
 	if (readFlushRequired)
 	{
+		CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.sync.render_target_hazard", m_state.currentCommandBuffer);
 		VkMemoryBarrier memoryBarrier{};
 		memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
 		memoryBarrier.srcAccessMask = 0;
@@ -1190,6 +1273,8 @@ bool s_syncOnNextDraw = false;
 void VulkanRenderer::draw_setRenderPass()
 {
 	CachedFBOVk* fboVk = m_state.activeFBO;
+	const bool omitDepthStore = !m_featureControl.deviceExtensions.dynamic_rendering &&
+		fboVk->SupportsDepthStoreOmission() && !CurrentDrawWritesDepthOrStencil();
 	// note - pixel self dependency can be handled via feedback_loop extension
 	// vertex/geometry self dependency needs renderpass split
 	CachedFBOVk::RendertargetSelfDependencyMask renderSelfDependencyInfo{};
@@ -1200,14 +1285,24 @@ void VulkanRenderer::draw_setRenderPass()
 		renderSelfDependencyInfo = fboVk->CheckForSelfDependency(m_state.activeVertexDS, m_state.activeGeometryDS, m_state.activePixelDS);
 	}
 
-	auto vkObjRenderPass = fboVk->GetRenderPassObj();
+	auto vkObjRenderPass = fboVk->GetRenderPassObj(omitDepthStore);
 	auto vkObjFramebuffer = fboVk->GetFramebufferObj();
 
 	bool feedbackLoopHandlesSelfDependency = UseAttachmentFeedbackLoop() && renderSelfDependencyInfo.HasSelfDependency() && !renderSelfDependencyInfo.HasVertexOrGeometrySelfDependency();
 	bool selfDependencyNeedsPassSplit = renderSelfDependencyInfo.HasSelfDependency() && !feedbackLoopHandlesSelfDependency;
 	bool overridePassReuse = selfDependencyNeedsPassSplit && (GetConfig().vk_accurate_barriers || m_state.activePipelineInfo->neverSkipAccurateBarrier);
+	if (overridePassReuse && m_state.activeRenderpassFBO)
+	{
+		m_nextRenderPassSelfDependencyHasNonPixel =
+			renderSelfDependencyInfo.HasVertexOrGeometrySelfDependency();
+		LattePerformanceMonitor_recordHostVulkanSelfDependencySplit(
+			m_nextRenderPassSelfDependencyHasNonPixel);
+	}
 
-	if (!overridePassReuse && m_state.activeRenderpassFBO == fboVk)
+	const bool depthStoreUpgrade = m_state.activeRenderpassFBO == fboVk &&
+		m_state.activeRenderpassOmitsDepthStore && !omitDepthStore;
+
+	if (!overridePassReuse && !depthStoreUpgrade && m_state.activeRenderpassFBO == fboVk)
 	{
 		if (m_state.descriptorSetsChanged)
 			sync_inputTexturesChanged(feedbackLoopHandlesSelfDependency);
@@ -1218,7 +1313,9 @@ void VulkanRenderer::draw_setRenderPass()
 		}
 		return;
 	}
-	draw_endRenderPass();
+	draw_endRenderPass(overridePassReuse ? LatteVulkanRenderPassEndReason::SelfDependency :
+		(depthStoreUpgrade ? LatteVulkanRenderPassEndReason::DepthStoreUpgrade :
+			LatteVulkanRenderPassEndReason::FramebufferChange));
 	if (m_state.descriptorSetsChanged)
 		sync_inputTexturesChanged();
 
@@ -1229,6 +1326,7 @@ void VulkanRenderer::draw_setRenderPass()
 
 	if (m_featureControl.deviceExtensions.dynamic_rendering)
 	{
+		BeginGpuProfilerGuestRenderPass();
 		vkCmdBeginRenderingKHR(m_state.currentCommandBuffer, fboVk->GetRenderingInfo());
 	}
 	else
@@ -1244,10 +1342,15 @@ void VulkanRenderer::draw_setRenderPass()
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = extend;
 		renderPassInfo.clearValueCount = 0;
+		BeginGpuProfilerGuestRenderPass();
 		vkCmdBeginRenderPass(m_state.currentCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
 	m_state.activeRenderpassFBO = fboVk;
+	m_state.activeRenderpassOmitsDepthStore = omitDepthStore;
+	if (omitDepthStore)
+		LattePerformanceMonitor_recordHostVulkanDepthStoreOmittedPass();
+	m_currentRenderPassDrawCount = 0;
 	if (UseAttachmentFeedbackLoop() && renderSelfDependencyInfo.GetAspectMask() != m_state.feedbackLoopImageAspect)
 	{
 		m_state.feedbackLoopImageAspect = renderSelfDependencyInfo.GetAspectMask();
@@ -1260,16 +1363,27 @@ void VulkanRenderer::draw_setRenderPass()
 	performanceMonitor.vk.numBeginRenderpassPerFrame.increment();
 }
 
-void VulkanRenderer::draw_endRenderPass()
+void VulkanRenderer::draw_endRenderPass(LatteVulkanRenderPassEndReason reason)
 {
 	if (!m_state.activeRenderpassFBO)
 		return;
+	m_nextRenderPassStartReason = reason;
+	LattePerformanceMonitor_recordHostVulkanRenderPassEnd(reason, m_currentRenderPassDrawCount);
+	if (IsDebugMarkersEnabled() && vkCmdInsertDebugUtilsLabelEXT)
+	{
+		VkDebugUtilsLabelEXT label{ VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
+		label.pLabelName = GetRenderPassEndDebugLabel(reason);
+		vkCmdInsertDebugUtilsLabelEXT(m_state.currentCommandBuffer, &label);
+	}
 	if (m_featureControl.deviceExtensions.dynamic_rendering)
 		vkCmdEndRenderingKHR(m_state.currentCommandBuffer);
 	else
 		vkCmdEndRenderPass(m_state.currentCommandBuffer);
+	EndGpuProfilerGuestRenderPass();
 	sync_RenderPassStoreTextures(m_state.activeRenderpassFBO);
 	m_state.activeRenderpassFBO = nullptr;
+	m_state.activeRenderpassOmitsDepthStore = false;
+	m_currentRenderPassDrawCount = 0;
 }
 
 // Defined in the Common renderer
@@ -1287,10 +1401,21 @@ void VulkanRenderer::draw_handleSpecialState5()
 	sint32 vpWidth, vpHeight;
 	LatteMRT::GetVirtualViewportDimensions(vpWidth, vpHeight);
 
-	surfaceCopy_copySurfaceWithFormatConversion(
+	const auto result = surfaceCopy_copySurfaceWithFormatConversion(
 		depthBuffer->baseTexture, depthBuffer->firstMip, depthBuffer->firstSlice,
 		colorBuffer->baseTexture, colorBuffer->firstMip, colorBuffer->firstSlice,
 		vpWidth, vpHeight);
+	if (result.succeeded)
+	{
+		LatteTexture_TrackTextureGPUWrite(colorBuffer->baseTexture,
+			static_cast<uint32>(colorBuffer->firstSlice), static_cast<uint32>(colorBuffer->firstMip),
+			LatteTexture_getNextUpdateEventCounter());
+	}
+	else
+	{
+		cemuLog_log(LogType::Force, "Vulkan special depth-to-color copy failed with reason {}",
+			static_cast<uint32>(result.reason));
+	}
 }
 
 void VulkanRenderer::draw_beginSequence()
@@ -1298,6 +1423,7 @@ void VulkanRenderer::draw_beginSequence()
 	m_state.drawSequenceSkip = false;
 
 	bool streamoutEnable = LatteGPUState.contextRegister[mmVGT_STRMOUT_EN] != 0;
+	RendererHostStageTimer stageTimer(LatteCommandHostTimeCategory::SequenceShader);
 
 	// update shader state
 	LatteSHRC_UpdateActiveShaders();
@@ -1313,6 +1439,7 @@ void VulkanRenderer::draw_beginSequence()
 	LatteGPUState.requiresTextureBarrier = false;
 	while (true)
 	{
+		stageTimer.SwitchTo(LatteCommandHostTimeCategory::SequenceFramebuffer);
 		LatteGPUState.repeatTextureInitialization = false;
 		if (!LatteMRT::UpdateCurrentFBO())
 		{
@@ -1327,15 +1454,18 @@ void VulkanRenderer::draw_beginSequence()
 			m_state.drawSequenceSkip = true;
 			return; // no render target
 		}
+		stageTimer.SwitchTo(LatteCommandHostTimeCategory::SequenceTextures);
 		LatteTexture_updateTextures();
 		if (!LatteGPUState.repeatTextureInitialization)
 			break;
 	}
 
 	// apply render target
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::SequenceApplyRenderTarget);
 	LatteMRT::ApplyCurrentState();
 
 	// viewport and scissor box
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::SequenceViewportScissor);
 	LatteRenderTarget_updateViewport();
 	LatteRenderTarget_updateScissorBox();
 
@@ -1353,6 +1483,7 @@ void VulkanRenderer::draw_beginSequence()
 
 void VulkanRenderer::draw_execute_first(uint32 baseVertex, uint32 baseInstance, uint32 instanceCount, uint32 count, MPTR indexDataMPTR, Latte::LATTE_VGT_DMA_INDEX_TYPE::E_INDEX_TYPE indexType, const LatteDrawcallContext& drawcallContext)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.draw.prepare.full");
 	if (m_state.drawSequenceSkip)
 	{
 		return;
@@ -1369,12 +1500,14 @@ void VulkanRenderer::draw_execute_first(uint32 baseVertex, uint32 baseInstance, 
 		draw_handleSpecialState5();
 		return;
 	}
+	RendererHostStageTimer stageTimer(LatteCommandHostTimeCategory::FullDrawPrelude);
 
 	// prepare streamout
 	m_streamoutState.verticesPerInstance = count;
 	LatteStreamout_PrepareDrawcall(count, instanceCount);
 
 	// update uniform vars
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::FullDrawUniforms);
 	LatteDecompilerShader* vertexShader = LatteSHRC_GetActiveVertexShader();
 	LatteDecompilerShader* pixelShader = LatteSHRC_GetActivePixelShader();
 	LatteDecompilerShader* geometryShader = LatteSHRC_GetActiveGeometryShader();
@@ -1389,6 +1522,7 @@ void VulkanRenderer::draw_execute_first(uint32 baseVertex, uint32 baseInstance, 
 	m_cmdBufferUniformRingbufIndices[m_commandBufferIndex] = m_uniformVarBufferWriteIndex;
 
 	// process index data
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::FullDrawIndices);
 	const LattePrimitiveMode primitiveMode = static_cast<LattePrimitiveMode>(LatteGPUState.contextRegister[mmVGT_PRIMITIVE_TYPE]);
 
 	Renderer::INDEX_TYPE hostIndexType;
@@ -1418,6 +1552,7 @@ void VulkanRenderer::draw_execute_first(uint32 baseVertex, uint32 baseInstance, 
 		}
 	}
 
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::FullDrawBuffers);
 	if (m_useHostMemoryForCache)
 	{
 		// direct memory access (Wii U memory space imported as a Vulkan buffer), update buffer bindings
@@ -1439,6 +1574,7 @@ void VulkanRenderer::draw_execute_first(uint32 baseVertex, uint32 baseInstance, 
 		LatteBufferCache_Sync(indexMax + baseVertex, baseInstance, instanceCount, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, stageUniformModifiedMask);
 	}
 
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::FullDrawPipeline);
 	PipelineInfo* pipeline_info = draw_getOrCreateGraphicsPipeline(count);
 	m_state.activePipelineInfo = pipeline_info;
 
@@ -1450,6 +1586,7 @@ void VulkanRenderer::draw_execute_first(uint32 baseVertex, uint32 baseInstance, 
 		return;
 	}
 
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::FullDrawDescriptors);
 	VkDescriptorSetInfo *vertexDS = nullptr, *pixelDS = nullptr, *geometryDS = nullptr;
 	draw_prepareDescriptorSets(pipeline_info, vertexDS, pixelDS, geometryDS);
 	m_state.activeVertexDS = vertexDS;
@@ -1457,6 +1594,7 @@ void VulkanRenderer::draw_execute_first(uint32 baseVertex, uint32 baseInstance, 
 	m_state.activeGeometryDS = geometryDS;
 	m_state.descriptorSetsChanged = true;
 
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::FullDrawHostState);
 	draw_setRenderPass();
 
 	if (m_state.currentPipeline != vkObjPipeline->GetPipeline())
@@ -1511,15 +1649,18 @@ void VulkanRenderer::draw_execute_first(uint32 baseVertex, uint32 baseInstance, 
 		vkCmdBindDescriptorSets(m_state.currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkObjPipeline->m_pipelineLayout, 2, 1, &geometryDS->m_vkObjDescriptorSet->descriptorSet, numDynOffsets, dynamicOffsets);
 	}
 	// draw
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::FullDrawApi);
 	if (hostIndexType != INDEX_TYPE::NONE)
 		vkCmdDrawIndexed(m_state.currentCommandBuffer, hostIndexCount, instanceCount, 0, baseVertex, baseInstance);
 	else
 		vkCmdDraw(m_state.currentCommandBuffer, count, instanceCount, baseVertex, baseInstance);
+	m_currentRenderPassDrawCount++;
 	LatteStreamout_FinishDrawcall(m_useHostMemoryForCache);
 }
 
 void VulkanRenderer::draw_execute_continued(uint32 baseVertex, uint32 baseInstance, uint32 instanceCount, uint32 count, MPTR indexDataMPTR, Latte::LATTE_VGT_DMA_INDEX_TYPE::E_INDEX_TYPE indexType, const LatteDrawcallContext& drawcallContext)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.draw.prepare.fast");
 	if (m_state.drawSequenceSkip)
 	{
 		return;
@@ -1738,6 +1879,7 @@ void VulkanRenderer::draw_execute_continued(uint32 baseVertex, uint32 baseInstan
 		vkCmdDrawIndexed(m_state.currentCommandBuffer, hostIndexCount, instanceCount, 0, baseVertex, baseInstance);
 	else
 		vkCmdDraw(m_state.currentCommandBuffer, count, instanceCount, baseVertex, baseInstance);
+	m_currentRenderPassDrawCount++;
 
 	LatteStreamout_FinishDrawcall(m_useHostMemoryForCache);
 }
@@ -1745,7 +1887,6 @@ void VulkanRenderer::draw_execute_continued(uint32 baseVertex, uint32 baseInstan
 void VulkanRenderer::draw_execute(uint32 baseVertex, uint32 baseInstance, uint32 instanceCount, uint32 count, MPTR indexDataMPTR, Latte::LATTE_VGT_DMA_INDEX_TYPE::E_INDEX_TYPE indexType, const LatteDrawcallContext& drawcallContext)
 {
 	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.draw.prepare");
-	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.draw", m_state.currentCommandBuffer);
 	if (drawcallContext.isFirst)
 		draw_execute_first(baseVertex, baseInstance, instanceCount, count, indexDataMPTR, indexType, drawcallContext);
 	else
@@ -1822,21 +1963,25 @@ void VulkanRenderer::draw_updateUniformBuffersDirectAccess(LatteDecompilerShader
 
 void VulkanRenderer::draw_endSequence()
 {
+	RendererHostStageTimer stageTimer(LatteCommandHostTimeCategory::SequenceEndTrackUpdates);
 	LatteDecompilerShader* pixelShader = LatteSHRC_GetActivePixelShader();
 	// post-drawcall logic
 	if (pixelShader)
 		LatteRenderTarget_trackUpdates();
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::SequenceEndReadback);
 	bool hasReadback = LatteTextureReadback_Update();
 	m_recordedDrawcalls++;
+	stageTimer.SwitchTo(LatteCommandHostTimeCategory::SequenceEndSubmit);
 	if (m_recordedDrawcalls >= m_submitThreshold || hasReadback)
 	{
-		SubmitCommandBuffer();
+		SubmitCommandBuffer(hasReadback ? LatteVulkanSubmitReason::Readback : m_submitSoonReason);
 	}
 }
 
 void VulkanRenderer::debug_genericBarrier()
 {
-	draw_endRenderPass();
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::GenericBarrier);
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.sync.full_barrier", m_state.currentCommandBuffer);
 
 	VkMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;

@@ -379,7 +379,7 @@ namespace erreula
 		ImVec2 pivot = { 0.5f, 0.5f };
 		ImGui::SetNextWindowPos(position, ImGuiCond_Always, pivot);
 		ImGui::SetNextWindowBgAlpha(0.9f);
-		ImGui::PushFont(font);
+		ImGui::PushFont(font, font ? font->LegacySize : 0.0f);
 
 		std::string title;
 		if (appearArg.title)

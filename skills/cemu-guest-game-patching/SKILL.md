@@ -10,6 +10,8 @@ description: Use when reverse-engineering Wii U Guest behavior for Cemu, auditin
 ## 先读什么
 
 - 所有任务先读 `references/cemu-guest-patch-model.md`。
+- 涉及 `patch_*.asm` 声明、codecave/origin、label、preset、data directive、callback 或
+  import/relocation 时，阅读 `../../docs/architecture/cemu-graphic-pack-asm.md`。
 - 涉及 BotW、v208 或 BetterVR 时，再读 `references/botw-v208-bettervr.md`。
 - 涉及二进制提取、IDA、动态 debugger、Guest profiler 或完整 Mod 生命周期时，阅读
   `../../docs/architecture/guest-reverse-debug-mod-pipeline.md`。
@@ -103,6 +105,14 @@ Guest thread ID 和 section ID 配对，并通过 Foundation `ProfilerTagBegin/E
 `timeline_tag_begin_count - timeline_tag_end_count == active_spans`，再解释 counter 或 Tracy
 scope。不要只在 End 时补写历史 span，嵌套区间会破坏 Tracy 单线程时序。完整边界见
 `docs/architecture/guest-profiler-tags.md`。
+
+需要把 Guest 业务阶段关联到 Latte/Vulkan 命令消费时，使用有序 GPU tag，而不是在 HLE
+调用当下修改 Host 共享状态。现有渲染 section `21..32` 会由
+`coreinit.hook_ProfileSectionBegin/End` 自动向主 GX2 command stream 写入标记；新 Mod 可显式
+调用 `gx2.hook_GpuTagBegin/End(section_id)`。真机验证必须检查 emitted/consumed 配对、active
+depth、invalid/overflow/unmatched/stale、no-command-buffer 和 display-list skip，并在 Tracy
+中区分 Guest CPU section 与 `GpuCommand/<section>`。完整 ABI 与 FrameGraph 用法见
+`docs/architecture/guest-semantic-framegraph.md`。
 
 动态调试复用 Guest PowerPC GDB Remote：`guest_debugger_start [port]`、
 `guest_debugger_status`、`guest_debugger_stop`。IDA EA 与 GDB PC 必须经导出 metadata 的

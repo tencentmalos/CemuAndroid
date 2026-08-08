@@ -123,11 +123,6 @@ GraphicAPI ActiveSettings::GetGraphicsAPI()
 		return api;
 	fallbackAPI = fallbackAPI.value_or(kMetal);
 #endif
-#ifdef ENABLE_OPENGL
-	if (api == kOpenGL)
-		return api;
-	fallbackAPI = fallbackAPI.value_or(kOpenGL);
-#endif
 	cemu_assert(fallbackAPI.has_value());
 	return *fallbackAPI;
 }

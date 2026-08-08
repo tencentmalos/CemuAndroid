@@ -1,4 +1,5 @@
 #include "Cafe/HW/Latte/Renderer/Vulkan/VulkanRenderer.h"
+#include "Cafe/HW/Latte/Renderer/Vulkan/VulkanProfiler.h"
 
 class LatteQueryObjectVk : public LatteQueryObject
 {
@@ -52,7 +53,7 @@ bool LatteQueryObjectVk::getResult(uint64& numSamplesPassed)
 
 void LatteQueryObjectVk::beginFragment()
 {
-	m_rendererVk->draw_endRenderPass();
+	m_rendererVk->draw_endRenderPass(LatteVulkanRenderPassEndReason::Query);
 
 	handleFinishedFragments();
 	uint32 newQueryIndex = acquireQueryIndex();
@@ -80,10 +81,11 @@ void LatteQueryObjectVk::begin()
 
 void LatteQueryObjectVk::endFragment()
 {
-	m_rendererVk->draw_endRenderPass();
+	m_rendererVk->draw_endRenderPass(LatteVulkanRenderPassEndReason::Query);
 
 	cemu_assert_debug(m_hasActiveFragment);
 	uint32 queryIndex = list_queryFragments.back().queryIndex;
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.occlusion_query.resolve", m_rendererVk->m_state.currentCommandBuffer);
 	vkCmdEndQuery(m_rendererVk->m_state.currentCommandBuffer, m_rendererVk->m_occlusionQueries.queryPool, queryIndex);
 
 	vkCmdCopyQueryPoolResults(m_rendererVk->m_state.currentCommandBuffer, m_rendererVk->m_occlusionQueries.queryPool, queryIndex, 1, m_rendererVk->m_occlusionQueries.bufferQueryResults, queryIndex * sizeof(uint64), 8, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
@@ -134,8 +136,8 @@ void LatteQueryObjectVk::end()
 	m_hasActiveQuery = false;
 	m_finishCommandBuffer = m_rendererVk->GetCurrentCommandBufferId();
 	m_rendererVk->m_occlusionQueries.m_lastCommandBuffer = m_finishCommandBuffer;
-	m_rendererVk->RequestSubmitSoon(); // make sure the current command buffer gets submitted soon
-	m_rendererVk->RequestSubmitOnIdle();
+	m_rendererVk->RequestSubmitSoon(LatteVulkanSubmitReason::OcclusionQuery); // make sure the current command buffer gets submitted soon
+	m_rendererVk->RequestSubmitOnIdle(LatteVulkanSubmitReason::OcclusionQuery);
 }
 
 LatteQueryObject* VulkanRenderer::occlusionQuery_create()
@@ -188,7 +190,7 @@ void VulkanRenderer::occlusionQuery_destroy(LatteQueryObject* queryObj)
 
 void VulkanRenderer::occlusionQuery_flush()
 {
-	WaitCommandBufferFinished(m_occlusionQueries.m_lastCommandBuffer);
+	WaitCommandBufferFinished(m_occlusionQueries.m_lastCommandBuffer, LatteVulkanSubmitReason::OcclusionQuery);
 }
 
 void VulkanRenderer::occlusionQuery_updateState()

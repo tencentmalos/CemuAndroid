@@ -7,6 +7,10 @@ namespace vpad
 {
 	void load();
 	void start();
+	void SetDiagnosticButtonAOverride(bool pressed);
+	void ResetDiagnosticInputStats();
+	uint64 GetDiagnosticReadCount();
+	uint64 GetDiagnosticAReadCount();
 }
 
 #define VPAD_MAX_CONTROLLERS (2)

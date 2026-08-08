@@ -18,6 +18,17 @@
 #endif // HAS_CUBEB
 
 #include <android/native_window_jni.h>
+#include <android/log.h>
+
+namespace
+{
+	constexpr const char* NATIVE_INIT_TAG = "CemuNativeInit";
+
+	void LogNativeInit(const char* message)
+	{
+		__android_log_write(ANDROID_LOG_INFO, NATIVE_INIT_TAG, message);
+	}
+}
 
 // forward declaration from main.cpp
 void CemuCommonInit();
@@ -227,13 +238,16 @@ Java_info_cemu_cemu_nativeinterface_NativeEmulation_setReplaceTVWithPadView([[ma
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeEmulation_initializeEmulation([[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz)
 {
+	LogNativeInit("application initializeEmulation begin");
 	FilesystemAndroid::SetFilesystemCallbacks(std::make_shared<AndroidFilesystemCallbacks>());
 	GetConfigHandle().SetFilename(ActiveSettings::GetConfigPath("settings.xml").generic_wstring());
 	NativeEmulation::CreateCemuDirectories();
 	NetworkConfig::LoadOnce();
 	ActiveSettings::Init();
 	LatteOverlay_init();
+	LogNativeInit("application CemuCommonInit begin");
 	CemuCommonInit();
+	LogNativeInit("application initializeEmulation end");
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
@@ -241,14 +255,21 @@ Java_info_cemu_cemu_nativeinterface_NativeEmulation_initializeRenderer(JNIEnv* e
 {
 	static std::unique_ptr<NativeEmulation::TestSurface> testSurface;
 
+	LogNativeInit("renderer InitializeGlobalVulkan begin");
 	InitializeGlobalVulkan();
+	LogNativeInit("renderer InitializeGlobalVulkan end");
 	JNIUtils::HandleNativeException(env, [&]() {
+		LogNativeInit("renderer TestSurface creation begin");
 		testSurface = std::make_unique<NativeEmulation::TestSurface>();
+		LogNativeInit("renderer TestSurface creation end");
 
 		WindowSystem::GetWindowInfo().window_main.surface = testSurface->getWindow();
 
+		LogNativeInit("renderer VulkanRenderer creation begin");
 		g_renderer = std::make_unique<VulkanRenderer>();
+		LogNativeInit("renderer VulkanRenderer creation end");
 	});
+	LogNativeInit("renderer initializeRenderer end");
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
@@ -274,6 +295,7 @@ Java_info_cemu_cemu_nativeinterface_NativeEmulation_supportsLoadingCustomDriver(
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeEmulation_setSurface(JNIEnv* env, [[maybe_unused]] jclass clazz, jobject surface, jboolean isMainCanvas)
 {
+	__android_log_print(ANDROID_LOG_INFO, NATIVE_INIT_TAG, "setSurface begin canvas=%s", isMainCanvas ? "main" : "pad");
 	JNIUtils::HandleNativeException(env, [&]() {
 		auto& windowHandleInfo = isMainCanvas ? WindowSystem::GetWindowInfo().canvas_main : WindowSystem::GetWindowInfo().canvas_pad;
 		auto oldWindow = windowHandleInfo.surface.load();
@@ -284,11 +306,13 @@ Java_info_cemu_cemu_nativeinterface_NativeEmulation_setSurface(JNIEnv* env, [[ma
 		windowHandleInfo.surface = newSurface;
 		windowHandleInfo.surface.notify_all();
 	});
+	__android_log_print(ANDROID_LOG_INFO, NATIVE_INIT_TAG, "setSurface end canvas=%s", isMainCanvas ? "main" : "pad");
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeEmulation_initializeSurface(JNIEnv* env, [[maybe_unused]] jclass clazz, jboolean isMainCanvas)
 {
+	__android_log_print(ANDROID_LOG_INFO, NATIVE_INIT_TAG, "initializeSurface begin canvas=%s", isMainCanvas ? "main" : "pad");
 	JNIUtils::HandleNativeException(env, [&]() {
 		int width, height;
 		if (isMainCanvas)
@@ -303,6 +327,7 @@ Java_info_cemu_cemu_nativeinterface_NativeEmulation_initializeSurface(JNIEnv* en
 
 		VulkanRenderer::GetInstance()->InitializeSurface({width, height}, isMainCanvas);
 	});
+	__android_log_print(ANDROID_LOG_INFO, NATIVE_INIT_TAG, "initializeSurface end canvas=%s", isMainCanvas ? "main" : "pad");
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
@@ -324,31 +349,44 @@ Java_info_cemu_cemu_nativeinterface_NativeEmulation_setSurfaceSize([[maybe_unuse
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeEmulation_initializeSystems([[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz)
 {
+	LogNativeInit("initializeSystems default controller begin");
 	NativeEmulation::SetDefaultDeviceController();
+	LogNativeInit("initializeSystems default controller end");
 	WindowSystem::GetWindowInfo().set_keystatesup();
+	LogNativeInit("initializeSystems audio begin");
 	NativeEmulation::InitializeAudioDevices();
+	LogNativeInit("initializeSystems audio end");
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT jint JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeEmulation_prepareTitle([[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, jstring launchPathJava)
 {
+	LogNativeInit("prepareTitle path conversion begin");
 	fs::path launchPath = JNIUtils::FromJString(env, launchPathJava);
+	LogNativeInit("prepareTitle TitleInfo construction begin");
 
 	TitleInfo launchTitle{launchPath};
+	__android_log_print(ANDROID_LOG_INFO, NATIVE_INIT_TAG, "prepareTitle TitleInfo ready valid=%d", launchTitle.IsValid());
 
 	using enum NativeEmulation::PrepareTitleResult;
 
 	if (launchTitle.IsValid())
 	{
 		// the title might not be in the TitleList, so we add it as a temporary entry
+		LogNativeInit("prepareTitle AddTitleFromPath begin");
 		CafeTitleList::AddTitleFromPath(launchPath);
+		LogNativeInit("prepareTitle AddTitleFromPath end");
 		// title is valid, launch from TitleId
 		TitleId baseTitleId;
+		LogNativeInit("prepareTitle FindBaseTitleId begin");
 		if (!CafeTitleList::FindBaseTitleId(launchTitle.GetAppTitleId(), baseTitleId))
 		{
+			LogNativeInit("prepareTitle FindBaseTitleId failed");
 			return ERROR_GAME_BASE_FILES_NOT_FOUND;
 		}
+		LogNativeInit("prepareTitle PrepareForegroundTitle begin");
 		CafeSystem::PREPARE_STATUS_CODE r = CafeSystem::PrepareForegroundTitle(baseTitleId);
+		__android_log_print(ANDROID_LOG_INFO, NATIVE_INIT_TAG, "prepareTitle PrepareForegroundTitle end result=%d", static_cast<int>(r));
 		if (r != CafeSystem::PREPARE_STATUS_CODE::SUCCESS)
 		{
 			return ERROR_UNKNOWN;
@@ -361,7 +399,9 @@ Java_info_cemu_cemu_nativeinterface_NativeEmulation_prepareTitle([[maybe_unused]
 		CafeTitleFileType fileType = DetermineCafeSystemFileType(launchPath);
 		if (fileType == CafeTitleFileType::RPX || fileType == CafeTitleFileType::ELF)
 		{
+			LogNativeInit("prepareTitle standalone RPX begin");
 			CafeSystem::PREPARE_STATUS_CODE r = CafeSystem::PrepareForegroundTitleFromStandaloneRPX(launchPath);
+			__android_log_print(ANDROID_LOG_INFO, NATIVE_INIT_TAG, "prepareTitle standalone RPX end result=%d", static_cast<int>(r));
 			if (r != CafeSystem::PREPARE_STATUS_CODE::SUCCESS)
 			{
 				return ERROR_UNKNOWN;
@@ -381,29 +421,38 @@ Java_info_cemu_cemu_nativeinterface_NativeEmulation_prepareTitle([[maybe_unused]
 		}
 	}
 
+	LogNativeInit("prepareTitle successful");
 	return SUCCESSFUL;
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeEmulation_launchTitle([[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz)
 {
+	LogNativeInit("launchTitle CafeSystem::LaunchForegroundTitle begin");
 	CafeSystem::LaunchForegroundTitle();
+	LogNativeInit("launchTitle CafeSystem::LaunchForegroundTitle end");
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeEmulation_stopEmulation([[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz)
 {
+	LogNativeInit("stopEmulation CafeSystem::ShutdownTitle begin");
 	CafeSystem::ShutdownTitle();
+	LogNativeInit("stopEmulation CafeSystem::ShutdownTitle end");
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeEmulation_pauseTitle([[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz)
 {
+	LogNativeInit("pauseTitle begin");
 	CafeSystem::PauseTitle();
+	LogNativeInit("pauseTitle end");
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeEmulation_resumeTitle([[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz)
 {
+	LogNativeInit("resumeTitle begin");
 	CafeSystem::ResumeTitle();
+	LogNativeInit("resumeTitle end");
 }

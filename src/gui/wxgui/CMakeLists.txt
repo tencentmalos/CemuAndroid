@@ -114,13 +114,6 @@ add_library(CemuWxGui STATIC
   wxHelper.h
 )
 
-if (ENABLE_OPENGL)
-  target_sources(CemuWxGui PRIVATE
-    canvas/OpenGLCanvas.cpp
-    canvas/OpenGLCanvas.h
-  )
-endif()
-
 if (ENABLE_VULKAN)
   target_sources(CemuWxGui PRIVATE
     canvas/VulkanCanvas.cpp

@@ -103,8 +103,6 @@ LatteDecompilerShader* LatteShader_CreateShaderFromDecompilerOutput(LatteDecompi
 void LatteShader_CreateRendererShader(LatteDecompilerShader* shader, bool compileAsync);
 void LatteShader_FinishCompilation(LatteDecompilerShader* shader);
 
-void LatteShader_prepareSeparableUniforms(LatteDecompilerShader* shader);
-
 void LatteSHRC_RegisterShader(LatteDecompilerShader* shader, uint64 baseHash, uint64 auxHash);
 
 void LatteShader_CleanupAfterCompile(LatteDecompilerShader* shader);

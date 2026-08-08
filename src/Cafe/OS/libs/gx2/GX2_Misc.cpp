@@ -8,6 +8,7 @@
 #include "Cafe/HW/Latte/Core/LatteBufferCache.h"
 #include "Cafe/HW/Latte/Core/LattePM4.h"
 #include "GX2_Command.h"
+#include "GX2_Draw.h"
 #include "GX2_Event.h"
 #include "GX2_Misc.h"
 #include "GX2_Memory.h"
@@ -183,6 +184,7 @@ namespace GX2
         sGX2MainCoreIndex = 0;
         GX2CommandResetToDefaultState();
         GX2EventResetToDefaultState();
+		GX2DrawResetToDefaultState();
 	}
 
 	sint32 GX2GetMainCoreId(PPCInterpreter_t* hCPU)

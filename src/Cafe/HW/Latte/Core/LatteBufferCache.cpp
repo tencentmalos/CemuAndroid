@@ -1,4 +1,5 @@
 #include "Cafe/HW/Latte/Renderer/Renderer.h"
+#include "Cafe/HW/Latte/Core/LatteBufferCache.h"
 #include "util/ChunkedHeap/ChunkedHeap.h"
 #include "util/helpers/fspinlock.h"
 #include "config/ActiveSettings.h"
@@ -7,6 +8,20 @@
 #define CACHE_PAGE_SIZE_M1	(CACHE_PAGE_SIZE-1)
 
 uint32 g_currentCacheChronon = 0;
+
+namespace
+{
+	thread_local LatteBufferCacheUploadSource s_uploadSource =
+		LatteBufferCacheUploadSource::Other;
+}
+
+LatteBufferCacheUploadSource LatteBufferCache_setUploadSource(
+	LatteBufferCacheUploadSource source)
+{
+	const LatteBufferCacheUploadSource previousSource = s_uploadSource;
+	s_uploadSource = source;
+	return previousSource;
+}
 
 template<typename TRangeType, typename TNodeObject>
 class IntervalTree
@@ -1230,7 +1245,9 @@ private:
 		// reset write tracking
 		checkAndSyncModifications(rangeBegin, rangeEnd, false);
 
-		g_renderer->bufferCache_upload(memory_getPointerFromPhysicalOffset(rangeBegin), rangeEnd - rangeBegin, getBufferOffset(rangeBegin));
+		const uint32 uploadSize = rangeEnd - rangeBegin;
+		LattePerformanceMonitor_recordHostBufferCacheUpload(s_uploadSource, uploadSize);
+		g_renderer->bufferCache_upload(memory_getPointerFromPhysicalOffset(rangeBegin), uploadSize, getBufferOffset(rangeBegin));
 	}
 
 	void syncFromNode(BufferCacheNode* srcNode)
@@ -1239,7 +1256,9 @@ private:
 		MPTR rangeBegin = std::max(m_rangeBegin, srcNode->m_rangeBegin);
 		MPTR rangeEnd = std::min(m_rangeEnd, srcNode->m_rangeEnd);
 		cemu_assert_debug(rangeBegin < rangeEnd);
-		g_renderer->bufferCache_copy(srcNode->getBufferOffset(rangeBegin), this->getBufferOffset(rangeBegin), rangeEnd - rangeBegin);
+		const uint32 copySize = rangeEnd - rangeBegin;
+		LattePerformanceMonitor_recordHostBufferCacheCopy(copySize);
+		g_renderer->bufferCache_copy(srcNode->getBufferOffset(rangeBegin), this->getBufferOffset(rangeBegin), copySize);
 		// copy page checksums and information
 		sint32 numPages = getPageCountFromRangeAligned(rangeBegin, rangeEnd);
 		CachePageInfo* pageInfoDst = this->m_pageInfo.data() + this->getPageIndexFromAddrAligned(rangeBegin);
@@ -1268,7 +1287,9 @@ private:
 		{
 			m_pageInfo[firstPage + i].hash = hashPage(s_pageUploadBuffer.data() + i * CACHE_PAGE_SIZE);
 		}
-		g_renderer->bufferCache_upload(s_pageUploadBuffer.data(), uploadRangeEnd - uploadRangeBegin, getBufferOffset(uploadRangeBegin));
+		const uint32 uploadSize = uploadRangeEnd - uploadRangeBegin;
+		LattePerformanceMonitor_recordHostBufferCacheUpload(s_uploadSource, uploadSize);
+		g_renderer->bufferCache_upload(s_pageUploadBuffer.data(), uploadSize, getBufferOffset(uploadRangeBegin));
 	}
 
 	// upload only non-streamout data of a single page
@@ -1295,7 +1316,9 @@ private:
 					uint32 uploadRelRangeBegin = blockBegin * 16;
 					uint32 uploadRelRangeEnd = i * 16;
 					cemu_assert_debug(uploadRelRangeEnd > uploadRelRangeBegin);
-					g_renderer->bufferCache_upload(pageCopy + uploadRelRangeBegin, uploadRelRangeEnd - uploadRelRangeBegin, getBufferOffset(pageBase + uploadRelRangeBegin));
+					const uint32 uploadSize = uploadRelRangeEnd - uploadRelRangeBegin;
+					LattePerformanceMonitor_recordHostBufferCacheUpload(s_uploadSource, uploadSize);
+					g_renderer->bufferCache_upload(pageCopy + uploadRelRangeBegin, uploadSize, getBufferOffset(pageBase + uploadRelRangeBegin));
 					blockBegin = -1;
 				}
 				pagePtrU64 += 2;
@@ -1310,7 +1333,9 @@ private:
 			uint32 uploadRelRangeBegin = blockBegin * 16;
 			uint32 uploadRelRangeEnd = CACHE_PAGE_SIZE;
 			cemu_assert_debug(uploadRelRangeEnd > uploadRelRangeBegin);
-			g_renderer->bufferCache_upload(pageCopy + uploadRelRangeBegin, uploadRelRangeEnd - uploadRelRangeBegin, getBufferOffset(pageBase + uploadRelRangeBegin));
+			const uint32 uploadSize = uploadRelRangeEnd - uploadRelRangeBegin;
+			LattePerformanceMonitor_recordHostBufferCacheUpload(s_uploadSource, uploadSize);
+			g_renderer->bufferCache_upload(pageCopy + uploadRelRangeBegin, uploadSize, getBufferOffset(pageBase + uploadRelRangeBegin));
 			blockBegin = -1;
 		}
 		return hasStreamoutBlocks;

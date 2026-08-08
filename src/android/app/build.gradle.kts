@@ -120,7 +120,6 @@ android {
                     "-DENABLE_LTO=OFF",
                     "-DENABLE_SDL=OFF",
                     "-DENABLE_WXWIDGETS=OFF",
-                    "-DENABLE_OPENGL=OFF",
                     "-DENABLE_BLUEZ=OFF",
                     "-DBUNDLE_SPEEX=ON",
                     "-DENABLE_DISCORD_RPC=OFF",

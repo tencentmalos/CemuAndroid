@@ -3,8 +3,16 @@
 #include "Cafe/Diagnostics/GuestExecutableDump.h"
 #include "Cafe/Diagnostics/GuestDebugger.h"
 #include "Cafe/Diagnostics/GuestProfiler.h"
+#include "Cafe/Diagnostics/RenderDocGuestFrameCapture.h"
+#include "Cafe/Diagnostics/SurfaceResolutionDiagnostics.h"
+#include "Cafe/HW/Latte/Core/Latte.h"
+#include "Cafe/HW/Latte/Core/LatteFrameGraphShadow.h"
+#include "Cafe/HW/Latte/Core/LattePerformanceMonitor.h"
 
 #include "Cafe/CafeSystem.h"
+#include "Cafe/OS/libs/gx2/GX2_Draw.h"
+#include "Cafe/OS/libs/gx2/GX2_Event.h"
+#include "Cafe/OS/libs/gx2/GX2_Query.h"
 
 #include <cstdlib>
 #include <limits>
@@ -55,6 +63,77 @@ namespace
 			GuestExecutableDump::RegisterDebugCommands(registry);
 			GuestDebugger::RegisterDebugCommands(registry);
 			GuestProfiler::RegisterDebugCommands(registry);
+			registry.Register("renderdoc_guest_capture", "Capture one complete Guest GPU frame with RenderDoc", [](const std::vector<std::string>& args) {
+				if (!args.empty())
+					return std::string{"usage: renderdoc_guest_capture\n"};
+				return RenderDocGuestFrameCapture::Request();
+			});
+			registry.Register("renderdoc_guest_capture_status", "Report Guest-frame RenderDoc capture state", [](const std::vector<std::string>& args) {
+				if (!args.empty())
+					return std::string{"usage: renderdoc_guest_capture_status\n"};
+				return RenderDocGuestFrameCapture::GetStatus();
+			});
+			SurfaceResolutionDiagnostics::RegisterDebugCommands(registry);
+			registry.Register("structured_draw_status", "Show Guest-to-Host structured draw fast-path state", [](const std::vector<std::string>& args) {
+				if (!args.empty())
+					return std::string{"usage: structured_draw_status\n"};
+				return GX2::GX2GetStructuredDrawFastPathStatus();
+			});
+			registry.Register("display_dependency_status", "Show Guest VSYNC counter to Host event dependency state", [](const std::vector<std::string>& args) {
+				if (!args.empty())
+					return std::string{"usage: display_dependency_status\n"};
+				return GX2::GX2GetDisplayOrdinalDependencyStatus();
+			});
+			registry.Register("draw_done_visibility_status", "Show registered DrawDone Guest-memory visibility deferral state", [](const std::vector<std::string>& args) {
+				if (!args.empty())
+					return std::string{"usage: draw_done_visibility_status\n"};
+				return GX2::GX2GetDrawDoneVisibilityDeferralStatus();
+			});
+			registry.Register("guest_feedback_status", "Show Guest GPU feedback generation observation state", [](const std::vector<std::string>& args) {
+				if (!args.empty())
+					return std::string{"usage: guest_feedback_status\n"};
+				return GX2::GX2GetGuestFeedbackStatus();
+			});
+			registry.Register("occlusion_query_policy", "Show or change the experimental Host occlusion-query policy", [](const std::vector<std::string>& args) {
+				if (args.empty())
+					return LatteQuery_GetPolicyStatus();
+				if (args.size() != 1 || (args.front() != "accurate" && args.front() != "always_visible"))
+					return std::string{"usage: occlusion_query_policy [accurate|always_visible]\n"};
+				LatteQuery_RequestPolicy(args.front() == "always_visible"
+					? LatteOcclusionQueryPolicy::AlwaysVisible
+					: LatteOcclusionQueryPolicy::Accurate);
+				return LatteQuery_GetPolicyStatus();
+			});
+			registry.Register("occlusion_query_consumer_status", "Show Guest CPU reads of occlusion-query results", [](const std::vector<std::string>& args) {
+				if (!args.empty())
+					return std::string{"usage: occlusion_query_consumer_status\n"};
+				return GX2::GX2GetOcclusionQueryConsumerStatus();
+			});
+			registry.Register("command_translation_status", "Show Guest command to Host translation hotspot state", [](const std::vector<std::string>& args) {
+				if (args.size() == 1 && args.front() == "reset")
+				{
+					LattePerformanceMonitor_resetCommandTranslationStatus();
+					return std::string{"command_translation_status reset\n"};
+				}
+				if (!args.empty())
+					return std::string{"usage: command_translation_status [reset]\n"};
+				return LattePerformanceMonitor_getCommandTranslationStatus();
+			});
+			registry.Register("framegraph_shadow_status", "Control and report the non-executing Host FrameGraph shadow compiler", [](const std::vector<std::string>& args) {
+				if (args.empty())
+					return LatteFrameGraphShadow::GetStatus();
+				if (args.size() != 1)
+					return std::string{"usage: framegraph_shadow_status [on|off|reset]\n"};
+				if (args.front() == "on")
+					LatteFrameGraphShadow::SetEnabled(true);
+				else if (args.front() == "off")
+					LatteFrameGraphShadow::SetEnabled(false);
+				else if (args.front() == "reset")
+					LatteFrameGraphShadow::Reset();
+				else
+					return std::string{"usage: framegraph_shadow_status [on|off|reset]\n"};
+				return LatteFrameGraphShadow::GetStatus();
+			});
 			registry.Register("open_last_game", "Open the most recently launched game", [](const std::vector<std::string>& args) {
 				if (!args.empty())
 					return std::string{"usage: open_last_game\n"};
@@ -186,6 +265,7 @@ void CemuDiagnostics::Shutdown()
 {
 	CemuWarmup::Shutdown();
 	GuestProfiler::Shutdown();
+	RenderDocGuestFrameCapture::Shutdown();
 	std::scoped_lock lock{s_lifecycleMutex};
 #if BOOST_PLAT_ANDROID
 	spatial::debugbus::SetDumpsysRegistry(nullptr);

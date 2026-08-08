@@ -27,6 +27,10 @@ build_arm
 cmake-build-*/
 out/
 .cache/
+_out/
+__pycache__/
+*.py[cod]
+/build_*/
 bin/Cemu_*
 bin/Cemu_*.exe
 

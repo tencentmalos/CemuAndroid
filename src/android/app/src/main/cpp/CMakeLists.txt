@@ -29,6 +29,7 @@ target_include_directories(CemuAndroid PRIVATE
 
 target_link_libraries(CemuAndroid PRIVATE
         -landroid
+        -llog
         CemuCommon
         CemuAudio
         CemuComponents
@@ -36,6 +37,7 @@ target_link_libraries(CemuAndroid PRIVATE
         CemuBin
         CemuGui
         CemuInput
+        CemuUtil
         spatial::foundation_debugbus
         ZArchive::zarchive
         stb

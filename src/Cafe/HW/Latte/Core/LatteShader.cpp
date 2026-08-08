@@ -384,10 +384,6 @@ void LatteShader_FinishCompilation(LatteDecompilerShader* shader)
 		return;
 	}
 	shader->shader->WaitForCompiled();
-
-#ifdef ENABLE_OPENGL
-	LatteShader_prepareSeparableUniforms(shader);
-#endif
 	LatteShader_CleanupAfterCompile(shader);
 }
 
@@ -698,12 +694,6 @@ static void InitUniformLayoutFromDecompiler(
     const LatteDecompilerOutput_t& decompilerOutput
 )
 {
-	if (g_renderer->GetType() == RendererAPI::OpenGL)
-	{
-		// hack - for OpenGL these are retrieved in _prepareSeparableUniforms()
-		shader->uniform.count_uniformRegister = decompilerOutput.uniformOffsetsGL.count_uniformRegister;
-		return;
-	}
     const auto& offsets = decompilerOutput.uniformOffsetsVK;
 
     shader->uniform.loc_remapped = offsets.offset_remapped;
@@ -745,9 +735,6 @@ LatteDecompilerShader* LatteShader_CreateShaderFromDecompilerOutput(LatteDecompi
 	// copy resource mapping
 	switch (g_renderer->GetType())
 	{
-	case RendererAPI::OpenGL:
-		shader->resourceMapping = decompilerOutput.resourceMappingGL;
-		break;
 	case RendererAPI::Vulkan:
 		shader->resourceMapping = decompilerOutput.resourceMappingVK;
 		break;
@@ -875,16 +862,6 @@ LatteDecompilerShader* LatteShader_CompileSeparableVertexShader(uint64 baseHash,
 	LatteShader_DumpRawShader(vertexShader->baseHash, vertexShader->auxHash, SHADER_DUMP_TYPE_VERTEX, vertexShaderPtr, vertexShaderSize);
 	LatteShader_CreateRendererShader(vertexShader, false);
 	performanceMonitor.numCompiledVS++;
-
-#ifdef ENABLE_OPENGL
-	if (g_renderer->GetType() == RendererAPI::OpenGL)
-	{
-		if (vertexShader->shader)
-			vertexShader->shader->PreponeCompilation(true);
-		LatteShader_FinishCompilation(vertexShader);
-	}
-#endif
-
 	LatteSHRC_RegisterShader(vertexShader, vertexShader->baseHash, vertexShader->auxHash);
 	return vertexShader;
 }
@@ -906,16 +883,6 @@ LatteDecompilerShader* LatteShader_CompileSeparableGeometryShader(uint64 baseHas
 	LatteShader_DumpRawShader(geometryShader->baseHash, geometryShader->auxHash, SHADER_DUMP_TYPE_COPY, geometryCopyShader, geometryCopyShaderSize);
 	LatteShader_CreateRendererShader(geometryShader, false);
 	performanceMonitor.numCompiledGS++;
-
-#ifdef ENABLE_OPENGL
-	if (g_renderer->GetType() == RendererAPI::OpenGL)
-	{
-		if (geometryShader->shader)
-			geometryShader->shader->PreponeCompilation(true);
-		LatteShader_FinishCompilation(geometryShader);
-	}
-#endif
-
 	LatteSHRC_RegisterShader(geometryShader, geometryShader->baseHash, geometryShader->auxHash);
 	return geometryShader;
 }
@@ -937,16 +904,6 @@ LatteDecompilerShader* LatteShader_CompileSeparablePixelShader(uint64 baseHash, 
 	{
 		LatteShaderCache_writeSeparablePixelShader(_shaderBaseHash_ps, psAuxHash, pixelShaderPtr, pixelShaderSize, LatteGPUState.contextRegister, usesGeometryShader);
 	}
-
-#ifdef ENABLE_OPENGL
-	if (g_renderer->GetType() == RendererAPI::OpenGL)
-	{
-		if (pixelShader->shader)
-			pixelShader->shader->PreponeCompilation(true);
-		LatteShader_FinishCompilation(pixelShader);
-	}
-#endif
-
 	LatteSHRC_RegisterShader(pixelShader, _shaderBaseHash_ps, psAuxHash);
 	return pixelShader;
 }

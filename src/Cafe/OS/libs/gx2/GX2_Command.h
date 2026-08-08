@@ -85,8 +85,17 @@ inline void gx2WriteGather_submit(Targs... args)
 
 namespace GX2
 {
+	enum class GuestGpuTagEmitResult : uint8
+	{
+		Emitted,
+		NoCommandBuffer,
+		DisplayList,
+	};
+
 	void GX2Command_Flush(uint32 numU32sForNextBuffer, bool triggerMarkerInterrupt = true);
 	void GX2ReserveCmdSpace(uint32 reservedFreeSpaceInU32);
+	GuestGpuTagEmitResult GX2EmitGuestGpuTag(bool begin, uint32 sectionId,
+		uint32 guestThreadId, uint32 guestLr, uint32 generation);
 
 	uint64 GX2GetLastSubmittedTimeStamp();
 	uint64 GX2GetRetiredTimeStamp();

@@ -30,7 +30,9 @@
 #include "Cafe/HW/Latte/Core/LatteTiming.h" // vsync control
 
 #include <cstdint>
+#include <chrono>
 #include <glslang/Public/ShaderLang.h>
+#include <vulkan/vulkan_format_traits.hpp>
 
 #include "spatial/profiler/Profiler.h"
 
@@ -55,7 +57,9 @@ const  std::vector<const char*> kOptionalDeviceExtensions =
 	VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME,
 	VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME,
 	VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME,
-	VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME
+	VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME,
+	VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME,
+	VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME
 };
 
 const std::vector<const char*> kRequiredDeviceExtensions =
@@ -852,7 +856,7 @@ VulkanRenderer::VulkanRenderer() : Renderer(RendererAPI::Vulkan)
 
 VulkanRenderer::~VulkanRenderer()
 {
-	SubmitCommandBuffer();
+	SubmitCommandBuffer(LatteVulkanSubmitReason::Shutdown);
 	WaitDeviceIdle();
 	WaitCommandBufferFinished(GetCurrentCommandBufferId());
 	DestroyGpuProfilerContext();
@@ -912,6 +916,8 @@ VulkanRenderer::~VulkanRenderer()
 	defaultShaders.copySurface_psColor2Depth = nullptr;
 	delete defaultShaders.copySurface_psDepth2Color;
 	defaultShaders.copySurface_psDepth2Color = nullptr;
+	delete defaultShaders.copySurface_psDepth2Depth;
+	defaultShaders.copySurface_psDepth2Depth = nullptr;
 
 	// destroy misc
 	for (auto& it : m_cmdBufferFences)
@@ -1227,7 +1233,7 @@ void VulkanRenderer::HandleScreenshotRequest(LatteTextureView* texView, bool pad
 		barrier_image<TRANSFER_READ, TRANSFER_WRITE | IMAGE_WRITE>(baseImageTex, region.imageSubresource, baseImageTex->GetDefaultLayout());
 	}
 
-	SubmitCommandBuffer();
+	SubmitCommandBuffer(LatteVulkanSubmitReason::TextureDump);
 	WaitCommandBufferFinished(GetCurrentCommandBufferId());
 
 	bool formatValid = true;
@@ -1335,6 +1341,14 @@ VkDeviceCreateInfo VulkanRenderer::CreateDeviceCreateInfo(const std::vector<VkDe
 		used_extensions.emplace_back(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
 		used_extensions.emplace_back(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
 	}
+	if (m_featureControl.deviceExtensions.load_store_op_none)
+		used_extensions.emplace_back(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+	else if (m_featureControl.deviceExtensions.render_pass_store_ops_qcom)
+		used_extensions.emplace_back(VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME);
+	if (m_featureControl.deviceExtensions.calibrated_timestamps_khr)
+		used_extensions.emplace_back(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+	else if (m_featureControl.deviceExtensions.calibrated_timestamps_ext)
+		used_extensions.emplace_back(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
 
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1435,6 +1449,10 @@ bool VulkanRenderer::CheckDeviceExtensionSupport(const VkPhysicalDevice device, 
 	info.deviceExtensions.pipeline_robustness = isExtensionAvailable(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
 	info.deviceExtensions.attachment_feedback_loop_layout = isExtensionAvailable(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
 	info.deviceExtensions.attachment_feedback_loop_dynamic_state = isExtensionAvailable(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
+	info.deviceExtensions.load_store_op_none = isExtensionAvailable(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+	info.deviceExtensions.render_pass_store_ops_qcom = isExtensionAvailable(VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME);
+	info.deviceExtensions.calibrated_timestamps_ext = isExtensionAvailable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+	info.deviceExtensions.calibrated_timestamps_khr = isExtensionAvailable(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
 	// dynamic rendering doesn't provide any benefits for us right now. Driver implementations are very unoptimized as of Feb 2022
 	info.deviceExtensions.present_wait = isExtensionAvailable(VK_KHR_PRESENT_WAIT_EXTENSION_NAME) && isExtensionAvailable(VK_KHR_PRESENT_ID_EXTENSION_NAME);
 
@@ -1902,7 +1920,7 @@ void VulkanRenderer::Initialize()
 
 void VulkanRenderer::Shutdown()
 {
-	SubmitCommandBuffer();
+	SubmitCommandBuffer(LatteVulkanSubmitReason::Shutdown);
 	WaitDeviceIdle();
 	// stop compilation threads
 	RendererShaderVk::Shutdown();
@@ -2100,7 +2118,7 @@ bool VulkanRenderer::ImguiBegin(bool mainWindow)
 	if (!AcquireNextSwapchainImage(mainWindow))
 		return false;
 
-	draw_endRenderPass();
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::ImGui);
 	m_state.currentPipeline = VK_NULL_HANDLE;
 
 	ImGui_ImplVulkan_CreateFontsTexture(m_state.currentCommandBuffer);
@@ -2140,7 +2158,7 @@ ImTextureID VulkanRenderer::GenerateTexture(const std::vector<uint8>& data, cons
 	catch (const std::exception& ex)
 	{
 		cemuLog_log(LogType::Force, "can't generate imgui texture: {}", ex.what());
-		return nullptr;
+		return ImTextureID_Invalid;
 	}
 }
 
@@ -2193,6 +2211,7 @@ void VulkanRenderer::InitFirstCommandBuffer()
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	vkBeginCommandBuffer(m_state.currentCommandBuffer, &beginInfo);
+	BeginGpuProfilerCommandBuffer();
 
 	vkCmdSetViewport(m_state.currentCommandBuffer, 0, 1, &m_state.currentViewport);
 	vkCmdSetScissor(m_state.currentCommandBuffer, 0, 1, &m_state.currentScissorRect);
@@ -2248,17 +2267,21 @@ void VulkanRenderer::WaitForNextFinishedCommandBuffer()
 	ProcessFinishedCommandBuffers();
 }
 
-void VulkanRenderer::SubmitCommandBuffer(VkSemaphore signalSemaphore, VkSemaphore waitSemaphore)
+void VulkanRenderer::SubmitCommandBuffer(LatteVulkanSubmitReason reason, VkSemaphore signalSemaphore,
+	VkSemaphore waitSemaphore)
 {
 	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.submit");
+	const auto submitStart = std::chrono::steady_clock::now();
+	const uint32 recordedDrawPasses = m_recordedDrawcalls;
 	{
 		SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.submit.end_render_pass");
-		draw_endRenderPass();
+		draw_endRenderPass(LatteVulkanRenderPassEndReason::CommandBufferSubmit);
 	}
 
 	{
 		SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.submit.collect_queries");
 		occlusionQuery_notifyEndCommandBuffer();
+		EndGpuProfilerCommandBuffer();
 		InitializeGpuProfilerContext();
 		CollectGpuProfilerQueries(m_state.currentCommandBuffer);
 	}
@@ -2316,6 +2339,7 @@ void VulkanRenderer::SubmitCommandBuffer(VkSemaphore signalSemaphore, VkSemaphor
 	auto nextCmdBufferIndex = (m_commandBufferIndex + 1) % m_commandBuffers.size();
 	if (nextCmdBufferIndex == m_commandBufferSyncIndex)
 	{
+		SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.completion.wait.command_buffer_recycle");
 		// force wait for the next command buffer
 		cemuLog_logDebug(LogType::Force, "Vulkan: Waiting for available command buffer...");
 		WaitForNextFinishedCommandBuffer();
@@ -2333,6 +2357,7 @@ void VulkanRenderer::SubmitCommandBuffer(VkSemaphore signalSemaphore, VkSemaphor
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 		vkBeginCommandBuffer(m_state.currentCommandBuffer, &beginInfo);
+		BeginGpuProfilerCommandBuffer();
 
 		// make sure some states are set for this command buffer
 		vkCmdSetViewport(m_state.currentCommandBuffer, 0, 1, &m_state.currentViewport);
@@ -2345,8 +2370,13 @@ void VulkanRenderer::SubmitCommandBuffer(VkSemaphore signalSemaphore, VkSemaphor
 	}
 
 	m_recordedDrawcalls = 0;
-	m_submitThreshold = 300;
+	m_submitThreshold = kDefaultSubmitDrawPassThreshold;
 	m_submitOnIdle = false;
+	m_submitSoonReason = LatteVulkanSubmitReason::DrawThreshold;
+	m_submitOnIdleReason = LatteVulkanSubmitReason::CommandProcessorIdle;
+	const uint64 submitNanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
+		std::chrono::steady_clock::now() - submitStart).count();
+	LattePerformanceMonitor_recordHostVulkanSubmit(reason, recordedDrawPasses, submitNanoseconds);
 }
 
 void VulkanRenderer::InitializeGpuProfilerContext()
@@ -2378,6 +2408,14 @@ void VulkanRenderer::InitializeGpuProfilerContext()
 	param.commandBuffer = reinterpret_cast<void*>(profilerCommandBuffer);
 	param.getInstanceProcAddr = reinterpret_cast<void (*)()>(vkGetInstanceProcAddr);
 	param.getDeviceProcAddr = reinterpret_cast<void (*)()>(vkGetDeviceProcAddr);
+	param.calibratedTimestamps = m_featureControl.deviceExtensions.calibrated_timestamps_ext ||
+		m_featureControl.deviceExtensions.calibrated_timestamps_khr;
+	const char* calibrationApi = m_featureControl.deviceExtensions.calibrated_timestamps_khr ? "KHR" :
+		(m_featureControl.deviceExtensions.calibrated_timestamps_ext ? "EXT" : "none");
+	cemuLog_log(LogType::Force,
+		"Vulkan profiler timestamp calibration: api={} hardware={} fallback={}", calibrationApi,
+		param.calibratedTimestamps ? "requested" : "unavailable",
+		param.calibratedTimestamps ? "not-needed" : "initial-query-pair");
 	spatial::modules::getProfiler()->createGPUProfilerCtx(&param);
 	vkFreeCommandBuffers(m_logicalDevice, m_commandPool, 1, &profilerCommandBuffer);
 	m_gpuProfilerContextCreated = true;
@@ -2385,10 +2423,95 @@ void VulkanRenderer::InitializeGpuProfilerContext()
 
 void VulkanRenderer::DestroyGpuProfilerContext()
 {
+	EndGpuProfilerGuestRenderPass();
+	EndGpuProfilerCommandBuffer();
 	if (!m_gpuProfilerContextCreated)
 		return;
 	spatial::modules::getProfiler()->destroyGPUProfilerCtx();
 	m_gpuProfilerContextCreated = false;
+}
+
+void VulkanRenderer::BeginGpuProfilerCommandBuffer()
+{
+	if (m_gpuCommandBufferProfilerScope || !m_gpuProfilerContextCreated || !spatial::modules::gProfilerConnected)
+		return;
+	static auto commandBufferMethod = spatial::modules::getProfiler()->createMethodInfo(
+		"vulkan.command_buffer.gpu", "", __FILE__, __LINE__, SPATIAL_FUNCTION);
+	m_gpuCommandBufferProfilerScope = std::make_unique<CemuVulkanGpuProfilerScope>(
+		commandBufferMethod, m_state.currentCommandBuffer);
+}
+
+void VulkanRenderer::EndGpuProfilerCommandBuffer()
+{
+	EndGpuProfilerGuestRenderPass();
+	m_gpuCommandBufferProfilerScope.reset();
+}
+
+void VulkanRenderer::BeginGpuProfilerGuestRenderPass()
+{
+	if (m_gpuGuestRenderPassProfilerScope || !m_gpuProfilerContextCreated ||
+		!spatial::modules::gProfilerConnected)
+		return;
+
+	const spatial::ProfilerMethodInfo* renderPassMethod{};
+	switch (m_nextRenderPassStartReason)
+	{
+	case LatteVulkanRenderPassEndReason::FramebufferChange:
+	{
+		static auto method = spatial::modules::getProfiler()->createMethodInfo(
+			"vulkan.render_pass.guest.framebuffer_change", "", __FILE__, __LINE__, SPATIAL_FUNCTION);
+		renderPassMethod = &method;
+		break;
+	}
+	case LatteVulkanRenderPassEndReason::SelfDependency:
+	{
+		static auto pixelMethod = spatial::modules::getProfiler()->createMethodInfo(
+			"vulkan.render_pass.guest.self_dependency.pixel", "", __FILE__, __LINE__, SPATIAL_FUNCTION);
+		static auto nonPixelMethod = spatial::modules::getProfiler()->createMethodInfo(
+			"vulkan.render_pass.guest.self_dependency.non_pixel", "", __FILE__, __LINE__, SPATIAL_FUNCTION);
+		renderPassMethod = m_nextRenderPassSelfDependencyHasNonPixel ? &nonPixelMethod : &pixelMethod;
+		break;
+	}
+	case LatteVulkanRenderPassEndReason::Readback:
+	case LatteVulkanRenderPassEndReason::TextureOperation:
+	case LatteVulkanRenderPassEndReason::SurfaceCopy:
+	{
+		static auto method = spatial::modules::getProfiler()->createMethodInfo(
+			"vulkan.render_pass.guest.after_texture_operation", "", __FILE__, __LINE__, SPATIAL_FUNCTION);
+		renderPassMethod = &method;
+		break;
+	}
+	case LatteVulkanRenderPassEndReason::BufferOperation:
+	{
+		static auto method = spatial::modules::getProfiler()->createMethodInfo(
+			"vulkan.render_pass.guest.after_buffer_operation", "", __FILE__, __LINE__, SPATIAL_FUNCTION);
+		renderPassMethod = &method;
+		break;
+	}
+	case LatteVulkanRenderPassEndReason::CommandBufferSubmit:
+	{
+		static auto method = spatial::modules::getProfiler()->createMethodInfo(
+			"vulkan.render_pass.guest.after_submit", "", __FILE__, __LINE__, SPATIAL_FUNCTION);
+		renderPassMethod = &method;
+		break;
+	}
+	default:
+	{
+		static auto method = spatial::modules::getProfiler()->createMethodInfo(
+			"vulkan.render_pass.guest.other", "", __FILE__, __LINE__, SPATIAL_FUNCTION);
+		renderPassMethod = &method;
+		break;
+	}
+	}
+	m_nextRenderPassStartReason = LatteVulkanRenderPassEndReason::Other;
+	m_nextRenderPassSelfDependencyHasNonPixel = false;
+	m_gpuGuestRenderPassProfilerScope = std::make_unique<CemuVulkanGpuProfilerScope>(
+		*renderPassMethod, m_state.currentCommandBuffer);
+}
+
+void VulkanRenderer::EndGpuProfilerGuestRenderPass()
+{
+	m_gpuGuestRenderPassProfilerScope.reset();
 }
 
 void VulkanRenderer::CollectGpuProfilerQueries(VkCommandBuffer commandBuffer)
@@ -2400,15 +2523,19 @@ void VulkanRenderer::CollectGpuProfilerQueries(VkCommandBuffer commandBuffer)
 }
 
 // submit within next 10 drawcalls
-void VulkanRenderer::RequestSubmitSoon()
+void VulkanRenderer::RequestSubmitSoon(LatteVulkanSubmitReason reason)
 {
 	m_submitThreshold = std::min(m_submitThreshold, m_recordedDrawcalls + 10);
+	if (reason == LatteVulkanSubmitReason::Readback || m_submitSoonReason == LatteVulkanSubmitReason::DrawThreshold)
+		m_submitSoonReason = reason;
 }
 
 // command buffer will be submitted when GPU has no more commands to process or when threshold is reached
-void VulkanRenderer::RequestSubmitOnIdle()
+void VulkanRenderer::RequestSubmitOnIdle(LatteVulkanSubmitReason reason)
 {
 	m_submitOnIdle = true;
+	if (reason == LatteVulkanSubmitReason::Readback || m_submitOnIdleReason == LatteVulkanSubmitReason::CommandProcessorIdle)
+		m_submitOnIdleReason = reason;
 }
 
 uint64 VulkanRenderer::GetCurrentCommandBufferId() const
@@ -2421,10 +2548,11 @@ bool VulkanRenderer::HasCommandBufferFinished(uint64 commandBufferId) const
 	return m_countCommandBufferFinished > commandBufferId;
 }
 
-void VulkanRenderer::WaitCommandBufferFinished(uint64 commandBufferId)
+void VulkanRenderer::WaitCommandBufferFinished(uint64 commandBufferId, LatteVulkanSubmitReason reason)
 {
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("vulkan.completion.wait.submission");
 	if (commandBufferId == m_numSubmittedCmdBuffers)
-		SubmitCommandBuffer();
+		SubmitCommandBuffer(reason);
 	while (HasCommandBufferFinished(commandBufferId) == false)
 		WaitForNextFinishedCommandBuffer();
 }
@@ -3117,13 +3245,14 @@ bool VulkanRenderer::AcquireNextSwapchainImage(bool mainWindow)
 	if (!result)
 		return false;
 
-	SubmitCommandBuffer(VK_NULL_HANDLE, chainInfo.ConsumeAcquireSemaphore());
+	SubmitCommandBuffer(LatteVulkanSubmitReason::SwapchainAcquire, VK_NULL_HANDLE,
+		chainInfo.ConsumeAcquireSemaphore());
 	return true;
 }
 
 void VulkanRenderer::RecreateSwapchain(bool mainWindow, bool skipCreate)
 {
-	SubmitCommandBuffer();
+	SubmitCommandBuffer(LatteVulkanSubmitReason::SwapchainRecreate);
 	WaitDeviceIdle();
 	auto& chainInfo = GetChainInfo(mainWindow);
 
@@ -3208,7 +3337,7 @@ void VulkanRenderer::SwapBuffer(bool mainWindow)
 	const size_t currentFrameCmdBufferID = GetCurrentCommandBufferId();
 
 	VkSemaphore presentSemaphore = chainInfo.m_presentSemaphores[chainInfo.swapchainImageIndex];
-	SubmitCommandBuffer(presentSemaphore); // submit all command and signal semaphore
+	SubmitCommandBuffer(LatteVulkanSubmitReason::Present, presentSemaphore); // submit all command and signal semaphore
 
 	cemu_assert_debug(m_numSubmittedCmdBuffers > 0);
 
@@ -3284,7 +3413,7 @@ void VulkanRenderer::SwapBuffer(bool mainWindow)
 void VulkanRenderer::Flush(bool waitIdle)
 {
 	if (m_recordedDrawcalls > 0 || m_submitOnIdle)
-		SubmitCommandBuffer();
+		SubmitCommandBuffer(m_submitOnIdle ? m_submitOnIdleReason : LatteVulkanSubmitReason::ExplicitFlush);
 	if (waitIdle)
 		WaitCommandBufferFinished(GetCurrentCommandBufferId());
 }
@@ -3292,14 +3421,14 @@ void VulkanRenderer::Flush(bool waitIdle)
 void VulkanRenderer::NotifyLatteCommandProcessorIdle()
 {
 	if (m_submitOnIdle)
-		SubmitCommandBuffer();
+		SubmitCommandBuffer(m_submitOnIdleReason);
 }
 
 void VulkanBenchmarkPrintResults();
 
 void VulkanRenderer::SwapBuffers(bool swapTV, bool swapDRC)
 {
-	SubmitCommandBuffer();
+	SubmitCommandBuffer(LatteVulkanSubmitReason::FrameBoundary);
 
 	if (swapTV && IsSwapchainInfoValid(true))
 		SwapBuffer(true);
@@ -3326,7 +3455,8 @@ void VulkanRenderer::ClearColorbuffer(bool padView)
 
 void VulkanRenderer::ClearColorImageRaw(VkImage image, uint32 sliceIndex, uint32 mipIndex, const VkClearColorValue& color, VkImageLayout inputLayout, VkImageLayout outputLayout)
 {
-	draw_endRenderPass();
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::Clear);
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.transfer.clear_color", m_state.currentCommandBuffer);
 
 	VkImageSubresourceRange subresourceRange{};
 	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -3399,7 +3529,7 @@ void VulkanRenderer::DrawBackbufferQuad(LatteTextureView* texView, RendererOutpu
 
 	auto& chainInfo = GetChainInfo(!padView);
 	LatteTextureViewVk* texViewVk = (LatteTextureViewVk*)texView;
-	draw_endRenderPass();
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::Present);
 
 	// barrier for input texture
 	VkMemoryBarrier memoryBarrier{};
@@ -3460,6 +3590,8 @@ void VulkanRenderer::DrawBackbufferQuad(LatteTextureView* texView, RendererOutpu
 	vkCmdDraw(m_state.currentCommandBuffer, 6, 1, 0, 0);
 
 	vkCmdEndRenderPass(m_state.currentCommandBuffer);
+	LattePerformanceMonitor_recordHostVulkanRenderPassEnd(
+		LatteVulkanRenderPassEndReason::Present, 1);
 
 	// restore viewport
 	vkCmdSetViewport(m_state.currentCommandBuffer, 0, 1, &m_state.currentViewport);
@@ -3615,6 +3747,39 @@ TextureDecoder* VulkanRenderer::texture_chooseDecodedFormat(Latte::E_GX2SURFFMT 
 	return texFormatInfo.decoder;
 }
 
+LatteSurfaceFallbackReason VulkanRenderer::texture_preflightInternalResolution(
+	Latte::E_GX2SURFFMT format, Latte::E_DIM dim, bool isDepth, bool, uint32 mipLevels,
+	const LatteSurfaceExtent& extent, LatteSurfaceScaleClass scaleClass)
+{
+	if (dim != Latte::E_DIM::DIM_2D && dim != Latte::E_DIM::DIM_2D_ARRAY)
+		return LatteSurfaceFallbackReason::DimensionUnsupported;
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(m_physicalDevice, &properties);
+	if (extent.width == 0 || extent.height == 0 ||
+		extent.width > properties.limits.maxImageDimension2D ||
+		extent.height > properties.limits.maxImageDimension2D ||
+		extent.depth > properties.limits.maxImageArrayLayers ||
+		mipLevels > properties.limits.maxImageDimension2D)
+	{
+		return LatteSurfaceFallbackReason::DimensionUnsupported;
+	}
+	FormatInfoVK formatInfo{};
+	GetTextureFormatInfoVK(format, isDepth, dim, extent.width, extent.height, &formatInfo);
+	if (formatInfo.vkImageFormat == VK_FORMAT_UNDEFINED)
+		return LatteSurfaceFallbackReason::FormatUnsupported;
+	VkFormatProperties formatProperties{};
+	vkGetPhysicalDeviceFormatProperties(m_physicalDevice, formatInfo.vkImageFormat, &formatProperties);
+	VkFormatFeatureFlags required = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+	if (scaleClass == LatteSurfaceScaleClass::ScalableRenderFamily)
+	{
+		required |= isDepth ? VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT :
+			VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+	}
+	if ((formatProperties.optimalTilingFeatures & required) != required)
+		return LatteSurfaceFallbackReason::FormatUnsupported;
+	return LatteSurfaceFallbackReason::None;
+}
+
 void VulkanRenderer::ReleaseDestructibleObject(VKRDestructibleObject* destructibleObject)
 {
 	// destroy immediately if possible
@@ -3664,7 +3829,7 @@ VkDescriptorSetInfo::~VkDescriptorSetInfo()
 
 void VulkanRenderer::texture_clearSlice(LatteTexture* hostTexture, sint32 sliceIndex, sint32 mipIndex)
 {
-	draw_endRenderPass();
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::TextureOperation);
 	auto vkTexture = (LatteTextureVk*)hostTexture;
 	if (vkTexture->isDepth)
 		texture_clearDepthSlice(hostTexture, sliceIndex, mipIndex, true, vkTexture->hasStencil, 0.0f, 0);
@@ -3687,7 +3852,8 @@ void VulkanRenderer::texture_clearColorSlice(LatteTexture* hostTexture, sint32 s
 
 void VulkanRenderer::texture_clearDepthSlice(LatteTexture* hostTexture, uint32 sliceIndex, sint32 mipIndex, bool clearDepth, bool clearStencil, float depthValue, uint32 stencilValue)
 {
-	draw_endRenderPass(); // vkCmdClearDepthStencilImage must not be inside renderpass
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::TextureOperation); // vkCmdClearDepthStencilImage must not be inside renderpass
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.transfer.clear_depth_stencil", m_state.currentCommandBuffer);
 
 	auto vkTexture = (LatteTextureVk*)hostTexture;
 
@@ -3728,11 +3894,25 @@ void VulkanRenderer::texture_clearDepthSlice(LatteTexture* hostTexture, uint32 s
 
 void VulkanRenderer::texture_loadSlice(LatteTexture* hostTexture, sint32 width, sint32 height, sint32 depth, void* pixelData, sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize)
 {
+	const auto result = texture_loadSliceRepresentation(hostTexture, LatteTextureRepresentation::Render,
+		width, height, depth, pixelData, sliceIndex, mipIndex, compressedImageSize);
+	if (!result.succeeded)
+		cemuLog_log(LogType::Force, "Vulkan texture upload failed for {:08x}", hostTexture->physAddress);
+}
+
+LatteSurfaceOperationResult VulkanRenderer::texture_loadSliceRepresentation(LatteTexture* hostTexture,
+	LatteTextureRepresentation representation, sint32 width, sint32 height, sint32 depth, void* pixelData,
+	sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize)
+{
 	auto vkTexture = (LatteTextureVk*)hostTexture;
-	auto vkImageObj = vkTexture->GetImageObj();
+	const auto ensureResult = vkTexture->EnsureRepresentation(representation);
+	if (!ensureResult.succeeded)
+		return ensureResult;
+	auto vkImageObj = vkTexture->GetImageObj(representation);
 	vkImageObj->flagForCurrentCommandBuffer();
 
-	draw_endRenderPass();
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::TextureOperation);
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.transfer.texture_upload", m_state.currentCommandBuffer);
 
 	VkMemoryRequirements memRequirements;
 	vkGetImageMemoryRequirements(m_logicalDevice, vkImageObj->m_image, &memRequirements);
@@ -3756,7 +3936,15 @@ void VulkanRenderer::texture_loadSlice(LatteTexture* hostTexture, sint32 width, 
 	barrierSubresourceRange.mipLevel = mipIndex;
 	barrierSubresourceRange.baseArrayLayer = is3DTexture ? 0 : sliceIndex;
 	barrierSubresourceRange.layerCount = 1;
-	barrier_image<ANY_TRANSFER | IMAGE_READ | IMAGE_WRITE | HOST_WRITE, ANY_TRANSFER>(vkTexture, barrierSubresourceRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	VkImageSubresourceRange barrierRange{};
+	barrierRange.aspectMask = barrierSubresourceRange.aspectMask;
+	barrierRange.baseMipLevel = barrierSubresourceRange.mipLevel;
+	barrierRange.levelCount = 1;
+	barrierRange.baseArrayLayer = barrierSubresourceRange.baseArrayLayer;
+	barrierRange.layerCount = barrierSubresourceRange.layerCount;
+	barrier_image<ANY_TRANSFER | IMAGE_READ | IMAGE_WRITE | HOST_WRITE, ANY_TRANSFER>(vkImageObj->m_image, barrierRange,
+		vkTexture->GetImageLayout(barrierRange, representation), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	vkTexture->SetImageLayout(barrierRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, representation);
 
 	VkBufferImageCopy imageRegion[2]{};
 	sint32 imageRegionCount = 0;
@@ -3826,13 +4014,16 @@ void VulkanRenderer::texture_loadSlice(LatteTexture* hostTexture, sint32 width, 
 
 	vkCmdCopyBufferToImage(m_state.currentCommandBuffer, uploadResv.vkBuffer, vkImageObj->m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageRegionCount, imageRegion);
 
-	barrier_image<ANY_TRANSFER, ANY_TRANSFER | IMAGE_READ | IMAGE_WRITE>(vkTexture, barrierSubresourceRange, vkTexture->GetDefaultLayout());
+	barrier_image<ANY_TRANSFER, ANY_TRANSFER | IMAGE_READ | IMAGE_WRITE>(vkImageObj->m_image, barrierRange,
+		vkTexture->GetImageLayout(barrierRange, representation), vkTexture->GetDefaultLayout(representation));
+	vkTexture->SetImageLayout(barrierRange, vkTexture->GetDefaultLayout(representation), representation);
+	return LatteSurfaceOperationResult::Success(compressedImageSize);
 }
 
 LatteTexture* VulkanRenderer::texture_createTextureEx(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels,
-	uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth)
+	uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth, LatteSurfaceUsage initialUsage)
 {
-	return new LatteTextureVk(this, dim, physAddress, physMipAddress, format, width, height, depth, pitch, mipLevels, swizzle, tileMode, isDepth);
+	return new LatteTextureVk(this, dim, physAddress, physMipAddress, format, width, height, depth, pitch, mipLevels, swizzle, tileMode, isDepth, initialUsage);
 }
 
 void VulkanRenderer::texture_setLatteTexture(LatteTextureView* textureView, uint32 textureUnit)
@@ -3840,12 +4031,16 @@ void VulkanRenderer::texture_setLatteTexture(LatteTextureView* textureView, uint
 	m_state.boundTexture[textureUnit] = static_cast<LatteTextureViewVk*>(textureView);
 }
 
-void VulkanRenderer::texture_copyImageSubData(LatteTexture* src, sint32 srcMip, sint32 effectiveSrcX, sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip, sint32 effectiveDstX, sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth, sint32 effectiveCopyHeight, sint32 srcDepth)
+LatteSurfaceOperationResult VulkanRenderer::texture_copyImageSubData(LatteTexture* src, sint32 srcMip,
+	sint32 effectiveSrcX, sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip,
+	sint32 effectiveDstX, sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth,
+	sint32 effectiveCopyHeight, sint32 srcDepth)
 {
 	LatteTextureVk* srcVk = static_cast<LatteTextureVk*>(src);
 	LatteTextureVk* dstVk = static_cast<LatteTextureVk*>(dst);
 
-	draw_endRenderPass(); // vkCmdCopyImage must be called outside of a renderpass
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::TextureOperation); // vkCmdCopyImage must be called outside of a renderpass
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.transfer.texture_copy", m_state.currentCommandBuffer);
 
 	VKRObjectTexture* srcVkObj = srcVk->GetImageObj();
 	VKRObjectTexture* dstVkObj = dstVk->GetImageObj();
@@ -3907,7 +4102,7 @@ void VulkanRenderer::texture_copyImageSubData(LatteTexture* src, sint32 srcMip, 
 		if (mipWidth < 4 || mipHeight < 4)
 		{
 			cemuLog_logDebug(LogType::Force, "vkCmdCopyImage - blocked copy for unsupported uncompressed->compressed copy with dst smaller than 4x4");
-			return;
+			return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::FormatUnsupported);
 		}
 	}
 
@@ -3921,11 +4116,201 @@ void VulkanRenderer::texture_copyImageSubData(LatteTexture* src, sint32 srcMip, 
 	// make sure the transfer is finished before the image is read or written
 	barrier_image<SYNC_OP::ANY_TRANSFER, SYNC_OP::IMAGE_READ | SYNC_OP::IMAGE_WRITE | SYNC_OP::ANY_TRANSFER>(srcVk, region.srcSubresource, srcVk->GetDefaultLayout());
 	barrier_image<SYNC_OP::ANY_TRANSFER, SYNC_OP::IMAGE_READ | SYNC_OP::IMAGE_WRITE | SYNC_OP::ANY_TRANSFER>(dstVk, region.dstSubresource, dstVk->GetDefaultLayout());
+	return LatteSurfaceOperationResult::Success();
+}
+
+bool VulkanRenderer::texture_hasRepresentation(const LatteTexture* texture, LatteTextureRepresentation representation) const
+{
+	return static_cast<const LatteTextureVk*>(texture)->HasRepresentation(representation);
+}
+
+uint64 VulkanRenderer::texture_getRepresentationBytes(const LatteTexture* texture, LatteTextureRepresentation representation) const
+{
+	return static_cast<const LatteTextureVk*>(texture)->GetRepresentationBytes(representation);
+}
+
+LatteSurfaceOperationResult VulkanRenderer::texture_ensureRepresentation(LatteTexture* texture, LatteTextureRepresentation representation)
+{
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("SurfaceScale.Vulkan.EnsureRepresentation");
+	return static_cast<LatteTextureVk*>(texture)->EnsureRepresentation(representation);
+}
+
+LatteSurfaceOperationResult VulkanRenderer::texture_copyImageSubDataBetweenRepresentations(LatteTexture* source,
+	LatteTextureRepresentation sourceRepresentation, sint32 sourceMip, sint32 sourceX, sint32 sourceY, sint32 sourceSlice,
+	LatteTexture* destination, LatteTextureRepresentation destinationRepresentation, sint32 destinationMip, sint32 destinationX,
+	sint32 destinationY, sint32 destinationSlice, sint32 copyWidth, sint32 copyHeight, sint32 depth)
+{
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("SurfaceScale.Vulkan.NativeBoundaryCopy");
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("surface_scale.native_boundary_copy", m_state.currentCommandBuffer);
+	auto* sourceVk = static_cast<LatteTextureVk*>(source);
+	auto* destinationVk = static_cast<LatteTextureVk*>(destination);
+	auto sourceEnsure = sourceVk->EnsureRepresentation(sourceRepresentation);
+	if (!sourceEnsure.succeeded)
+		return sourceEnsure;
+	auto destinationEnsure = destinationVk->EnsureRepresentation(destinationRepresentation);
+	if (!destinationEnsure.succeeded)
+		return destinationEnsure;
+	auto* sourceObject = sourceVk->GetImageObj(sourceRepresentation);
+	auto* destinationObject = destinationVk->GetImageObj(destinationRepresentation);
+	if (!sourceObject || !destinationObject || sourceObject->m_imageAspect != destinationObject->m_imageAspect)
+	{
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::FormatUnsupported);
+	}
+	const bool exactFormat = sourceObject->m_format == destinationObject->m_format;
+	const bool sizeCompatibleColorFormat =
+		sourceObject->m_imageAspect == VK_IMAGE_ASPECT_COLOR_BIT &&
+		!Latte::IsCompressedFormat(source->format) &&
+		!Latte::IsCompressedFormat(destination->format) &&
+		vk::blockSize(static_cast<vk::Format>(sourceObject->m_format)) ==
+			vk::blockSize(static_cast<vk::Format>(destinationObject->m_format));
+	if (!exactFormat && !sizeCompatibleColorFormat)
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::FormatUnsupported);
+	if (source->Is3DTexture() || destination->Is3DTexture())
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::DimensionUnsupported);
+
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::TextureOperation);
+	sourceObject->flagForCurrentCommandBuffer();
+	destinationObject->flagForCurrentCommandBuffer();
+	VkImageSubresourceRange sourceRange{sourceObject->m_imageAspect, static_cast<uint32>(sourceMip), 1,
+		static_cast<uint32>(sourceSlice), static_cast<uint32>(depth)};
+	VkImageSubresourceRange destinationRange{destinationObject->m_imageAspect, static_cast<uint32>(destinationMip), 1,
+		static_cast<uint32>(destinationSlice), static_cast<uint32>(depth)};
+	barrier_image<IMAGE_WRITE | ANY_TRANSFER, TRANSFER_READ>(sourceObject->m_image, sourceRange,
+		sourceVk->GetImageLayout(sourceRange, sourceRepresentation), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+	sourceVk->SetImageLayout(sourceRange, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, sourceRepresentation);
+	barrier_image<IMAGE_READ | IMAGE_WRITE | ANY_TRANSFER, TRANSFER_WRITE>(destinationObject->m_image, destinationRange,
+		destinationVk->GetImageLayout(destinationRange, destinationRepresentation), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	destinationVk->SetImageLayout(destinationRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destinationRepresentation);
+	std::array<VkImageCopy, 3> regions{};
+	uint32 regionCount{};
+	for (VkImageAspectFlags aspect : {VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_STENCIL_BIT})
+	{
+		if ((sourceObject->m_imageAspect & aspect) == 0)
+			continue;
+		auto& region = regions[regionCount++];
+		region.srcOffset = {sourceX, sourceY, 0};
+		region.dstOffset = {destinationX, destinationY, 0};
+		region.extent = {static_cast<uint32>(copyWidth), static_cast<uint32>(copyHeight), 1};
+		region.srcSubresource = {aspect, static_cast<uint32>(sourceMip), static_cast<uint32>(sourceSlice), static_cast<uint32>(depth)};
+		region.dstSubresource = {aspect, static_cast<uint32>(destinationMip), static_cast<uint32>(destinationSlice), static_cast<uint32>(depth)};
+	}
+	vkCmdCopyImage(m_state.currentCommandBuffer, sourceObject->m_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		destinationObject->m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regionCount, regions.data());
+	barrier_image<TRANSFER_READ, IMAGE_READ | IMAGE_WRITE | ANY_TRANSFER>(sourceObject->m_image, sourceRange,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, sourceVk->GetDefaultLayout(sourceRepresentation));
+	sourceVk->SetImageLayout(sourceRange, sourceVk->GetDefaultLayout(sourceRepresentation), sourceRepresentation);
+	barrier_image<TRANSFER_WRITE, IMAGE_READ | IMAGE_WRITE | ANY_TRANSFER>(destinationObject->m_image, destinationRange,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destinationVk->GetDefaultLayout(destinationRepresentation));
+	destinationVk->SetImageLayout(destinationRange, destinationVk->GetDefaultLayout(destinationRepresentation), destinationRepresentation);
+	return LatteSurfaceOperationResult::Success();
+}
+
+LatteSurfaceOperationResult VulkanRenderer::texture_resampleRepresentation(LatteTexture* texture,
+	LatteTextureRepresentation sourceRepresentation, LatteTextureRepresentation destinationRepresentation,
+	const LatteSurfaceSubresourceRange& range, LatteSurfaceResampleFilter filter)
+{
+	SPATIAL_PROFILER_AUTO_SCOPE_NAME("SurfaceScale.Vulkan.Resample");
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("surface_scale.resample", m_state.currentCommandBuffer);
+	if (sourceRepresentation == destinationRepresentation || texture->RepresentationsAlias())
+		return LatteSurfaceOperationResult::Success();
+	if (texture->Is3DTexture() || texture->dim == Latte::E_DIM::DIM_1D)
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::DimensionUnsupported);
+	auto* textureVk = static_cast<LatteTextureVk*>(texture);
+	auto sourceEnsure = textureVk->EnsureRepresentation(sourceRepresentation);
+	if (!sourceEnsure.succeeded)
+		return sourceEnsure;
+	auto destinationEnsure = textureVk->EnsureRepresentation(destinationRepresentation);
+	if (!destinationEnsure.succeeded)
+		return destinationEnsure;
+	auto* sourceObject = textureVk->GetImageObj(sourceRepresentation);
+	auto* destinationObject = textureVk->GetImageObj(destinationRepresentation);
+
+	VkFormatProperties formatProperties{};
+	vkGetPhysicalDeviceFormatProperties(m_physicalDevice, sourceObject->m_format, &formatProperties);
+	const bool canBlit =
+		(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT) != 0 &&
+		(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT) != 0;
+	if (!canBlit)
+	{
+		if (sourceObject->m_imageAspect == VK_IMAGE_ASPECT_DEPTH_BIT &&
+			destinationObject->m_imageAspect == VK_IMAGE_ASPECT_DEPTH_BIT)
+		{
+			for (uint32 mip = range.firstMip; mip < range.firstMip + range.mipCount; ++mip)
+			{
+				const auto destinationExtent = texture->GetRepresentationExtent(destinationRepresentation, mip);
+				for (uint32 slice = range.firstSlice; slice < range.firstSlice + range.sliceCount; ++slice)
+				{
+					surfaceCopy_viaDrawcall(textureVk, static_cast<sint32>(mip),
+						static_cast<sint32>(slice), textureVk, static_cast<sint32>(mip),
+						static_cast<sint32>(slice), static_cast<sint32>(destinationExtent.width),
+						static_cast<sint32>(destinationExtent.height), sourceRepresentation,
+						destinationRepresentation);
+				}
+			}
+			return LatteSurfaceOperationResult::Success();
+		}
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+	}
+	LatteSurfaceResampleFilter effectiveFilter = filter;
+	if (filter == LatteSurfaceResampleFilter::Linear &&
+		(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == 0)
+	{
+		effectiveFilter = LatteSurfaceResampleFilter::Nearest;
+	}
+
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::TextureOperation);
+	sourceObject->flagForCurrentCommandBuffer();
+	destinationObject->flagForCurrentCommandBuffer();
+	const VkFilter vkFilter = effectiveFilter == LatteSurfaceResampleFilter::Linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+	for (uint32 mip = range.firstMip; mip < range.firstMip + range.mipCount; ++mip)
+	{
+		const auto sourceExtent = texture->GetRepresentationExtent(sourceRepresentation, mip);
+		const auto destinationExtent = texture->GetRepresentationExtent(destinationRepresentation, mip);
+		VkImageSubresourceRange sourceRange{sourceObject->m_imageAspect, mip, 1, range.firstSlice, range.sliceCount};
+		VkImageSubresourceRange destinationRange{destinationObject->m_imageAspect, mip, 1, range.firstSlice, range.sliceCount};
+		barrier_image<IMAGE_WRITE | ANY_TRANSFER, TRANSFER_READ>(sourceObject->m_image, sourceRange,
+			textureVk->GetImageLayout(sourceRange, sourceRepresentation), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+		textureVk->SetImageLayout(sourceRange, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, sourceRepresentation);
+		barrier_image<IMAGE_READ | IMAGE_WRITE | ANY_TRANSFER, TRANSFER_WRITE>(destinationObject->m_image, destinationRange,
+			textureVk->GetImageLayout(destinationRange, destinationRepresentation), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		textureVk->SetImageLayout(destinationRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destinationRepresentation);
+
+		for (uint32 slice = range.firstSlice; slice < range.firstSlice + range.sliceCount; ++slice)
+		{
+			for (VkImageAspectFlags aspect : {VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_STENCIL_BIT})
+			{
+				if ((sourceObject->m_imageAspect & aspect) == 0)
+					continue;
+				VkImageBlit region{};
+				region.srcSubresource = {aspect, mip, slice, 1};
+				region.dstSubresource = {aspect, mip, slice, 1};
+				region.srcOffsets[1] = {static_cast<sint32>(sourceExtent.width), static_cast<sint32>(sourceExtent.height), 1};
+				region.dstOffsets[1] = {static_cast<sint32>(destinationExtent.width), static_cast<sint32>(destinationExtent.height), 1};
+				vkCmdBlitImage(m_state.currentCommandBuffer, sourceObject->m_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+					destinationObject->m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region, vkFilter);
+			}
+		}
+		barrier_image<TRANSFER_READ, IMAGE_READ | IMAGE_WRITE | ANY_TRANSFER>(sourceObject->m_image, sourceRange,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, textureVk->GetDefaultLayout(sourceRepresentation));
+		textureVk->SetImageLayout(sourceRange, textureVk->GetDefaultLayout(sourceRepresentation), sourceRepresentation);
+		barrier_image<TRANSFER_WRITE, IMAGE_READ | IMAGE_WRITE | ANY_TRANSFER>(destinationObject->m_image, destinationRange,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureVk->GetDefaultLayout(destinationRepresentation));
+		textureVk->SetImageLayout(destinationRange, textureVk->GetDefaultLayout(destinationRepresentation), destinationRepresentation);
+	}
+	return LatteSurfaceOperationResult::Success();
 }
 
 LatteTextureReadbackInfo* VulkanRenderer::texture_createReadback(LatteTextureView* textureView)
 {
-	auto* result = new LatteTextureReadbackInfoVk(m_logicalDevice, textureView);
+	return texture_createReadback(textureView, LatteTextureRepresentation::Render);
+}
+
+LatteTextureReadbackInfo* VulkanRenderer::texture_createReadback(LatteTextureView* textureView,
+	LatteTextureRepresentation representation)
+{
+	if (!static_cast<LatteTextureVk*>(textureView->baseTexture)->HasRepresentation(representation))
+		return nullptr;
+	auto* result = new LatteTextureReadbackInfoVk(m_logicalDevice, textureView, representation);
 	const uint32 linearImageSize = result->GetImageSize();
 	if (linearImageSize == 0)
 	{
@@ -3935,6 +4320,11 @@ LatteTextureReadbackInfo* VulkanRenderer::texture_createReadback(LatteTextureVie
 
 	const uint32 uploadSize = linearImageSize;
 	const uint32 uploadAlignment = 256; // todo - use Vk optimalBufferCopyOffsetAlignment
+	if (uploadSize > TEXTURE_READBACK_SIZE)
+	{
+		delete result;
+		return nullptr;
+	}
 	m_textureReadbackBufferWriteIndex = (m_textureReadbackBufferWriteIndex + uploadAlignment - 1) & ~(uploadAlignment - 1);
 
 	if ((m_textureReadbackBufferWriteIndex + uploadSize + 256) > TEXTURE_READBACK_SIZE)
@@ -4040,6 +4430,46 @@ void VulkanRenderer::buffer_bindUniformBuffer(LatteConst::ShaderType shaderType,
 	}
 }
 
+bool VulkanRenderer::buffer_bindUniformBufferHostData(LatteConst::ShaderType shaderType,
+	uint32 bufferIndex, const uint8* data, uint32 size)
+{
+	if (size == 0)
+	{
+		buffer_bindUniformBuffer(shaderType, bufferIndex, 0, 0);
+		return true;
+	}
+
+	const uint32 shaderStageIndex = static_cast<uint32>(shaderType);
+	cemu_assert_debug(shaderStageIndex < m_uniformBankRingCache.size());
+	cemu_assert_debug(bufferIndex < LATTE_NUM_MAX_UNIFORM_BUFFERS);
+	auto& cacheEntry = m_uniformBankRingCache[shaderStageIndex][bufferIndex];
+	const bool isZero = data == nullptr;
+	const bool canReuse = cacheEntry.valid &&
+		cacheEntry.generation == m_uniformVarBufferGeneration &&
+		cacheEntry.data.size() == size && cacheEntry.isZero == isZero &&
+		(isZero || std::memcmp(cacheEntry.data.data(), data, size) == 0);
+	LattePerformanceMonitor_recordHostUniformRingBankBind(size, canReuse);
+	if (canReuse)
+	{
+		buffer_bindUniformBuffer(shaderType, bufferIndex, cacheEntry.offset, size);
+		return true;
+	}
+
+	cacheEntry.data.resize(size);
+	if (data)
+		std::memcpy(cacheEntry.data.data(), data, size);
+	else
+		std::fill(cacheEntry.data.begin(), cacheEntry.data.end(), 0);
+	cacheEntry.offset = uniformData_uploadUniformDataBufferGetOffset(cacheEntry.data);
+	cacheEntry.generation = m_uniformVarBufferGeneration;
+	cacheEntry.isZero = isZero;
+	cacheEntry.valid = true;
+	const uint32 offset = cacheEntry.offset;
+	buffer_bindUniformBuffer(shaderType, bufferIndex, offset, size);
+	LattePerformanceMonitor_recordHostUniformRingBankUpload(size);
+	return true;
+}
+
 void VulkanRenderer::bufferCache_init(const sint32 bufferSize)
 {
 	m_importedMemBaseAddress = 0x10000000;
@@ -4061,16 +4491,123 @@ void VulkanRenderer::bufferCache_init(const sint32 bufferSize)
 		memoryManager->CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 0, m_bufferCache, m_bufferCacheMemory);
 }
 
+void VulkanRenderer::bufferCache_beginUploadBatch()
+{
+	cemu_assert_debug(!m_bufferCacheUploadBatchActive);
+	cemu_assert_debug(m_pendingBufferCacheUploads.empty());
+	m_bufferCacheUploadBatchActive = true;
+}
+
+void VulkanRenderer::bufferCache_endUploadBatch()
+{
+	cemu_assert_debug(m_bufferCacheUploadBatchActive);
+	FlushBufferCacheUploadBatch();
+	m_bufferCacheUploadBatchActive = false;
+}
+
+void VulkanRenderer::FlushBufferCacheUploadBatch()
+{
+	if (m_pendingBufferCacheUploads.empty())
+		return;
+
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::BufferOperation);
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.transfer.buffer_upload_batch", m_state.currentCommandBuffer);
+
+	std::vector<VkBufferMemoryBarrier> barriers;
+	barriers.reserve(m_pendingBufferCacheUploads.size() * 2);
+	for (const PendingBufferCacheUpload& upload : m_pendingBufferCacheUploads)
+	{
+		VkBufferMemoryBarrier sourceBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+		sourceBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT |
+			VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_HOST_WRITE_BIT;
+		sourceBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		sourceBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		sourceBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		sourceBarrier.buffer = upload.sourceBuffer;
+		sourceBarrier.offset = upload.sourceOffset;
+		sourceBarrier.size = upload.size;
+		barriers.emplace_back(sourceBarrier);
+
+		VkBufferMemoryBarrier destinationBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+		destinationBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT |
+			VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+			VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_SHADER_READ_BIT;
+		destinationBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		destinationBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		destinationBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		destinationBarrier.buffer = m_bufferCache;
+		destinationBarrier.offset = upload.destinationOffset;
+		destinationBarrier.size = upload.size;
+		barriers.emplace_back(destinationBarrier);
+	}
+	vkCmdPipelineBarrier(m_state.currentCommandBuffer,
+		VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_HOST_BIT |
+			VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+			VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr,
+		static_cast<uint32>(barriers.size()), barriers.data(), 0, nullptr);
+
+	struct CopyGroup
+	{
+		VkBuffer sourceBuffer{VK_NULL_HANDLE};
+		std::vector<VkBufferCopy> regions;
+	};
+	std::vector<CopyGroup> groups;
+	for (const PendingBufferCacheUpload& upload : m_pendingBufferCacheUploads)
+	{
+		auto group = std::find_if(groups.begin(), groups.end(), [&](const CopyGroup& candidate) {
+			return candidate.sourceBuffer == upload.sourceBuffer;
+		});
+		if (group == groups.end())
+		{
+			groups.emplace_back(CopyGroup{upload.sourceBuffer});
+			group = std::prev(groups.end());
+		}
+		group->regions.emplace_back(VkBufferCopy{
+			upload.sourceOffset, upload.destinationOffset, upload.size});
+	}
+	for (const CopyGroup& group : groups)
+	{
+		vkCmdCopyBuffer(m_state.currentCommandBuffer, group.sourceBuffer, m_bufferCache,
+			static_cast<uint32>(group.regions.size()), group.regions.data());
+	}
+
+	barrier_sequentializeTransfer();
+	LattePerformanceMonitor_recordHostBufferCacheUploadBatch(
+		static_cast<uint32>(m_pendingBufferCacheUploads.size()),
+		static_cast<uint32>(groups.size()));
+	m_pendingBufferCacheUploads.clear();
+}
+
 void VulkanRenderer::bufferCache_upload(uint8* buffer, sint32 size, uint32 bufferOffset)
 {
-	draw_endRenderPass();
-
 	VKRSynchronizedRingAllocator& vkMemAllocator = memoryManager->getStagingAllocator();
 
 	auto uploadResv = vkMemAllocator.AllocateBufferMemory(size, 256);
 	memcpy(uploadResv.memPtr, buffer, size);
 
 	vkMemAllocator.FlushReservation(uploadResv);
+	if (m_bufferCacheUploadBatchActive)
+	{
+		const VkDeviceSize destinationBegin = bufferOffset;
+		const VkDeviceSize destinationEnd = destinationBegin + size;
+		const bool overlapsPendingDestination = std::any_of(
+			m_pendingBufferCacheUploads.begin(), m_pendingBufferCacheUploads.end(),
+			[&](const PendingBufferCacheUpload& pending) {
+				const VkDeviceSize pendingEnd = pending.destinationOffset + pending.size;
+				return destinationBegin < pendingEnd &&
+					pending.destinationOffset < destinationEnd;
+			});
+		if (overlapsPendingDestination)
+			FlushBufferCacheUploadBatch();
+		m_pendingBufferCacheUploads.emplace_back(PendingBufferCacheUpload{
+			uploadResv.vkBuffer, uploadResv.bufferOffset,
+			bufferOffset, static_cast<VkDeviceSize>(size)});
+		return;
+	}
+
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::BufferOperation);
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.transfer.buffer_upload", m_state.currentCommandBuffer);
 
 	barrier_bufferRange<ANY_TRANSFER | HOST_WRITE, ANY_TRANSFER,
 		BUFFER_SHADER_READ, TRANSFER_WRITE>(
@@ -4089,7 +4626,9 @@ void VulkanRenderer::bufferCache_upload(uint8* buffer, sint32 size, uint32 buffe
 void VulkanRenderer::bufferCache_copy(uint32 srcOffset, uint32 dstOffset, uint32 size)
 {
 	cemu_assert_debug(!m_useHostMemoryForCache);
-	draw_endRenderPass();
+	FlushBufferCacheUploadBatch();
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::BufferOperation);
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.transfer.buffer_copy", m_state.currentCommandBuffer);
 
 	barrier_sequentializeTransfer();
 
@@ -4107,7 +4646,8 @@ void VulkanRenderer::bufferCache_copy(uint32 srcOffset, uint32 dstOffset, uint32
 
 void VulkanRenderer::bufferCache_copyStreamoutToMainBuffer(uint32 srcOffset, uint32 dstOffset, uint32 size)
 {
-	draw_endRenderPass();
+	draw_endRenderPass(LatteVulkanRenderPassEndReason::BufferOperation);
+	CEMU_VULKAN_GPU_PROFILE_SCOPE("vulkan.transfer.streamout_copy", m_state.currentCommandBuffer);
 
 	VkBuffer dstBuffer;
 	if (m_useHostMemoryForCache)
@@ -4337,7 +4877,8 @@ void VKRObjectSampler::DestroyCache()
 	s_samplerCache.clear();
 }
 
-VKRObjectRenderPass::VKRObjectRenderPass(AttachmentInfo_t& attachmentInfo, sint32 colorAttachmentCount)
+VKRObjectRenderPass::VKRObjectRenderPass(AttachmentInfo_t& attachmentInfo, sint32 colorAttachmentCount,
+	bool omitDepthStore)
 {
 	VulkanRenderer* vkRenderer = VulkanRenderer::GetInstance();
 	bool useAttachmentFeedbackLoop = vkRenderer->UseAttachmentFeedbackLoop();
@@ -4410,11 +4951,11 @@ VKRObjectRenderPass::VKRObjectRenderPass(AttachmentInfo_t& attachmentInfo, sint3
 		entry.format = attachmentInfo.depthAttachment.format;
 		entry.samples = VK_SAMPLE_COUNT_1_BIT;
 		entry.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-		entry.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		entry.storeOp = omitDepthStore ? VK_ATTACHMENT_STORE_OP_NONE : VK_ATTACHMENT_STORE_OP_STORE;
 		if (attachmentInfo.depthAttachment.hasStencil)
 		{
 			entry.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-			entry.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+			entry.stencilStoreOp = omitDepthStore ? VK_ATTACHMENT_STORE_OP_NONE : VK_ATTACHMENT_STORE_OP_STORE;
 		}
 		else
 		{

@@ -12,13 +12,16 @@
 #include "util/DXGIWrapper/DXGIWrapper.h"
 #endif
 
-// imgui forward declarations
 struct ImDrawData;
 
 namespace spatial::imgui
 {
 class Layer;
 }
+
+// Dear ImGui 1.92 defaults ImTextureID to ImU64. Keep the renderer interface
+// independent from imgui.h while matching that ABI exactly.
+using ImTextureID = unsigned long long;
 
 enum class GfxVendor
 {
@@ -35,14 +38,11 @@ enum class GfxVendor
 
 enum class RendererAPI
 {
-	OpenGL,
 	Vulkan,
 	Metal,
 
 	MAX
 };
-
-using ImTextureID = void*;
 
 class Renderer
 {
@@ -58,6 +58,7 @@ public:
 	virtual ~Renderer() = default;
 
 	RendererAPI GetType() const { return m_rendererAPI; }
+	virtual void* GetRenderDocDevicePointer() const { return nullptr; }
 
 	virtual void Initialize();
 	virtual void Shutdown();
@@ -113,27 +114,80 @@ public:
 
 	virtual void texture_clearSlice(LatteTexture* hostTexture, sint32 sliceIndex, sint32 mipIndex) = 0;
 	virtual void texture_loadSlice(LatteTexture* hostTexture, sint32 width, sint32 height, sint32 depth, void* pixelData, sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize) = 0;
+	virtual LatteSurfaceOperationResult texture_loadSliceRepresentation(LatteTexture* texture, LatteTextureRepresentation representation,
+		sint32 width, sint32 height, sint32 depth, void* pixelData, sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize)
+	{
+		if (representation != LatteTextureRepresentation::Render)
+			return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+		texture_loadSlice(texture, width, height, depth, pixelData, sliceIndex, mipIndex, compressedImageSize);
+		return LatteSurfaceOperationResult::Success(compressedImageSize);
+	}
 	virtual void texture_clearColorSlice(LatteTexture* hostTexture, sint32 sliceIndex, sint32 mipIndex, float r, float g, float b, float a) = 0;
 	virtual void texture_clearDepthSlice(LatteTexture* hostTexture, uint32 sliceIndex, sint32 mipIndex, bool clearDepth, bool clearStencil, float depthValue, uint32 stencilValue) = 0;
 
-	virtual LatteTexture* texture_createTextureEx(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth) = 0;
+	virtual LatteTexture* texture_createTextureEx(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth, LatteSurfaceUsage initialUsage) = 0;
+	virtual LatteSurfaceFallbackReason texture_preflightInternalResolution(Latte::E_GX2SURFFMT,
+		Latte::E_DIM, bool, bool, uint32, const LatteSurfaceExtent&, LatteSurfaceScaleClass)
+	{
+		return LatteSurfaceFallbackReason::BackendOperationUnsupported;
+	}
 
 	virtual void texture_setLatteTexture(LatteTextureView* textureView, uint32 textureUnit) = 0;
-	virtual void texture_copyImageSubData(LatteTexture* src, sint32 srcMip, sint32 effectiveSrcX, sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip, sint32 effectiveDstX, sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth, sint32 effectiveCopyHeight, sint32 srcDepth) = 0;
+	virtual LatteSurfaceOperationResult texture_copyImageSubData(LatteTexture* src, sint32 srcMip, sint32 effectiveSrcX,
+		sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip, sint32 effectiveDstX,
+		sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth, sint32 effectiveCopyHeight,
+		sint32 srcDepth) = 0;
 
 	virtual LatteTextureReadbackInfo* texture_createReadback(LatteTextureView* textureView) = 0;
+	virtual LatteTextureReadbackInfo* texture_createReadback(LatteTextureView* textureView, LatteTextureRepresentation representation)
+	{
+		return representation == LatteTextureRepresentation::Render ? texture_createReadback(textureView) : nullptr;
+	}
+
+	// P2 representation contract. Policy and authority stay in Core; backends only
+	// allocate and execute the requested operation. Production resolution remains 1x
+	// until the title-lifecycle snapshot is introduced in P3.
+	virtual bool texture_hasRepresentation(const LatteTexture* texture, LatteTextureRepresentation representation) const
+	{
+		return representation == LatteTextureRepresentation::Render || texture->RepresentationsAlias();
+	}
+	virtual uint64 texture_getRepresentationBytes(const LatteTexture*, LatteTextureRepresentation) const { return 0; }
+	virtual LatteSurfaceOperationResult texture_ensureRepresentation(LatteTexture* texture, LatteTextureRepresentation representation)
+	{
+		if (representation == LatteTextureRepresentation::Render || texture->RepresentationsAlias())
+			return LatteSurfaceOperationResult::Success();
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+	}
+	virtual LatteSurfaceOperationResult texture_resampleRepresentation(LatteTexture*, LatteTextureRepresentation,
+		LatteTextureRepresentation, const LatteSurfaceSubresourceRange&, LatteSurfaceResampleFilter)
+	{
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+	}
+	virtual LatteSurfaceOperationResult texture_copyImageSubDataBetweenRepresentations(LatteTexture*, LatteTextureRepresentation,
+		sint32, sint32, sint32, sint32, LatteTexture*, LatteTextureRepresentation, sint32, sint32, sint32, sint32,
+		sint32, sint32, sint32)
+	{
+		return LatteSurfaceOperationResult::Failure(LatteSurfaceFallbackReason::BackendOperationUnsupported);
+	}
 
 	// surface copy
-	virtual void surfaceCopy_copySurfaceWithFormatConversion(LatteTexture* sourceTexture, sint32 srcMip, sint32 srcSlice, LatteTexture* destinationTexture, sint32 dstMip, sint32 dstSlice, sint32 width, sint32 height) = 0;
+	virtual LatteSurfaceOperationResult surfaceCopy_copySurfaceWithFormatConversion(LatteTexture* sourceTexture, sint32 srcMip, sint32 srcSlice, LatteTexture* destinationTexture, sint32 dstMip, sint32 dstSlice, sint32 width, sint32 height) = 0;
 
 	// buffer cache
 	virtual void bufferCache_init(const sint32 bufferSize) = 0;
+	virtual void bufferCache_beginUploadBatch() {}
+	virtual void bufferCache_endUploadBatch() {}
 	virtual void bufferCache_upload(uint8* buffer, sint32 size, uint32 bufferOffset) = 0;
 	virtual void bufferCache_copy(uint32 srcOffset, uint32 dstOffset, uint32 size) = 0;
 	virtual void bufferCache_copyStreamoutToMainBuffer(uint32 srcOffset, uint32 dstOffset, uint32 size) = 0;
 
 	virtual void buffer_bindVertexBuffer(uint32 bufferIndex, uint32 offset, uint32 size) = 0;
 	virtual void buffer_bindUniformBuffer(LatteConst::ShaderType shaderType, uint32 bufferIndex, uint32 offset, uint32 size) = 0;
+	virtual bool buffer_bindUniformBufferHostData(LatteConst::ShaderType shaderType,
+		uint32 bufferIndex, const uint8* data, uint32 size)
+	{
+		return false;
+	}
 
 	// shader
 	virtual RendererShader* shader_create(RendererShader::ShaderType type, uint64 baseHash, uint64 auxHash, const std::string& source, bool compileAsync, bool isGfxPackSource) = 0;

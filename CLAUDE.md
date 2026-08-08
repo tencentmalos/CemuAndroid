@@ -11,6 +11,7 @@
 - 构建、提交前验证、故障排查：`skills/cemu-android-build-validation/SKILL.md`
 - 构建失败、adb / logcat、native crash、tombstone、JNI、Gradle 问题分析：`skills/cemu-android-analysis/SKILL.md`
 - Android/桌面 CPU + Vulkan GPU Tracy 采集、FPS 概要面板和 debugbus 验证：`skills/cemu-android-performance/SKILL.md`
+- Android Vulkan gameplay 抓帧、RenderDoc remote replay、纹理/viewport/target 图形分析：`skills/cemu-renderdoc-analysis/SKILL.md`
 - Wii U 标题版本检查、汉化资源烘焙和 WUA 打包：`skills/cemu-wua-packaging/SKILL.md`
 - Guest 游戏逆向、graphic-pack `patch_*.asm`、codecave/HLE hook 制作与真机 A/B 验证：`skills/cemu-guest-game-patching/SKILL.md`
 - 从运行中的 Cemu 提取 RPX、校验身份、加载/转换并建立 IDA 数据库：`skills/cemu-guest-executable-ida/SKILL.md`

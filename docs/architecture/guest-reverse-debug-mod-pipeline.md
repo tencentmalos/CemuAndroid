@@ -439,6 +439,10 @@ flowchart TD
 
 ## 9. 阶段 D：Mod 制作与加载
 
+Cemu `patch_*.asm` 并非单纯 hook 清单，而是带 module/origin/callback 声明的运行时 PPC
+assembler/patch loader 输入。完整语法、应用阶段、HLE import、能力边界及其与金手指的差异见
+[`cemu-graphic-pack-asm.md`](cemu-graphic-pack-asm.md)。
+
 ### 9.1 最小化顺序
 
 ```mermaid

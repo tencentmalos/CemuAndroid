@@ -1,6 +1,7 @@
 package info.cemu.cemu.emulation
 
 import android.annotation.SuppressLint
+import android.util.Log
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import androidx.activity.compose.BackHandler
@@ -21,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.FilledIconButton
@@ -36,6 +38,7 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -94,6 +97,25 @@ fun EmulationScreen(
     val gamePadPosition by viewModel.gamePadPosition.collectAsState()
     val isInputOverlayVisible by viewModel.isInputOverlayVisible.collectAsState()
     val inputOverlaySettings by viewModel.inputOverlaySettings.collectAsState()
+
+    DisposableEffect(Unit) {
+        Log.i(EMULATION_LOG_TAG, "EmulationScreen entered composition")
+        onDispose {
+            Log.i(EMULATION_LOG_TAG, "EmulationScreen left composition")
+        }
+    }
+
+    LaunchedEffect(gamePadPosition) {
+        Log.i(EMULATION_LOG_TAG, "layout gamePadPosition=$gamePadPosition")
+    }
+
+    LaunchedEffect(isEmulationInitialized) {
+        Log.i(EMULATION_LOG_TAG, "UI initialized=$isEmulationInitialized")
+    }
+
+    LaunchedEffect(emulationError) {
+        emulationError?.let { Log.e(EMULATION_LOG_TAG, "UI error=$it") }
+    }
 
 
     fun closeDrawer() {
@@ -229,7 +251,7 @@ fun EmulationScreen(
     }
 
     if (!isEmulationInitialized) {
-        EmulationLoadingDialog()
+        EmulationLoadingOverlay()
     }
 
     if (showQuitConfirmationDialog) {
@@ -474,8 +496,37 @@ private fun EmulationSurface(
     AndroidView(
         modifier = modifier,
         factory = { context ->
+            Log.i(EMULATION_LOG_TAG, "SurfaceView factory canvas=${if (isTV) "main" else "pad"}")
             SurfaceView(context).apply {
                 var firstChange = true
+
+                addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
+                    override fun onViewAttachedToWindow(view: android.view.View) {
+                        Log.i(
+                            EMULATION_LOG_TAG,
+                            "SurfaceView attached canvas=${if (isTV) "main" else "pad"} " +
+                                "size=${view.width}x${view.height} shown=${view.isShown}",
+                        )
+                    }
+
+                    override fun onViewDetachedFromWindow(view: android.view.View) {
+                        Log.w(
+                            EMULATION_LOG_TAG,
+                            "SurfaceView detached canvas=${if (isTV) "main" else "pad"} " +
+                                "size=${view.width}x${view.height}",
+                        )
+                    }
+                })
+                addOnLayoutChangeListener { view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                    if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) {
+                        Log.i(
+                            EMULATION_LOG_TAG,
+                            "SurfaceView layout canvas=${if (isTV) "main" else "pad"} " +
+                                "bounds=($left,$top)-($right,$bottom) " +
+                                "size=${view.width}x${view.height} shown=${view.isShown}",
+                        )
+                    }
+                }
 
                 setOnTouchListener(CanvasOnTouchListener(isTV))
 
@@ -485,19 +536,43 @@ private fun EmulationSurface(
                     override fun surfaceChanged(
                         holder: SurfaceHolder, format: Int, width: Int, height: Int
                     ) {
+                        Log.i(
+                            EMULATION_LOG_TAG,
+                            "SurfaceView changed canvas=${if (isTV) "main" else "pad"} " +
+                                "format=$format size=${width}x$height valid=${holder.surface.isValid} " +
+                                "firstChange=$firstChange",
+                        )
                         if (firstChange) {
+                            Log.i(
+                                EMULATION_LOG_TAG,
+                                "SurfaceView requesting emulation initialization canvas=${if (isTV) "main" else "pad"}",
+                            )
                             afterInit()
                             firstChange = false
                         }
                     }
 
-                    override fun surfaceCreated(holder: SurfaceHolder) {}
+                    override fun surfaceCreated(holder: SurfaceHolder) {
+                        Log.i(
+                            EMULATION_LOG_TAG,
+                            "SurfaceView created canvas=${if (isTV) "main" else "pad"} " +
+                                "valid=${holder.surface.isValid}",
+                        )
+                    }
 
-                    override fun surfaceDestroyed(holder: SurfaceHolder) {}
+                    override fun surfaceDestroyed(holder: SurfaceHolder) {
+                        Log.w(
+                            EMULATION_LOG_TAG,
+                            "SurfaceView destroyed canvas=${if (isTV) "main" else "pad"} " +
+                                "valid=${holder.surface.isValid}",
+                        )
+                    }
                 })
             }
         })
 }
+
+private const val EMULATION_LOG_TAG = "CemuEmulation"
 
 @Composable
 private fun EmulationQuitConfirmationDialog(onQuit: () -> Unit, onDismiss: () -> Unit) {
@@ -511,13 +586,26 @@ private fun EmulationQuitConfirmationDialog(onQuit: () -> Unit, onDismiss: () ->
 }
 
 @Composable
-private fun EmulationLoadingDialog() {
-    AlertDialog(
-        title = { Text(tr("Initializing emulation")) },
-        text = { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) },
-        confirmButton = {},
-        onDismissRequest = {},
-    )
+private fun EmulationLoadingOverlay() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Card {
+            Column(
+                modifier = Modifier
+                    .width(320.dp)
+                    .padding(24.dp),
+            ) {
+                Text(
+                    text = tr("Initializing emulation"),
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    fontSize = 20.sp,
+                )
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+        }
+    }
 }
 
 @Composable

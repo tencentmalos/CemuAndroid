@@ -112,6 +112,7 @@ VKFUNC_DEVICE(vkCreateRenderPass);
 VKFUNC_DEVICE(vkDestroyRenderPass);
 VKFUNC_DEVICE(vkCmdBeginRenderPass);
 VKFUNC_DEVICE(vkCmdEndRenderPass);
+VKFUNC_DEVICE(vkCmdInsertDebugUtilsLabelEXT);
 
 // command buffers
 VKFUNC_DEVICE(vkCreateCommandPool);

@@ -1,0 +1,7 @@
+[Definition]
+titleIds = 00050000101C9300
+name = BotW v208 Readback Purpose Probe
+path = "The Legend of Zelda: Breath of the Wild/Readback Purpose Probe"
+description = Experimental JP v208 probe that disables AutoExposure to identify its Guest-visible render-target readbacks. Not a product setting.
+version = 7
+default = 1

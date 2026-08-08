@@ -12,6 +12,7 @@
 
 #include "Cafe/CafeSystem.h"
 #include "Cafe/Diagnostics/CemuDiagnostics.h"
+#include "Cafe/Diagnostics/CemuWarmup.h"
 #include "Cafe/TitleList/TitleList.h"
 #include "Cafe/TitleList/SaveList.h"
 
@@ -68,28 +69,6 @@ void _putenvSafe(const char* c)
     _putenv(s->c_str());
 }
 
-void reconfigureGLDrivers()
-{
-#ifdef ENABLE_OPENGL
-	// reconfigure GL drivers to store
-	const fs::path nvCacheDir = ActiveSettings::GetCachePath("shaderCache/driver/nvidia/");
-
-	std::error_code err;
-	fs::create_directories(nvCacheDir, err);
-
-	std::string nvCacheDirEnvOption("__GL_SHADER_DISK_CACHE_PATH=");
-	nvCacheDirEnvOption.append(_pathToUtf8(nvCacheDir));
-
-#if BOOST_OS_WINDOWS
-	std::wstring tmpW = boost::nowide::widen(nvCacheDirEnvOption);
-	_wputenv(tmpW.c_str());
-#else
-    _putenvSafe(nvCacheDirEnvOption.c_str());
-#endif
-    _putenvSafe("__GL_SHADER_DISK_CACHE_SKIP_CLEANUP=1");
-#endif
-}
-
 void reconfigureVkDrivers()
 {
 #ifdef ENABLE_VULKAN
@@ -118,7 +97,6 @@ void CemuCommonInit()
 	// JNI_OnLoad initializes this earlier on Android. The call is idempotent and
 	// gives desktop builds the same process-lifetime diagnostics setup.
 	CemuDiagnostics::Initialize();
-	reconfigureGLDrivers();
 	reconfigureVkDrivers();
 	// crypto init
 	AES128_init();
@@ -127,7 +105,9 @@ void CemuCommonInit()
 	PPCTimer_init();
 
 	WindowsInitCwd();
-    ExceptionHandler_Init();
+#if !BOOST_PLAT_ANDROID
+	ExceptionHandler_Init();
+#endif
 	// read config
 	GetConfigHandle().Load();
 	if (NetworkConfig::XMLExists())
@@ -136,6 +116,7 @@ void CemuCommonInit()
 	std::future<int> futureInitAudioAPI = std::async(std::launch::async, []{ IAudioAPI::InitializeStatic(); IAudioInputAPI::InitializeStatic(); return 0; });
 	std::future<int> futureInitGraphicPacks = std::async(std::launch::async, []{ GraphicPack2::LoadAll(); return 0; });
 	InputManager::instance().load();
+	CemuWarmup::OnInputManagerReady();
 	futureInitAudioAPI.wait();
 	futureInitGraphicPacks.wait();
 	// init Cafe system

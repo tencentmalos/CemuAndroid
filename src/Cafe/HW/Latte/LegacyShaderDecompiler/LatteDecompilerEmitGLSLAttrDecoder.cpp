@@ -309,66 +309,27 @@ void LatteDecompiler_emitAttributeDecodeGLSL(LatteDecompilerShader* shaderContex
 		}
 		else if (attrib->format == FMT_8_8 && attrib->nfa == 0 && attrib->isSigned == 0)
 		{
-			if( (attrib->offset&3) == 2 && LatteGPUState.glVendor == GLVENDOR_AMD && g_renderer->GetType() == RendererAPI::OpenGL )
-			{ 
-				// AMD workaround
-				src->addFmt("attrDecoder.xy = floatBitsToUint(vec2(attrDataSem{}.zw)/255.0);" _CRLF, attributeInputIndex);
-				src->add("attrDecoder.zw = uvec2(0);" _CRLF);
-			}
-			else
-			{
-				src->addFmt("attrDecoder.xy = floatBitsToUint(vec2(attrDataSem{}.xy)/255.0);" _CRLF, attributeInputIndex);
-				src->add("attrDecoder.zw = uvec2(0);" _CRLF);
-			}
+			src->addFmt("attrDecoder.xy = floatBitsToUint(vec2(attrDataSem{}.xy)/255.0);" _CRLF, attributeInputIndex);
+			src->add("attrDecoder.zw = uvec2(0);" _CRLF);
 		}
 		else if (attrib->format == FMT_8_8 && attrib->nfa == 2 && attrib->isSigned == 0)
 		{
 			// seen in BotW
-			if ((attrib->offset & 3) == 2 && LatteGPUState.glVendor == GLVENDOR_AMD && g_renderer->GetType() == RendererAPI::OpenGL)
-			{
-				// AMD workaround
-				src->addFmt("attrDecoder.xy = floatBitsToUint(vec2(attrDataSem{}.zw));" _CRLF, attributeInputIndex);
-				src->add("attrDecoder.zw = uvec2(0);" _CRLF);
-			}
-			else
-			{
-				src->addFmt("attrDecoder.xy = floatBitsToUint(vec2(attrDataSem{}.xy));" _CRLF, attributeInputIndex);
-				src->add("attrDecoder.zw = uvec2(0);" _CRLF);
-			}
+			src->addFmt("attrDecoder.xy = floatBitsToUint(vec2(attrDataSem{}.xy));" _CRLF, attributeInputIndex);
+			src->add("attrDecoder.zw = uvec2(0);" _CRLF);
 		}
 		else if (attrib->format == FMT_8_8 && attrib->nfa == 0 && attrib->isSigned != 0)
 		{
-			if ((attrib->offset & 3) == 2 && LatteGPUState.glVendor == GLVENDOR_AMD && g_renderer->GetType() == RendererAPI::OpenGL)
-			{
-				// AMD workaround
-				src->addFmt("attrDecoder.xy = attrDataSem{}.zw;" _CRLF, attributeInputIndex);
-				src->add("if( (attrDecoder.x&0x80) != 0 ) attrDecoder.x |= 0xFFFFFF00;" _CRLF);
-				src->add("if( (attrDecoder.y&0x80) != 0 ) attrDecoder.y |= 0xFFFFFF00;" _CRLF);
-				src->add("attrDecoder.x = floatBitsToUint(max(float(int(attrDecoder.x))/127.0,-1.0));" _CRLF);
-				src->add("attrDecoder.y = floatBitsToUint(max(float(int(attrDecoder.y))/127.0,-1.0));" _CRLF);
-				src->add("attrDecoder.zw = uvec2(0);" _CRLF);
-			}
-			else
-			{
-				src->addFmt("attrDecoder.xy = attrDataSem{}.xy;" _CRLF, attributeInputIndex);
-				src->add("if( (attrDecoder.x&0x80) != 0 ) attrDecoder.x |= 0xFFFFFF00;" _CRLF);
-				src->add("if( (attrDecoder.y&0x80) != 0 ) attrDecoder.y |= 0xFFFFFF00;" _CRLF);
-				src->add("attrDecoder.x = floatBitsToUint(max(float(int(attrDecoder.x))/127.0,-1.0));" _CRLF);
-				src->add("attrDecoder.y = floatBitsToUint(max(float(int(attrDecoder.y))/127.0,-1.0));" _CRLF);
-				src->add("attrDecoder.zw = uvec2(0);" _CRLF);
-			}
+			src->addFmt("attrDecoder.xy = attrDataSem{}.xy;" _CRLF, attributeInputIndex);
+			src->add("if( (attrDecoder.x&0x80) != 0 ) attrDecoder.x |= 0xFFFFFF00;" _CRLF);
+			src->add("if( (attrDecoder.y&0x80) != 0 ) attrDecoder.y |= 0xFFFFFF00;" _CRLF);
+			src->add("attrDecoder.x = floatBitsToUint(max(float(int(attrDecoder.x))/127.0,-1.0));" _CRLF);
+			src->add("attrDecoder.y = floatBitsToUint(max(float(int(attrDecoder.y))/127.0,-1.0));" _CRLF);
+			src->add("attrDecoder.zw = uvec2(0);" _CRLF);
 		}
 		else if (attrib->format == FMT_8_8 && attrib->nfa == 1 && attrib->isSigned == 0)
 		{
-			if ((attrib->offset & 3) == 2 && LatteGPUState.glVendor == GLVENDOR_AMD && g_renderer->GetType() == RendererAPI::OpenGL)
-			{
-				// AMD workaround
-				src->addFmt("attrDecoder.xyzw = uvec4(attrDataSem{}.zw,0,0);" _CRLF, attributeInputIndex);
-			}
-			else
-			{
-				src->addFmt("attrDecoder.xyzw = uvec4(attrDataSem{}.xy,0,0);" _CRLF, attributeInputIndex);
-			}
+			src->addFmt("attrDecoder.xyzw = uvec4(attrDataSem{}.xy,0,0);" _CRLF, attributeInputIndex);
 		}
 		else if( attrib->format == FMT_8 && attrib->nfa == 0 && attrib->isSigned == 0 )
 		{
@@ -506,5 +467,4 @@ void LatteDecompiler_emitAttributeDecodeGLSL(LatteDecompilerShader* shaderContex
 		cemu_assert_debug(false);
 	}
 }
-
 

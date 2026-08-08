@@ -105,6 +105,11 @@ endif()
 option(CEMU_USE_UNITY_BUILD "Enable Unity Build across the complete build graph" ON)
 set(CMAKE_UNITY_BUILD ${CEMU_USE_UNITY_BUILD})
 
+option(CEMU_BUILD_INTERNAL_TESTS "Build focused Cemu Core test harnesses" OFF)
+if (CEMU_BUILD_INTERNAL_TESTS)
+	enable_testing()
+endif()
+
 # foundation still uses this legacy Azahar-facing switch. Keep one host-level
 # source of truth so Cemu and foundation cannot silently select different modes.
 set(CITRA_USE_UNITY_BUILD ${CEMU_USE_UNITY_BUILD}
@@ -145,19 +150,20 @@ endif()
 
 if (APPLE)
     set(ENABLE_METAL_DEFAULT ON)
-	set(ENABLE_OPENGL_DEFAULT OFF)
 else()
     set(ENABLE_METAL_DEFAULT OFF)
-	set(ENABLE_OPENGL_DEFAULT ON)
 endif()
 
-option(ENABLE_OPENGL "Enables the OpenGL backend" ${ENABLE_OPENGL_DEFAULT})
 option(ENABLE_VULKAN "Enables the Vulkan backend" ON)
 option(ENABLE_METAL "Enables the Metal backend" ${ENABLE_METAL_DEFAULT})
 option(ENABLE_DISCORD_RPC "Enables the Discord Rich Presence feature" ON)
 
 if (ENABLE_METAL AND NOT APPLE)
     message(FATAL_ERROR "Metal backend is only supported on Apple platforms")
+endif()
+
+if (NOT ENABLE_VULKAN AND NOT ENABLE_METAL)
+	message(FATAL_ERROR "At least one graphics backend must be enabled (Vulkan or Metal)")
 endif()
 
 # input backends
@@ -225,11 +231,6 @@ if (ENABLE_VULKAN)
 	include_directories("dependencies/Vulkan-Headers/include")
 	add_compile_definitions(ENABLE_VULKAN)
 	add_compile_definitions(VK_NO_PROTOTYPES)
-endif()
-
-if (ENABLE_OPENGL)
-	find_package(OpenGL REQUIRED)
-	add_compile_definitions(ENABLE_OPENGL)
 endif()
 
 if (ENABLE_METAL)

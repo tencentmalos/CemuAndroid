@@ -1,5 +1,207 @@
 # Cemu 帧性能架构：Guest / Host / GPU 与长帧案例
 
+> BotW draw 从 Guest GX2 HLE、模拟 PM4 到 Host renderer 的专项分析，以及结构化 draw 快速通道实验，见 [Guest 到 Host 的结构化 Draw 快速通道](guest-host-structured-draw-fast-path.md)。
+
+> `WAIT_REG_MEM`、`GX2DrawDone`、readback 与 renderer fence 的生产者/消费者语义，以及
+> Host-like dependency/completion point 设计，见 [Guest / Host 同步与完成点架构](guest-host-synchronization.md)。
+
+> Qualcomm/Adreno 的 binning/HSR、Cemu 当前未完成的 conditional-render culling，以及 BotW
+> `accurate` / `always_visible` query A/B，见
+> [移动 GPU HSR 与 Cemu Occlusion Query 策略](mobile-occlusion-query-hsr.md)。
+
+> 2026-08-07 在 Pico B3110 上完成了第一份对齐 **Cemu Guest 帧边界** 的 BotW RDC，
+> 并用 warmup 后 30 秒 Tracy counter 做了交叉验证。完整数据见
+> [BotW Guest 命令翻译与 Host Vulkan 提交基线](../verification/botw-command-translation-baseline.md)。
+
+## 2026-08-07 AYN Thor：现代 GPU 能覆盖 draw，前端翻译仍是成本
+
+在默认移除 Host occlusion query、完成完整 warmup 后，对 BotW v208 神庙 gameplay 采集
+30 秒 Tracy。样本包含 380 个 frame、3,753,340 个 CPU zone、6,122 个 GPU zone；其中
+6,112 个 GPU zone 有真实 Vulkan timestamp。设备当时的 Adreno 频率为 401 MHz，因此绝对
+FPS 只用于描述该次样本，不与其他时钟状态混用。
+
+基线 artifact：`20260807-143517-836-tracy-tracy-live-normalized-only-0fdc7925`。
+
+| 每帧指标 | 结果 | 含义 |
+| --- | ---: | --- |
+| PM4 packet / dword | 61,858 / 318,353 | Guest 协议前端工作量，不是 draw 数 |
+| context packet | 21,611 | shader、RT、depth、blend 等虚拟寄存器状态 |
+| changed / redundant SET packet | 19,438 / 22,697 | 重复状态包数量甚至高于真实变化包 |
+| draw | 3,970 | 现代 Host GPU 可承受的 Wii U 级渲染量 |
+| full / fast draw | 1,189 / 2,781 | 约 30% 仍进入完整 Host state prepare |
+| Host draw translate | 16.99 ms | 明确属于 LatteThread/Vulkan 前端 CPU 成本 |
+| Vulkan submit | 10.42 | threshold 3.07、readback 4.33、frame/acquire/present 各 1 |
+| GPU command-buffer root | 46.41 ms | 真实 GPU timestamp；低于约 79 ms 的整帧间隔 |
+| present blit / readback copy GPU | 0.66 / 0.18 ms | 最终 blit 和 copy 指令本体都不是主耗时 |
+
+### GPU command-buffer 盲区已拆开
+
+后续在 command-buffer root 内补了 guest render pass、transfer、hazard、present 和
+readback GPU scope，并修正 Ptracy 对嵌套 GPU zone 的重复求和。完成 warmup 后的 BotW
+v208 神庙窗口为 artifact
+`20260807-152929-264-tracy-tracy-live-normalized-only-d71186cb`，正式统计 frame
+`1800..2051`，共 252 帧。
+
+| GPU 指标 | 每帧 | 正确解释 |
+| --- | ---: | --- |
+| command-buffer covered union | 48.36 ms | GPU 根区间并集，是该窗口的实际 GPU 覆盖 |
+| 所有嵌套 zone inclusive sum | 96.19 ms | 父子重复求和，只用于检查埋点层级，不能当帧时 |
+| guest render-pass self | 43.83 ms | 已标记 GPU 时间的主要部分 |
+| command-buffer 未命名 self | 0.63 ms | 根区间扣除直接子区间后的剩余盲区 |
+| texture copy / buffer upload | 1.61 / 0.82 ms | 明确的 transfer 子阶段 |
+| present blit / surface copy | 0.66 / 0.30 ms | 末端输出与 surface conversion |
+
+因此旧结论中的“GPU command buffer 约 46 ms”不再等于“未知 rendering”。绝大部分已经
+落入 guest render pass，根区间未命名 self 只有约 0.63 ms/帧。该窗口平均约 653 个 GPU
+zone/帧，即约 1307 次 timestamp write/帧，仍属于高密度埋点；render-pass 归因可用于找
+方向，但正式 A/B 还要使用 root-only 或抽样明细复核 profiler perturbation。
+
+2026-08-08 又在用户肉眼确认已经进入同一神庙 gameplay 后直接采集 40 秒，得到 artifact
+`20260807-160734-819-tracy-tracy-live-normalized-only-9bd34fa3`。丢弃两端边界后统计
+frame `50..477`，共 428 帧；场景截图为
+`_out/profiler/gpu-composition-20260808/gameplay-after-capture.png`。这次独立复现与上表
+一致：command-buffer covered union 为 `48.45 ms/帧`，guest render-pass self 为
+`43.89 ms/帧`，占 covered 的 `90.6%`；command-buffer 未命名 self 仅
+`0.63 ms/帧`。其余组成如下：
+
+| GPU 分类 | 每帧 | covered 占比 |
+| --- | ---: | ---: |
+| Guest render pass self | 43.89 ms | 90.59% |
+| texture/buffer/surface/streamout/readback 等 transfer | 3.12 ms | 6.44% |
+| present blit | 0.66 ms | 1.37% |
+| render-target/input-texture hazard | 0.15 ms | 0.31% |
+| command-buffer 未命名 self | 0.63 ms | 1.29% |
+
+对应的 Host counter 平均为 3973 draw、253.4 个 Guest render pass 和 10.40 次 Vulkan
+submit/帧。169.0 个 pass 只有一次 draw，207.0 个 pass 最多四次 draw，分别占 Guest
+render pass 的 `66.7%` 和 `81.7%`。这说明下一层 GPU 优化不能再笼统归因到
+“command buffer”，而应检查细碎 render pass、attachment 切换和 tile/binning 周期。
+
+render-pass duration 的分布也显示，数量与时间不能混为一谈：小于 `0.05 ms` 的 pass
+占全部 pass 的约 `63.0%`，但只占 Guest render-pass GPU 时间的 `8.34%`；大于等于
+`0.5 ms` 的 pass 只占约 `11.3%`，却贡献 `63.25%` 的时间，其中大于等于 `2 ms` 的
+599 个 pass 贡献 `10.97%`。后续应以低频抽样方式给重 pass 补 attachment identity、
+draw count、pipeline/shader 和结束原因，不应继续给约 3970 个 draw 逐个写 GPU timestamp。
+
+该轮 Tracy 连接期间 `cemu.fps_milli` 平均为 13.25 FPS；断开后同一进程、同一画面状态层
+恢复为 16.5 FPS，采集前截图为 17.0 FPS。约 654 个 GPU zone/帧和 1307 次 timestamp
+write/帧具有明显扰动，因此本轮只用硬件 timestamp duration 判断组成，不把连接期间的
+绝对 FPS 当产品基线。该驱动仍为 `flags=0`、无 `GpuCalibration` 事件；逐帧关联使用
+CPU submit time，不能把 GPU 绝对时间轴与 CPU 时间轴强行对齐。
+
+### Adreno / Tracy 的 CPU-GPU 时间戳校准边界
+
+Foundation 现在同时支持 `VK_EXT_calibrated_timestamps` 与
+`VK_KHR_calibrated_timestamps`，并修正了 Tracy symbol table 曾用
+`vkGetDeviceProcAddr` 加载 physical-device 函数的问题。驱动提供校准扩展时，Tracy
+context 会设置 `flags & 1`，并在长采集中发送 `GpuCalibration` 事件修正漂移。
+
+当前 AYN Thor 的 Adreno 740 驱动（2023-12-27）虽然报告 Vulkan 1.3，但两种校准扩展
+都未暴露。实机日志明确为：
+
+```text
+Vulkan profiler timestamp calibration: api=none hardware=unavailable fallback=initial-query-pair
+```
+
+这种设备不能伪造 calibrated flag。fallback 改为连续 8 次提交极小 timestamp command，
+以 CPU submit 前后时间包围 GPU timestamp，选取最窄区间并用中点建立初始时钟锚点；旧实现
+只在 `vkQueueWaitIdle` 后取一次 CPU 时间，存在固定的向后偏差。20 秒同类诊断采集对比如下：
+
+| depth-0 GPU start - CPU record end | 旧单次锚点 | 新 8 次最短区间锚点 |
+| --- | ---: | ---: |
+| 最小值 | 0.304 ms | 0.149 ms |
+| P50 | 0.657 ms | 0.512 ms |
+| P95 | 0.831 ms | 0.687 ms |
+| 最大值 | 6.032 ms | 1.342 ms |
+
+新采集 artifact 为
+`20260807-155634-519-tracy-tracy-live-normalized-only-f0434a86`；旧对照为
+`20260807-154548-254-tracy-tracy-live-normalized-only-dfabaefe`。新样本 1798 个
+depth-0 command buffer 中，前 20% 与后 20% 的中位间隔分别是 0.524 ms 和 0.507 ms，
+20 秒内未观察到有意义的漂移。这两轮是 timestamp calibration 专项诊断，没有执行完整
+gameplay warmup，只能比较时钟锚点质量，不能作为 FPS 或热点优化基线。
+
+这里的间隔还包含真实 queue submit/调度延迟，所以它不是校准误差本身，也不能把
+`flags=0` 写成硬件校准成功。可信边界是：GPU zone duration 继续使用硬件 timestamp；
+CPU/GPU 绝对先后和逐帧相对位置在 `flags=0` 时使用 CPU-submit 时间；Ptracy 以
+`calibrationSource=initial-query-pair-estimate` 和
+`TracyGpuCpuAlignmentUncalibrated` 明确标记这一点。只有 context flag 为 1 且长采集出现
+`gpuCalibrationEventCount > 0`，才能把绝对 CPU/GPU timeline 当作硬件周期校准结果。
+
+`vulkan.draw.prepare.full` 聚合约 `11.00 ms/帧`，fast prepare 约 `3.15 ms/帧`。同时
+`latte.command_buffer.decode` 的 self time 约 `7.10 ms/帧`。这说明当前问题不是 Adreno
+“画不动 Wii U 的约 4k draw”，而是 Cemu 仍在 Host CPU 上解释约 6.2 万个 PM4 packet、
+重建约 1.2k 次完整 draw state，并以多个 command buffer 提交给驱动。
+
+```mermaid
+flowchart TB
+    A[BotW Guest<br/>约 6.2 万 PM4 packet]
+    B[LatteThread 解码<br/>约 7.1 ms self]
+    C[3970 draw<br/>1189 full + 2781 fast]
+    D[Host draw translate<br/>约 17.0 ms]
+    E[约 10.4 次 Vulkan submit]
+    F[Adreno GPU root<br/>约 46.4 ms]
+    G[整帧约 79 ms]
+
+    A --> B --> C --> D --> E --> F
+    F --> G
+```
+
+因此后续默认原则是：**保留 Guest 可观察语义，让现代 GPU 直接承担实际渲染量；优先消除
+旧硬件 hint、重复状态翻译、过细 command-buffer 批次和不必要同步。** HSR/Hi-Z/binning
+可以覆盖隐藏片元，却不会替 Cemu 解码 PM4、创建 descriptor/pipeline 或录制 `vkCmdDraw*`。
+
+当前 300 draw-pass threshold 每帧触发约 3.07 次 submit。曾独立实验把常规阈值提高到
+600；readback、present、frame boundary、swapchain acquire、显式 completion 等边界全部
+保留。结果证明这不是当前可保留的优化：Vulkan submit 从 `10.42` 降至 `8.41` 次/帧，
+`vulkan.submit` CPU 聚合从 `5.75` 降至 `5.48 ms/帧`；但 readback visibility 的
+`wait_for_fence` 从 `1.41` 升至 `7.17 ms/帧`，feedback-boundary DrawDone 从 `3.09`
+升至 `9.17 ms/帧`。因此默认值已恢复为 300。
+
+这个反例说明：物理 GPU 可以处理更大的 Wii U draw batch，但当前 Guest feedback/readback
+仍把“尽早完成”作为可观察语义。后续要先把上一帧 feedback、staging copy 和 completion
+point 从主 graphics batch 解耦，再扩大非反馈 draw 的批次；不能只以 submit 数下降判定优化。
+600 threshold 实验 artifact 为
+`20260807-144803-798-tracy-tracy-live-normalized-only-0c85ae91`，包含 405 个 frame、
+5,709 个真实 GPU-time zone；实验代码未保留。
+
+## 最新基线：不是单一 translate 瓶颈
+
+当前最完整的同场景证据把约 `94.06 ms` 的平均帧拆成了三个不能混为一谈的层次：
+
+| 层次 | 直接证据 | 当前判断 |
+| --- | --- | --- |
+| Guest command 生产/交付 | Guest/Host 都是 60 submissions、135,749 words，pending 为 0 | command queue 没有跨帧积压 |
+| Host command consume/translate | consume 77.01 ms，draw translate 17.79 ms | translate 约占帧时 18.9%，是实质成本但不是全部 |
+| Host Vulkan 结构与同步 | 4241 draws、255 passes、216 copies、12 submits | 大量短 pass 与 readback/submit 是独立成本 |
+
+稳定窗口中每帧平均 `11.33` 次 Vulkan submit：固定 4 次由 draw-pass threshold 触发，
+4～5 次由 readback 触发，另有固定 3 次尚待继续分类。RenderDoc 完整帧还显示
+`169/255` 个 render pass 只有一个 draw，`210/255` 个不超过四个 draw。
+
+```mermaid
+flowchart TB
+    A[约 3971 个 Cemu draw]
+    B[Host translate<br/>约 17.79 ms]
+    C[约 1190 个 Cemu draw sequence]
+    D[255 个 Vulkan render pass]
+    E[216 次 Vulkan copy]
+    F[11～12 次 submit]
+    G[等待 / readback / GPU 执行]
+
+    A --> B --> C
+    C --> D
+    C --> E
+    D --> F
+    E --> F
+    F --> G
+```
+
+这修正了“只要 Guest 直接调用 Host renderer 就能消除主要开销”的过强假设。即使跳过
+部分 PM4 packet decode，attachment/hazard、readback、copy、render-pass 生命周期和
+queue submit 仍必须存在。后续优化先按 submit reason 和低 draw pass 做语义安全合并，
+再评估 BotW 专有 Host 快速通道；不能先绕过 Guest command stream 再补同步正确性。
+
 > 本文分析的是 **2026-08-01、AYANEO Pocket DS、BOTW v208 / DLC v80、
 > Vulkan、Android RelWithDebInfo** 这一次 20 秒 Tracy 采集中的最慢帧，即 frame
 > `#71`。它不是“Cemu 在所有设备和游戏中的全局最慢帧”。后续比较必须复用相同场景、
@@ -29,6 +231,84 @@ Frame `#71` 用时 **117.223 ms**，是本次 198 帧中的最大值。它相对
    Guest/Host 语义边界可信，Guest wall time 数值不可信。
 6. **GPU 仍是后续的第二道上限。** 本段 GPU 平均覆盖 46.773 ms，即使完全消除
    CPU 瓶颈，也只能对应约 21 FPS；但它不是 frame `#71` 成为局部最长帧的原因。
+
+### 1.1 2026-08-02 Render/Texture 独立尺度实验补充
+
+P3 实机验证在同一 BotW 神庙场景提供了新的交叉证据：
+
+| 组合 | 面板瞬时 FPS | Draws | Source | 证据边界 |
+| --- | ---: | ---: | --- | --- |
+| Texture 1x + Render 1x | 约 12 | 未在本轮截图冻结 | 1280x720 → 1280x720 | 用户同场景观测 |
+| Texture 2x + Render 0.5x | 10.5～12.2 | 3,802～3,811（约 2,800 fast） | 1280x720 → 640x360 | warmup 后设备截图 |
+| Texture 1x + Render 2x | 8.6 | 3,824（2,813 fast） | 1280x720 → 2560x1440 | warmup 后设备截图 |
+
+单张 StatusLayer 不是稳定 benchmark，不能用 12.2 与 8.6 计算精确收益；但两个现象
+足够稳定，可用于确定下一步方向：
+
+1. Render 从 1x 降到 0.5x 后仍约 12 FPS，说明当前 1x 基线没有主要受 raster 像素
+   吞吐限制。
+2. Render 提高到 2x 后降到约 8.6 FPS，说明额外 raster/RT 带宽会把 GPU 推成新的
+   附加瓶颈，但它不是 1x 下约 12 FPS 的首要限制。
+3. 0.5x 与 2x 的 draw 数都约为 3.8k，且约 2.8k 进入 fast draw；降低 internal
+   extent 不会减少 guest GX2 packet、Latte decode、状态/descriptor 准备和 Vulkan
+   draw 记录次数。
+
+```mermaid
+flowchart TB
+    A[Render 1x: 约 12 FPS]
+    B[Render 降到 0.5x]
+    C[像素约降到 1/4]
+    D[Draws 仍约 3.8k]
+    E[FPS 仍约 12]
+    F[优先检查 Host 前端]
+    G[Guest 命令与 Latte decode]
+    H[draw.prepare / descriptor / submit]
+
+    A --> B --> C
+    B --> D --> E
+    C --> E
+    E --> F
+    F --> G
+    F --> H
+```
+
+因此 `Texture 2x + Render 0.5x` 当前应视为画质、显存与 raster 成本重新分配的候选，
+不是主要提帧方案。下一轮 Tracy 要按 frame 聚合 normal/fast draw、Guest marker/pass、
+command words、状态变化、descriptor/pipeline 命中和 submit draw count，验证约 3,800
+draws 中哪些可合并、缓存或通过 BotW 专有 marker 快速通道减少 Host 成本。
+
+同一组合完成同步修正后又采集了 10 秒 Tracy（102 帧，trace 位于
+`_out/internal-resolution/p3/cemu-botw-render0.5-texture2.tracy`）。最长帧 `#42` 为
+116.938 ms，1 秒窗口的 draw 计数稳定在 3,846～3,860。该帧数据把 draw 假设从相关性
+推进到了可量化的 Host 成本：
+
+| Host scope | 调用数 | 累计 / self | 对 116.938 ms 帧的解释 |
+| --- | ---: | ---: | --- |
+| `vulkan.draw.prepare` | 3,801 | 26.157 / 26.157 ms | 约 6.88 µs/draw，直接占约 22.4% |
+| `latte.draw_pass.decode` | 1,068 | 22.256 / 3.197 ms | 包含 fast sequence 和部分子 draw，不能再与 prepare 相加 |
+| `latte.sync.wait_reg_mem` | 1 | 30.890 / 30.870 ms | 同步等待与 draw 固定成本同样重要 |
+| `vulkan.submit` | 12 | 14.839 / 0.037 ms | 大部分时间落在结束、回收和 fence 等子项 |
+| `SurfaceScale.PreflightAttachmentGroup` | 1,068 | 4.367 / 4.367 ms | P3 新路径的可优化固定开销 |
+| `SurfaceScale.Vulkan.Resample` | 135 | 0.943 / 0.943 ms | 当前不是主瓶颈 |
+
+同帧 GPU 覆盖为 41.943 ms，仍显著短于 116.938 ms CPU 帧。结论不是“3800 draws
+解释了全部 12 FPS”，而是“逐 draw prepare 已确认吃掉约 26 ms；另有约 31 ms 的
+同步等待”。优化顺序应先拆分 full/fast prepare、pipeline/descriptor/cache 命中，再
+分析 `wait_reg_mem` 对应的 Guest marker 与 GPU fence；两条线需要分别验证。
+
+拆分标签后的第二轮 8 秒采集进一步给出了优化重心：
+
+| 路径 | 每帧计数 | 全段次数 | 全段 prepare | 平均每次 |
+| --- | ---: | ---: | ---: | ---: |
+| full / sequence first draw | 1,013～1,016 | 45,590 | 419.959 ms | 约 9.21 µs |
+| fast / continued draw | 2,842～2,845 | 127,669 | 182.493 ms | 约 1.43 µs |
+
+fast draw 已占总 draw 的 73.6%～73.7%，说明现有 continuous draw pass 优化确实大量
+命中；但约 26.3% 的 full draw 占两类 prepare 聚合时间约 69.7%。换句话说，BotW 每帧
+仍把渲染拆成约 1,000 个需要完整 state/resource/pipeline 准备的 sequence，平均每个
+sequence 只有约 2.8 个后续 fast draw。后续专有快速通道首先应记录“为什么结束
+continuous pass”，再评估是否能安全放宽某些状态变更的终止条件；不能直接吞掉 Guest
+状态包或跨越真实的 attachment/texture hazard。
 
 ## 2. 证据基线
 
@@ -342,6 +622,23 @@ sequenceDiagram
 
 ### 5.3 GX2 命令如何跨过 Guest / Host 边界
 
+PM4 packet 是 AMD GPU Command Processor 使用的有序命令包，不是某一种 draw。Latte 的
+Guest command buffer 以 dword 为单位串联 packet header 与 payload；Cemu 根据 packet type
+和 opcode 更新虚拟寄存器或产生 Host 操作。BotW 稳态常见类别如下：
+
+| PM4 类别 / 示例 | Guest 作用 | Host 转换 |
+| --- | --- | --- |
+| `SET_CONTEXT_REG` | shader、RT、depth、blend、viewport 等上下文 | 更新 Latte state，必要时重选 pipeline/FBO |
+| `SET_RESOURCE` / `SET_SAMPLER` | texture、vertex/uniform buffer、sampler | texture cache、descriptor 与 buffer binding |
+| `DRAW_INDEX_2` / `DRAW_INDEX_AUTO` | 发起 indexed/non-indexed draw | `vkCmdDrawIndexed` / `vkCmdDraw` |
+| `WAIT_REG_MEM` / `EVENT_WRITE` | 顺序、retirement、内存可见性 | dependency、readback completion、Host wait |
+| `INDIRECT_BUFFER_PRIV` | 进入 Guest display list/子 command buffer | LatteThread 切换解码区间，不直接等同 Host submit |
+| Cemu `IT_HLE_*` | 表达 GX2 HLE 与模拟器内部边界 | query、scanbuffer、surface copy、feedback 等专用处理 |
+
+因此“每帧 6.2 万 PM4 packet、约 4 千 draw”并不矛盾。大量 packet 是状态、资源和同步；
+现代 GPU 可以覆盖 draw 的 raster/tiler 工作，但 PM4 解码和 Vulkan 状态翻译仍由 Host CPU
+承担。
+
 以 BOTW 发出一批 draw 为例，边界依次是：
 
 1. BOTW Guest 代码在某个 `OSThread_t` 上运行；承载它的 `PPC Core N` 先进入已经生成的
@@ -359,7 +656,8 @@ sequenceDiagram
 5. draw packet 最终进入 `VulkanRenderer::draw_execute`，Host 进行 shader/pipeline、
    descriptor/resource/state 准备并记录 `vkCmdDraw*`。它对应 CPU zone
    `vulkan.draw.prepare` 和 GPU zone `vulkan.draw`，两者不是同一段执行时间。
-6. Vulkan renderer 的新 command buffer 默认将 submit threshold 设为 300 recorded draws，
+6. Vulkan renderer 的新 command buffer 默认将 submit threshold 设为 300 recorded draw
+   passes（600 的扩大批次实验因 feedback/readback wait 回退而未保留），
    也会因 readback、显式“尽快提交”等条件提前 submit。frame `#71` 观测到 4,129 draws
    和 12 次 `vulkan.submit`；由于 CPU frame marker、录制和 GPU 执行跨帧流水，不能用
    `4,129 / 300` 推导该帧应有的 submit 次数，也不能假定每批严格 300 draw。
@@ -831,6 +1129,189 @@ consumer 等待 Guest producer，不能直接证明 Guest PPC CPU 饱和。
 
 完整采集标识、APK hash、截图、counter 和最长帧表见
 [`performance-profiler.md`](../verification/20260801-C5/performance-profiler.md)。
+
+### 11.6 BotW Guest tag 驱动的 Host 快速通道候选
+
+现有 `patch_guest_profiler.asm` 在 BotW v208 的 PPC 函数入口和返回点调用
+`coreinit.hook_ProfileSectionBegin/End`。这条 HLE 调用发生在承载 Guest `OSThread` 的
+`PPC Core N` 上；它能说明 `drawTV`、`postDrawTV` 等 Guest 阶段何时运行，但不会自动
+随 GX2 command buffer 进入 `LatteThread`，也不会减少 PM4 解码、Vulkan draw prepare、
+submit 或 fence/readback 成本。因此它当前是定位工具，不是渲染快速通道。
+
+后续若为 BotW 增加专有 Host 快速通道，应按以下证据链推进：
+
+```mermaid
+flowchart TD
+    A[BotW ASM Begin/End]
+    B[写入轻量 GPU marker packet]
+    C[LatteThread 按队列顺序消费]
+    D[按 Guest pass 聚合 opcode/draw/wait]
+    E{主要是 CPU busy?}
+    F[识别稳定重复模板]
+    G[Host 预解码/批量状态更新]
+    H[保留通用路径]
+    I[等待/抢占/fence 优化]
+
+    A --> B --> C --> D --> E
+    E -->|是| F --> G
+    E -->|否| I
+    G --> H
+```
+
+第一步不是缓存 Vulkan command buffer，而是新增一个 Cemu 私有、无 GPU 副作用的
+marker packet：Guest ASM/HLE 只写入固定 section ID，`LatteThread` 在原命令顺序中消费
+并切换当前 pass。Profiler 再按 pass 聚合 command words、opcode 数、normal/fast draw、
+surface transition、wait 和 submit；这样才能把 Guest 的 `PPCSystemTaskDrawTV` 与 Host
+实际消费到的工作关联起来，而不是用两条并行时间线猜测因果。
+
+只有同时满足下列条件，才进入 BotW 专有预解码或模板缓存：
+
+- 同一 section 内存在跨帧重复且可稳定识别的 indirect command buffer；
+- 实测成本来自 opcode dispatch、寄存器状态翻译或资源查找，而不是
+  `wait_reg_mem`、async readback、fence wait、ring empty 或 OS off-CPU；
+- 模板的动态字段、Guest 内存依赖、surface serial、shader/pipeline key 和失效条件可完整
+  列举；任一条件变化都回退通用 decode；
+- 快速路径与通用路径可逐帧抽样对比最终寄存器状态、draw 参数和 RenderDoc 输出。
+
+可优先评估的实现从低风险到高风险依次是：相同状态写入去重、批量 opcode dispatch、
+已验证 indirect buffer 的预解码 IR、BotW 固定 pass 的模板实例化。直接复用已录制 Vulkan
+command buffer 风险最高，因为 descriptor、image layout、alias、同步和动态资源生命周期
+都可能跨帧变化，当前不作为首选。
+
+明确不进入专有快速通道的边界包括：wait/semaphore/flip、readback、query、动态 Guest
+内存写入、texture alias/reinterpret、surface family 或 scale generation 变化、shader/pipeline
+尚未稳定，以及任何未被 marker 覆盖的命令。专有路径必须是可关闭、可诊断的增量优化，
+不能替换通用 Cemu 语义。
+
+当前优先级仍是先修复 GPU pass/submit 时间戳，并完成 marker→Latte 顺序关联。最新数据中
+每帧约 24.80 ms async readback、20.65 ms `wait_reg_mem`、17.17 ms draw prepare；这些数字
+说明“全部 82.5 ms decode 都可以用模板缓存消除”是不成立的。
+
+### 11.7 Guest→Host 命令与帧尾同步归属
+
+在 Android RelWithDebInfo 上完成默认 warmup、确认进入 BotW v208 初始神庙后，新增的
+HLE 调用点归属计数器把 Guest section、GX2 command buffer、帧尾同步和 Host Latte 工作
+串到了一条证据链。正式窗口为 Tracy session `s28`，参数 15 秒、147 个 frame-set 帧；
+采集前 `guest_profiler_reset` 已成功，采集后 section 配对错误均为 0。断开 Tracy 后同一
+画面的状态层为 12.0 FPS / 83.16 ms，采集时逐 draw CPU/GPU zone 会把典型帧放大到约
+98～101 ms，因此本节用 trace 判断耗时归属，不用连接态 FPS 代替真实性能。
+本轮目标是验证调用归属，不宣称满足下文“最长帧结论至少连续 20 秒”的完整退出标准。
+
+```mermaid
+flowchart TD
+    State[Guest StateMachine<br/>约 16～21 ms]
+    Post[Guest SystemTask PostCalc<br/>约 16～24 ms]
+    Draw[Guest DrawTV / DrawDRC<br/>约 0.2～0.3 ms]
+    Publish[发布 indirect command buffer<br/>约 60 次/帧]
+    Ring[Host command ring<br/>等待 Guest 约 13～18 ms]
+    Decode[Latte 解码]
+    Prepare[约 4.0k draw prepare<br/>约 19～23 ms]
+    FullSync[两次 GX2DrawDone<br/>触发 async readback]
+    Fence[一次 WAIT_REG_MEM<br/>约 16～20 ms]
+    GPU[Host GPU<br/>抽查 8.389 ms]
+
+    State --> Post --> Draw --> Publish --> Ring --> Decode
+    Decode --> Prepare --> GPU
+    Decode --> FullSync
+    Decode --> Fence
+```
+
+这些分支可能在不同 Host/Guest 线程上重叠，图只表达因果和队列顺序，不能把所有毫秒
+直接相加。
+
+#### 命令提交归属
+
+`GX2Command_SubmitCommandBuffer` 现在读取当前 Guest `OSThread` 上仍活动的 profiler
+section，并按 section 累计 submission、word 数和 Guest LR。session `s28` 的 counter
+差值如下：
+
+| 归属 | submission 事件 | command words 差值 | words 占比 |
+| --- | ---: | ---: | ---: |
+| `PPCSystemTaskDrawTV` | 5,215 | 20,687,936 | 99.41% |
+| `PPCSystemTaskDrawDRC` | 3,129 | 106,968 | 0.51% |
+| 未归属 | 596 | 15,456 | 0.07% |
+| 总计 | 8,940 | 20,810,440 | 100%（舍入） |
+
+按 149 个 Guest 帧折算约 60 次 submission、139.7k words/帧，其中 DrawTV 约 35 次、
+DrawDRC 约 21 次、未归属约 4 次。这里的 words 是 Guest 共享内存中 indirect command
+buffer 的 `uint32` 长度，不是 Guest 每帧复制到 Host 的字节数；`DrawTV` 自身只有约
+0.1～0.3 ms，说明它主要发布指针与长度，约四千次 draw 的 PM4 解码和 Vulkan 状态准备
+发生在后续 `LatteThread`。
+
+因此“Guest→Host 数据传输集中在 rendering”需要改写为更准确的结论：99% 以上的命令
+描述量确实在 `DrawTV` scope 内发布，但成本不是一次大 memcpy，而是 Host 随后逐条消费
+命令、维护状态、准备 draw 和执行同步。
+
+#### 帧尾三类 Guest HLE 调用点
+
+新埋点记录了 `GX2SetGPUFence`、`GX2DrawDone` 和 `GX2SwapScanBuffers` 进入 Host HLE 时
+的 Guest LR。稳定窗口结果没有歧义：
+
+| 事件 | 次数 | Guest LR | 每 Guest 帧 |
+| --- | ---: | --- | ---: |
+| `GX2SetGPUFence` | 149 | `0x031FAB04` | 1 |
+| `GX2DrawDone`，第一处 | 149 | `0x031FAA14` | 1 |
+| `GX2SwapScanBuffers` | 149 | `0x031FAB20` | 1 |
+| `GX2DrawDone`，第二处 | 149 | `0x031FAB24` | 1 |
+
+LR 是 Guest `bl` 返回地址，所以实际 call instruction 分别位于 LR 前 4 字节。它们组成
+下面的 BotW 帧尾序列：
+
+```mermaid
+sequenceDiagram
+    participant Guest as BotW Guest
+    participant GX2 as Cemu GX2 HLE
+    participant Latte as LatteThread
+    participant Vk as Vulkan/GPU
+
+    Guest->>GX2: GX2DrawDone @ 0x031FAA10
+    GX2->>Latte: HLE_SYNC_ASYNC_OPERATIONS
+    Latte->>Vk: async readback / fence wait
+    Guest->>GX2: GX2SetGPUFence @ 0x031FAB00
+    GX2->>Latte: WAIT_REG_MEM 0x1046D420
+    Guest->>GX2: GX2SwapScanBuffers @ 0x031FAB1C
+    Guest->>GX2: GX2DrawDone @ 0x031FAB20
+    GX2->>Latte: HLE_SYNC_ASYNC_OPERATIONS
+```
+
+`GX2DrawDone` 在 Vulkan 路径会强制写入 `IT_HLE_SYNC_ASYNC_OPERATIONS`、flush command
+buffer，再等待最后 timestamp。session `s28` 中它有 298 个闭合 HLE scope，累计
+6,887.7 ms，平均约 23.1 ms/次；Host 同时记录 299 次 async operation、累计
+3,161.0 ms。单帧 #70 中两次完整 DrawDone 依次约 25.27 ms 与 21.98 ms，Host
+async readback 为 25.12 ms。Guest HLE scope 与 Latte 工作发生在不同线程，不能把两者
+相加，但调用次数、顺序和时间相关性证明了 full-sync/readback 由这两次帧尾调用触发。
+
+`GX2SetGPUFence` 每帧一次，固定物理地址 `0x1046D420`。Host 初值长期为 reference-2，
+最终值等于 reference；session `s28` 的 `wait_reg_mem` 为 149 次、累计 2,958.1 ms，平均
+约 19.85 ms。它等待的是 Guest/CPU 可见内存达到目标值，不是逐次等待约四千个 draw。
+下一轮应通过 IDA/runtime watchpoint 找出谁写 `0x1046D420`，再判断它是必要 job barrier、
+保守轮询，还是可由事件唤醒替代。
+
+#### 与 BetterVR 优化补丁的静态对齐
+
+BetterVR 的 `patch_RND_StereoRendering_Optimizations.asm` 恰好执行：
+
+- `0x031FAA10 = nop`，移除第一处 pre-swap `GX2DrawDone`；
+- 在 `0x031FAB1C` 替换原 `GX2SwapScanBuffers` 调用；
+- wrapper 内先 swap、再调用一次 `GX2DrawDone`，返回 `0x031FAB24`。
+
+因此“BotW 每帧两次 DrawDone，其中第一处可能冗余”已经同时拥有动态 trace 与静态 mod
+参考。它是当前收益最大的 BotW 专项实验候选，但不能直接当作通用 Cemu 优化：正式启用
+前必须做单独 Graphic Pack A/B，检查 readback/query、画面正确性、长时间稳定性和
+RenderDoc 帧输出；通用 Host 路径仍保留两次调用的原始语义。
+
+#### 当前瓶颈优先级
+
+1. 先做 BotW `0x031FAA10` pre-swap DrawDone 的可关闭 A/B 实验；理论上最多移除一条
+   约 20～25 ms 的 Guest 等待链，但实际收益受两次 full-sync 重叠和 GPU 完成度限制。
+2. 用 debugger/IDA 找 `0x1046D420` 的 Guest writer，解释每帧约 20 ms 的
+   `WAIT_REG_MEM`，不能只优化 Host 忙轮询表象。
+3. 在 `PPCSystemTaskPostCalc` 内只对已静态验证的高成本子调用补 tag；它稳定约
+   16～24 ms，但函数含大量 callsite，不应盲目批量 detour。
+4. 为 DrawTV→Latte 增加 command-stream marker，按 Guest pass 聚合约四千次 draw；
+   当前 draw prepare 仍约 19～23 ms，是独立于帧尾同步的 CPU 成本。
+5. GPU frame #70 covered time 为 8.389 ms，且 Render/Texture 均为 1x；当前场景首先是
+   Guest/Host CPU 与同步受限，不应先以扩大 GPU 分辨率或 GPU shader 优化作为主线。
 
 ## 12. 后续退出标准
 

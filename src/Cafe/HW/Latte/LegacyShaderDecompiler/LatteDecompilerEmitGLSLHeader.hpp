@@ -2,11 +2,11 @@
 
 namespace LatteDecompiler
 {
-	void _emitUniformVariables(LatteDecompilerShaderContext* decompilerContext, RendererAPI rendererType, LatteDecompilerOutputUniformOffsets& uniformOffsets)
+	void _emitUniformVariables(LatteDecompilerShaderContext* decompilerContext, bool useVulkanLayout, LatteDecompilerOutputUniformOffsets& uniformOffsets)
 	{
-		LatteDecompilerShaderResourceMapping& resourceMapping = (rendererType == RendererAPI::Vulkan) ? decompilerContext->output->resourceMappingVK : decompilerContext->output->resourceMappingGL;
+		LatteDecompilerShaderResourceMapping& resourceMapping = useVulkanLayout ? decompilerContext->output->resourceMappingVK : decompilerContext->output->resourceMappingGL;
 
-		if (rendererType == RendererAPI::Vulkan)
+		if (useVulkanLayout)
 		{
 			// for Vulkan uniform vars are in a uniform buffer
 			if (decompilerContext->hasUniformVarBlock)
@@ -91,7 +91,7 @@ namespace LatteDecompiler
 				// omit uf_fragCoordScale
 				compatNeedFragCoordScalePadding = true;
 			}
-			else if (rendererType == RendererAPI::OpenGL)
+			else if (!useVulkanLayout)
 			{
 				uniformCurrentOffset = (uniformCurrentOffset + 7)&~7;
 				shaderSrc->add("uniform vec2 uf_fragCoordScale;" _CRLF);
@@ -114,7 +114,7 @@ namespace LatteDecompiler
 				continue;
 			if (compatNeedFragCoordScalePadding)
 			{
-				if (rendererType == RendererAPI::OpenGL)
+				if (!useVulkanLayout)
 				{
 					uniformCurrentOffset = (uniformCurrentOffset + 7)&~7;
 					shaderSrc->add("uniform vec2 uf_fragCoordScaleCompatPadding;" _CRLF); uniformCurrentOffset += 8;
@@ -152,7 +152,7 @@ namespace LatteDecompiler
 		}
 
 		uniformOffsets.offset_endOfBlock = uniformCurrentOffset;
-		if (rendererType == RendererAPI::Vulkan)
+		if (useVulkanLayout)
 		{
 			if (decompilerContext->hasUniformVarBlock)
 				shaderSrc->add("};" _CRLF); // end of push-constant block
@@ -594,9 +594,9 @@ namespace LatteDecompiler
 		_emitHeaderMacros(decompilerContext);
 		// uniform variables
 		decompilerContext->shaderSource->add("#ifdef VULKAN" _CRLF);
-		_emitUniformVariables(decompilerContext, RendererAPI::Vulkan, decompilerContext->output->uniformOffsetsVK);
+		_emitUniformVariables(decompilerContext, true, decompilerContext->output->uniformOffsetsVK);
 		decompilerContext->shaderSource->add("#else" _CRLF);
-		_emitUniformVariables(decompilerContext, RendererAPI::OpenGL, decompilerContext->output->uniformOffsetsGL);
+		_emitUniformVariables(decompilerContext, false, decompilerContext->output->uniformOffsetsGL);
 		decompilerContext->shaderSource->add("#endif" _CRLF);
 		// uniform buffers
 		_emitUniformBuffers(decompilerContext);

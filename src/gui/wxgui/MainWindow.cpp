@@ -48,9 +48,6 @@
 #endif
 
 // Renderer Canvasses
-#ifdef ENABLE_OPENGL
-#include "canvas/OpenGLCanvas.h"
-#endif
 #ifdef ENABLE_VULKAN
 #include "canvas/VulkanCanvas.h"
 #endif
@@ -1620,10 +1617,6 @@ void MainWindow::CreateCanvas()
     this->GetSizer()->Add(m_game_panel, 1, wxEXPAND);
 
     // create canvas
-	#ifdef ENABLE_OPENGL
-	if (ActiveSettings::GetGraphicsAPI() == kOpenGL)
-		m_render_canvas = GLCanvas_Create(m_game_panel, wxSize(1280, 720), true);
-	#endif
 	#ifdef ENABLE_VULKAN
 	if (ActiveSettings::GetGraphicsAPI() == kVulkan)
 		m_render_canvas = new VulkanCanvas(m_game_panel, wxSize(1280, 720), true);
@@ -2351,7 +2344,6 @@ void MainWindow::RecreateMenu()
 	debugLoggingMenu->AppendCheckItem(MAINFRAME_MENU_ID_DEBUG_LOGGING0 + stdx::to_underlying(LogType::TextureCache), _("&Texture cache warnings"))->Check(cemuLog_isLoggingEnabled(LogType::TextureCache));
 	debugLoggingMenu->AppendCheckItem(MAINFRAME_MENU_ID_DEBUG_LOGGING0 + stdx::to_underlying(LogType::TextureReadback), _("&Texture readback"))->Check(cemuLog_isLoggingEnabled(LogType::TextureReadback));
 	debugLoggingMenu->AppendSeparator();
-	debugLoggingMenu->AppendCheckItem(MAINFRAME_MENU_ID_DEBUG_LOGGING0 + stdx::to_underlying(LogType::OpenGLLogging), _("&OpenGL debug output"))->Check(cemuLog_isLoggingEnabled(LogType::OpenGLLogging));
 	debugLoggingMenu->AppendCheckItem(MAINFRAME_MENU_ID_DEBUG_LOGGING0 + stdx::to_underlying(LogType::VulkanValidation), _("&Vulkan validation layer (slow)"))->Check(cemuLog_isLoggingEnabled(LogType::VulkanValidation));
 	debugLoggingMenu->AppendCheckItem(MAINFRAME_MENU_ID_DEBUG_ADVANCED_PPC_INFO, _("&Log PPC context for API"))->Check(cemuLog_advancedPPCLoggingEnabled());
 	m_loggingSubmenu = debugLoggingMenu;
@@ -2428,7 +2420,6 @@ void MainWindow::RecreateMenu()
 		m_nfcMenu->Enable(MAINFRAME_MENU_ID_NFC_TOUCH_NFC_FILE, true);
 
 		// these options cant be toggled after the renderer backend is initialized:
-		m_loggingSubmenu->Enable(MAINFRAME_MENU_ID_DEBUG_LOGGING0 + stdx::to_underlying(LogType::OpenGLLogging), false);
 		m_loggingSubmenu->Enable(MAINFRAME_MENU_ID_DEBUG_LOGGING0 + stdx::to_underlying(LogType::VulkanValidation), false);
 
 		UpdateNFCMenu();

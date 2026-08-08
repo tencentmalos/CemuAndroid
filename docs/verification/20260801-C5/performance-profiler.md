@@ -120,7 +120,7 @@ The arm64 RelWithDebInfo native object contains the expected shared profiler
 markers:
 
 ```text
-localabstract:azahar-tracy
+localabstract:cemu-tracy
 latte.command_buffer.decode
 cemu.guest_quanta_per_frame
 cemu.guest_jit_entries_per_frame
@@ -149,7 +149,7 @@ the live Tracy capture had SHA-256:
 Profiler MCP was started before launching the title:
 
 ```text
-url=android://localabstract:azahar-tracy
+url=android://localabstract:cemu-tracy
 protocol=tracy
 duration_seconds=40
 keep_session=true
@@ -289,7 +289,7 @@ left running for interactive validation.
 ## Current BOTW gameplay profiler analysis
 
 Profiler MCP captured the playable scene for 20 seconds over Tracy 0.10 using
-`android://localabstract:azahar-tracy`. The retained MCP session was `s3`; a
+`android://localabstract:cemu-tracy`. The retained MCP session was `s3`; a
 local, untracked analysis copy was saved as `_out/profiles/cemu-botw-current.tracy`
 (59,736,635 bytes; SHA-256
 `5891b138dc05eeeac9487330e845246730eb7d5fb705f174238a2c343967d366`). This is a

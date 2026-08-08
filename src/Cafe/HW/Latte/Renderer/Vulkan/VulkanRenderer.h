@@ -8,6 +8,7 @@
 #include "Cafe/HW/Latte/Renderer/Vulkan/CachedFBOVk.h"
 #include "Cafe/HW/Latte/Renderer/Vulkan/VKRMemoryManager.h"
 #include "Cafe/HW/Latte/Renderer/Vulkan/SwapchainInfoVk.h"
+#include "Cafe/HW/Latte/Core/LattePerformanceMonitor.h"
 #include "util/math/vector2.h"
 #include "util/helpers/Semaphore.h"
 #include "util/containers/flat_hash_map.hpp"
@@ -65,6 +66,8 @@ namespace VulkanRendererConst
 	static const inline int SHADER_STAGE_INDEX_GEOMETRY = static_cast<int>(LatteConst::ShaderType::Geometry);
 	static const inline int SHADER_STAGE_INDEX_COUNT = 4;
 };
+
+class CemuVulkanGpuProfilerScope;
 
 // the order doesnt really matter but the types should cover range 0-2 since we use them as an array index
 static_assert(static_cast<int>(LatteConst::ShaderType::Vertex) == 0);
@@ -235,6 +238,12 @@ public:
 
 	void ImguiInit();
 	VkInstance GetVkInstance() const { return m_instance; }
+	void* GetRenderDocDevicePointer() const override
+	{
+		if (m_instance == VK_NULL_HANDLE)
+			return nullptr;
+		return *reinterpret_cast<void* const*>(m_instance);
+	}
 	VkDevice GetLogicalDevice() const { return m_logicalDevice; }
 	VkPhysicalDevice GetPhysicalDevice() const { return m_physicalDevice; }
 
@@ -257,14 +266,16 @@ public:
 	void InitFirstCommandBuffer();
 	void ProcessFinishedCommandBuffers();
 	void WaitForNextFinishedCommandBuffer();
-	void SubmitCommandBuffer(VkSemaphore signalSemaphore = VK_NULL_HANDLE, VkSemaphore waitSemaphore = VK_NULL_HANDLE);
-	void RequestSubmitSoon();
-	void RequestSubmitOnIdle();
+	void SubmitCommandBuffer(LatteVulkanSubmitReason reason, VkSemaphore signalSemaphore = VK_NULL_HANDLE,
+		VkSemaphore waitSemaphore = VK_NULL_HANDLE);
+	void RequestSubmitSoon(LatteVulkanSubmitReason reason);
+	void RequestSubmitOnIdle(LatteVulkanSubmitReason reason);
 
 	// command buffer synchronization
 	uint64 GetCurrentCommandBufferId() const;
 	bool HasCommandBufferFinished(uint64 commandBufferId) const;
-	void WaitCommandBufferFinished(uint64 commandBufferId);
+	void WaitCommandBufferFinished(uint64 commandBufferId,
+		LatteVulkanSubmitReason reason = LatteVulkanSubmitReason::CompletionWait);
 
 	// resource destruction queue
 	void ReleaseDestructibleObject(VKRDestructibleObject* destructibleObject);
@@ -310,20 +321,42 @@ public:
 	void texture_clearDepthSlice(LatteTexture* hostTexture, uint32 sliceIndex, sint32 mipIndex, bool clearDepth, bool clearStencil, float depthValue, uint32 stencilValue) override;
 
 	void texture_loadSlice(LatteTexture* hostTexture, sint32 width, sint32 height, sint32 depth, void* pixelData, sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize) override;
+	LatteSurfaceOperationResult texture_loadSliceRepresentation(LatteTexture* texture, LatteTextureRepresentation representation,
+		sint32 width, sint32 height, sint32 depth, void* pixelData, sint32 sliceIndex, sint32 mipIndex, uint32 compressedImageSize) override;
 
-	LatteTexture* texture_createTextureEx(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth) override;
+	LatteTexture* texture_createTextureEx(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth, LatteSurfaceUsage initialUsage) override;
+	LatteSurfaceFallbackReason texture_preflightInternalResolution(Latte::E_GX2SURFFMT format,
+		Latte::E_DIM dim, bool isDepth, bool hasStencil, uint32 mipLevels,
+		const LatteSurfaceExtent& extent, LatteSurfaceScaleClass scaleClass) override;
 
 	void texture_setLatteTexture(LatteTextureView* textureView, uint32 textureUnit) override;
 
-	void texture_copyImageSubData(LatteTexture* src, sint32 srcMip, sint32 effectiveSrcX, sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip, sint32 effectiveDstX, sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth, sint32 effectiveCopyHeight, sint32 srcDepth) override;
+	LatteSurfaceOperationResult texture_copyImageSubData(LatteTexture* src, sint32 srcMip, sint32 effectiveSrcX,
+		sint32 effectiveSrcY, sint32 srcSlice, LatteTexture* dst, sint32 dstMip, sint32 effectiveDstX,
+		sint32 effectiveDstY, sint32 dstSlice, sint32 effectiveCopyWidth, sint32 effectiveCopyHeight,
+		sint32 srcDepth) override;
 	LatteTextureReadbackInfo* texture_createReadback(LatteTextureView* textureView) override;
+	LatteTextureReadbackInfo* texture_createReadback(LatteTextureView* textureView, LatteTextureRepresentation representation) override;
+	bool texture_hasRepresentation(const LatteTexture* texture, LatteTextureRepresentation representation) const override;
+	uint64 texture_getRepresentationBytes(const LatteTexture* texture, LatteTextureRepresentation representation) const override;
+	LatteSurfaceOperationResult texture_ensureRepresentation(LatteTexture* texture, LatteTextureRepresentation representation) override;
+	LatteSurfaceOperationResult texture_resampleRepresentation(LatteTexture* texture, LatteTextureRepresentation source,
+		LatteTextureRepresentation destination, const LatteSurfaceSubresourceRange& range, LatteSurfaceResampleFilter filter) override;
+	LatteSurfaceOperationResult texture_copyImageSubDataBetweenRepresentations(LatteTexture* source, LatteTextureRepresentation sourceRepresentation,
+		sint32 sourceMip, sint32 sourceX, sint32 sourceY, sint32 sourceSlice, LatteTexture* destination,
+		LatteTextureRepresentation destinationRepresentation, sint32 destinationMip, sint32 destinationX, sint32 destinationY,
+		sint32 destinationSlice, sint32 copyWidth, sint32 copyHeight, sint32 depth) override;
 
 	// surface copy
-	void surfaceCopy_copySurfaceWithFormatConversion(LatteTexture* sourceTexture, sint32 srcMip, sint32 srcSlice, LatteTexture* destinationTexture, sint32 dstMip, sint32 dstSlice, sint32 width, sint32 height) override;
+	LatteSurfaceOperationResult surfaceCopy_copySurfaceWithFormatConversion(LatteTexture* sourceTexture, sint32 srcMip, sint32 srcSlice, LatteTexture* destinationTexture, sint32 dstMip, sint32 dstSlice, sint32 width, sint32 height) override;
 	void surfaceCopy_notifyTextureRelease(LatteTextureVk* hostTexture);
 
 	private:
-	void surfaceCopy_viaDrawcall(LatteTextureVk* srcTextureVk, sint32 texSrcMip, sint32 texSrcSlice, LatteTextureVk* dstTextureVk, sint32 texDstMip, sint32 texDstSlice, sint32 effectiveCopyWidth, sint32 effectiveCopyHeight);
+	void surfaceCopy_viaDrawcall(LatteTextureVk* srcTextureVk, sint32 texSrcMip, sint32 texSrcSlice,
+		LatteTextureVk* dstTextureVk, sint32 texDstMip, sint32 texDstSlice,
+		sint32 effectiveCopyWidth, sint32 effectiveCopyHeight,
+		LatteTextureRepresentation sourceRepresentation = LatteTextureRepresentation::Render,
+		LatteTextureRepresentation destinationRepresentation = LatteTextureRepresentation::Render);
 
 	void surfaceCopy_cleanup();
 
@@ -331,7 +364,8 @@ private:
 	uint64 copySurface_getPipelineStateHash(struct VkCopySurfaceState_t& state);
 	struct CopySurfacePipelineInfo* copySurface_getCachedPipeline(struct VkCopySurfaceState_t& state);
 	struct CopySurfacePipelineInfo* copySurface_getOrCreateGraphicsPipeline(struct VkCopySurfaceState_t& state);
-	VKRObjectTextureView* surfaceCopy_createImageView(LatteTextureVk* textureVk, uint32 sliceIndex, uint32 mipIndex);
+	VKRObjectTextureView* surfaceCopy_createImageView(LatteTextureVk* textureVk, uint32 sliceIndex,
+		uint32 mipIndex, LatteTextureRepresentation representation);
 	VKRObjectFramebuffer* surfaceCopy_getOrCreateFramebuffer(struct VkCopySurfaceState_t& state, struct CopySurfacePipelineInfo* pipelineInfo);
 	VKRObjectDescriptorSet* surfaceCopy_getOrCreateDescriptorSet(struct VkCopySurfaceState_t& state, struct CopySurfacePipelineInfo* pipelineInfo);
 
@@ -342,6 +376,8 @@ private:
 public:
 	// renderer interface
 	void bufferCache_init(const sint32 bufferSize) override;
+	void bufferCache_beginUploadBatch() override;
+	void bufferCache_endUploadBatch() override;
 	void bufferCache_upload(uint8* buffer, sint32 size, uint32 bufferOffset) override;
 	void bufferCache_copy(uint32 srcOffset, uint32 dstOffset, uint32 size) override;
 
@@ -349,6 +385,8 @@ public:
 	void buffer_bindVertexStrideWorkaroundBuffer(VkBuffer fixedBuffer, uint32 offset, uint32 bufferIndex, uint32 size);
 	std::pair<VkBuffer, uint32> buffer_genStrideWorkaroundVertexBuffer(MPTR buffer, uint32 size, uint32 oldStride);
 	void buffer_bindUniformBuffer(LatteConst::ShaderType shaderType, uint32 bufferIndex, uint32 offset, uint32 size) override;
+	bool buffer_bindUniformBufferHostData(LatteConst::ShaderType shaderType,
+		uint32 bufferIndex, const uint8* data, uint32 size) override;
 
 	RendererShader* shader_create(RendererShader::ShaderType type, uint64 baseHash, uint64 auxHash, const std::string& source, bool isGameShader, bool isGfxPackShader) override;
 
@@ -381,6 +419,7 @@ private:
 
 		// renderpass
 		CachedFBOVk* activeRenderpassFBO{}; // the FBO of the currently active Vulkan renderpass
+		bool activeRenderpassOmitsDepthStore{};
 
 		// drawcall state
 		PipelineInfo* activePipelineInfo{ nullptr };
@@ -476,6 +515,10 @@ private:
 			bool pipeline_robustness = false; // VK_EXT_pipeline_robustness
 			bool attachment_feedback_loop_layout = false; // VK_EXT_attachment_feedback_loop_layout
 			bool attachment_feedback_loop_dynamic_state = false; // VK_EXT_attachment_feedback_loop_dynamic_state (this is forced to false if VK_EXT_attachment_feedback_loop_layout is not supported)
+			bool load_store_op_none = false; // VK_EXT_load_store_op_none
+			bool render_pass_store_ops_qcom = false; // VK_QCOM_render_pass_store_ops
+			bool calibrated_timestamps_ext = false; // VK_EXT_calibrated_timestamps
+			bool calibrated_timestamps_khr = false; // VK_KHR_calibrated_timestamps
 		}deviceExtensions;
 
 		struct
@@ -531,6 +574,10 @@ private:
 	void CreateCommandBuffers();
 	void InitializeGpuProfilerContext();
 	void DestroyGpuProfilerContext();
+	void BeginGpuProfilerCommandBuffer();
+	void EndGpuProfilerCommandBuffer();
+	void BeginGpuProfilerGuestRenderPass();
+	void EndGpuProfilerGuestRenderPass();
 	void CollectGpuProfilerQueries(VkCommandBuffer commandBuffer);
 
 	void swapchain_createDescriptorSetLayout();
@@ -562,7 +609,7 @@ private:
 	void draw_updateDepthBias(bool forceUpdate);
 
 	void draw_setRenderPass();
-	void draw_endRenderPass();
+	void draw_endRenderPass(LatteVulkanRenderPassEndReason reason = LatteVulkanRenderPassEndReason::Other);
 
 	void draw_beginSequence() override;
 	void draw_execute(uint32 baseVertex, uint32 baseInstance, uint32 instanceCount, uint32 count, MPTR indexDataMPTR, Latte::LATTE_VGT_DMA_INDEX_TYPE::E_INDEX_TYPE indexType, const LatteDrawcallContext& drawcallContext) override;
@@ -629,6 +676,8 @@ private:
 	VkPipelineLayout m_pipelineLayout{nullptr};
 	VkCommandPool m_commandPool{ nullptr };
 	bool m_gpuProfilerContextCreated = false;
+	std::unique_ptr<CemuVulkanGpuProfilerScope> m_gpuCommandBufferProfilerScope;
+	std::unique_ptr<CemuVulkanGpuProfilerScope> m_gpuGuestRenderPassProfilerScope;
 
 	// buffer to cache uniform vars
 	VkBuffer m_uniformVarBuffer = VK_NULL_HANDLE;
@@ -637,6 +686,17 @@ private:
 	uint8* m_uniformVarBufferPtr = nullptr;
 	uint32 m_uniformVarBufferWriteIndex = 0;
 	uint32 m_uniformVarBufferReadIndex = 0;
+	uint32 m_uniformVarBufferGeneration = 1;
+	struct UniformBankRingCacheEntry
+	{
+		std::vector<uint8> data;
+		uint32 offset{};
+		uint32 generation{};
+		bool isZero{};
+		bool valid{};
+	};
+	std::array<std::array<UniformBankRingCacheEntry, LATTE_NUM_MAX_UNIFORM_BUFFERS>,
+		VulkanRendererConst::SHADER_STAGE_INDEX_COUNT> m_uniformBankRingCache;
 
 	// transform feedback ringbuffer
 	VkBuffer m_xfbRingBuffer = VK_NULL_HANDLE;
@@ -645,6 +705,16 @@ private:
 	// buffer cache (attributes, uniforms and streamout)
 	VkBuffer m_bufferCache = VK_NULL_HANDLE;
 	VkDeviceMemory m_bufferCacheMemory = VK_NULL_HANDLE;
+	struct PendingBufferCacheUpload
+	{
+		VkBuffer sourceBuffer{VK_NULL_HANDLE};
+		VkDeviceSize sourceOffset{};
+		VkDeviceSize destinationOffset{};
+		VkDeviceSize size{};
+	};
+	bool m_bufferCacheUploadBatchActive{};
+	std::vector<PendingBufferCacheUpload> m_pendingBufferCacheUploads;
+	void FlushBufferCacheUploadBatch();
 
 	// texture readback
 	VkBuffer m_textureReadbackBuffer = VK_NULL_HANDLE;
@@ -696,9 +766,18 @@ private:
 	uint64 m_numSubmittedCmdBuffers{};
 	uint64 m_countCommandBufferFinished{};
 
-	uint32 m_recordedDrawcalls{}; // number of drawcalls recorded into current command buffer
-	uint32 m_submitThreshold{}; // submit current buffer if recordedDrawcalls exceeds this number
+	// BotW A/B testing found 300 balances submit overhead and Guest-visible
+	// GPU-feedback latency better than either 150 or 1200 draw passes.
+	static constexpr uint32 kDefaultSubmitDrawPassThreshold = 300;
+	uint32 m_recordedDrawcalls{}; // number of draw passes recorded into current command buffer
+	uint32 m_submitThreshold{}; // submit current buffer if recorded draw passes reach this number
 	bool m_submitOnIdle{}; // submit current buffer if Latte command processor goes into idle state (no more commands or waiting for externally signaled condition)
+	LatteVulkanSubmitReason m_submitSoonReason{LatteVulkanSubmitReason::DrawThreshold};
+	LatteVulkanSubmitReason m_submitOnIdleReason{LatteVulkanSubmitReason::CommandProcessorIdle};
+	uint32 m_currentRenderPassDrawCount{};
+	LatteVulkanRenderPassEndReason m_nextRenderPassStartReason{
+		LatteVulkanRenderPassEndReason::FramebufferChange};
+	bool m_nextRenderPassSelfDependencyHasNonPixel{};
 
 	// drawcall handling
 	void draw_execute_first(uint32 baseVertex, uint32 baseInstance, uint32 instanceCount, uint32 count, MPTR indexDataMPTR, Latte::LATTE_VGT_DMA_INDEX_TYPE::E_INDEX_TYPE indexType, const LatteDrawcallContext& drawcallContext);
@@ -978,6 +1057,11 @@ public:
 	bool IsDebugMarkersEnabled() const { return m_featureControl.usingDebugMarkerTool; }
 	bool IsTracingToolEnabled() const { return m_featureControl.usingTracingTool; }
 	bool UseAttachmentFeedbackLoop() const { return m_featureControl.deviceExtensions.attachment_feedback_loop_dynamic_state; }
+	bool SupportsAttachmentStoreOpNone() const
+	{
+		return m_featureControl.deviceExtensions.load_store_op_none ||
+			m_featureControl.deviceExtensions.render_pass_store_ops_qcom;
+	}
 
 private:
 
@@ -990,6 +1074,7 @@ private:
 		RendererShaderVk* copySurface_vs{};
 		RendererShaderVk* copySurface_psDepth2Color{};
 		RendererShaderVk* copySurface_psColor2Depth{};
+		RendererShaderVk* copySurface_psDepth2Depth{};
 	}defaultShaders;
 
 

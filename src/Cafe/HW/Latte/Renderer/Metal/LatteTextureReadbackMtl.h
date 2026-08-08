@@ -6,7 +6,9 @@
 class LatteTextureReadbackInfoMtl : public LatteTextureReadbackInfo
 {
 public:
-	LatteTextureReadbackInfoMtl(class MetalRenderer* mtlRenderer, LatteTextureView* textureView, uint32 bufferOffset) : LatteTextureReadbackInfo(textureView), m_mtlr{mtlRenderer}, m_bufferOffset{bufferOffset} {}
+	LatteTextureReadbackInfoMtl(class MetalRenderer* mtlRenderer, LatteTextureView* textureView, uint32 bufferOffset,
+		LatteTextureRepresentation representation = LatteTextureRepresentation::Render)
+		: LatteTextureReadbackInfo(textureView), m_mtlr{mtlRenderer}, m_bufferOffset{bufferOffset}, m_representation{representation} {}
 	~LatteTextureReadbackInfoMtl();
 
 	void StartTransfer() override;
@@ -22,4 +24,5 @@ private:
 	MTL::CommandBuffer* m_commandBuffer = nullptr;
 
 	uint32 m_bufferOffset = 0;
+	LatteTextureRepresentation m_representation{LatteTextureRepresentation::Render};
 };

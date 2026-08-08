@@ -1,5 +1,6 @@
 #pragma once
 #include "Cafe/HW/Latte/Core/LatteConst.h"
+#include "Cafe/HW/Latte/Core/LatteSurfaceScale.h"
 
 struct LatteSamplerState
 {
@@ -24,7 +25,7 @@ struct LatteSamplerState
 class LatteTexture
 {
 public:
-	LatteTexture(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth);
+	LatteTexture(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth, LatteSurfaceUsage initialUsage);
 	virtual ~LatteTexture();
 
 	virtual void AllocateOnHost() = 0;
@@ -63,21 +64,62 @@ public:
 		height = std::max(1, this->height >> mipLevel);
 	}
 
+	LatteSurfaceExtent GetGuestExtent(uint32 mipLevel = 0) const
+	{
+		return LatteSurfaceMipExtent(resolutionInfo.guestExtent, mipLevel, Is3DTexture());
+	}
+
+	LatteSurfaceExtent GetHostExtent(uint32 mipLevel = 0) const
+	{
+		return LatteSurfaceMipExtent(resolutionInfo.hostExtent, mipLevel, Is3DTexture());
+	}
+
+	LatteSurfaceExtent GetRepresentationExtent(LatteTextureRepresentation representation, uint32 mipLevel = 0) const
+	{
+		return representation == LatteTextureRepresentation::Render ? GetHostExtent(mipLevel) : GetGuestExtent(mipLevel);
+	}
+
+	const LatteSurfaceResolutionInfo& GetResolutionInfo() const
+	{
+		return resolutionInfo;
+	}
+
+	bool ApplyResolutionFallback(LatteSurfaceFallbackReason reason);
+
+	bool HasHostResolutionOverride() const
+	{
+		return resolutionInfo.guestExtent.width != resolutionInfo.hostExtent.width ||
+			resolutionInfo.guestExtent.height != resolutionInfo.hostExtent.height ||
+			resolutionInfo.guestExtent.depth != resolutionInfo.hostExtent.depth;
+	}
+
+	bool RepresentationsAlias() const
+	{
+		return !HasHostResolutionOverride();
+	}
+
+	LatteSurfaceRect ScaleGuestRectToHost(const LatteSurfaceRect& rect, uint32 mipLevel) const
+	{
+		return LatteSurfaceScaleRect(rect, GetGuestExtent(mipLevel), GetHostExtent(mipLevel));
+	}
+
+	bool HasSameHostScale(const LatteTexture& other, uint32 thisMip, uint32 otherMip) const
+	{
+		return GetHostScaleCompatibility(other, thisMip, otherMip).compatible;
+	}
+
+	LatteSurfaceScaleCompatibilityResult GetHostScaleCompatibility(const LatteTexture& other, uint32 thisMip, uint32 otherMip) const
+	{
+		return LatteSurfaceCompareScale(GetGuestExtent(thisMip), GetHostExtent(thisMip),
+			other.GetGuestExtent(otherMip), other.GetHostExtent(otherMip));
+	}
+
 	// similar to GetSize, but returns the real size of the texture taking into account any resolution overwrite by gfx pack rules
 	void GetEffectiveSize(sint32& effectiveWidth, sint32& effectiveHeight, sint32 mipLevel) const
 	{
-		if( overwriteInfo.hasResolutionOverwrite )
-		{
-			effectiveWidth = overwriteInfo.width;
-			effectiveHeight = overwriteInfo.height;
-		}
-		else
-		{
-			effectiveWidth = this->width;
-			effectiveHeight = this->height;
-		}
-		effectiveWidth = std::max(1, effectiveWidth >> mipLevel);
-		effectiveHeight = std::max(1, effectiveHeight >> mipLevel);
+		const auto hostExtent = GetHostExtent(mipLevel);
+		effectiveWidth = static_cast<sint32>(hostExtent.width);
+		effectiveHeight = static_cast<sint32>(hostExtent.height);
 	}
 
 	sint32 GetMipDepth(sint32 mipIndex)
@@ -189,8 +231,12 @@ public:
 	uint32 lockTextureUpdateId{}; // set to current texture update id whenever texture is bound and used
 	uint32 lockCount{};
 	// usage
+	uint64 diagnosticSurfaceId{};
+	uint32 surfaceUsageMask{};
 	uint32 lastAccessTick{};
 	uint32 lastAccessFrameCount{};
+	LatteSurfaceResolutionInfo resolutionInfo{};
+	uint64 surfaceScaleReservedBytes{};
 	// detection of render feedback loops (see OpenGL 4.5 spec, 9.3)
 	uint32 lastUnflushedRTDrawcallIndex{};
 	// views
@@ -254,6 +300,7 @@ struct LatteTextureSliceMipInfo
 	// change tracking
 	uint32 dataChecksum;
 	uint64 lastDynamicUpdate;
+	LatteSurfaceContentSerials contentSerials{};
 	// format info
 	Latte::E_HWTILEMODE tileMode;
 	sint32 pitch;
@@ -329,8 +376,13 @@ void LatteTexture_updateTextures();
 std::vector<LatteTextureInformation> LatteTexture_QueryCacheInfo();
 
 float* LatteTexture_getEffectiveTextureScale(LatteConst::ShaderType shaderType, sint32 texUnit);
+bool LatteTexture_GX2FormatHasStencil(bool isDepth, Latte::E_GX2SURFFMT format);
 
-LatteTextureView* LatteTexture_CreateTexture(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth);
+LatteTextureView* LatteTexture_CreateTexture(Latte::E_DIM dim, MPTR physAddress, MPTR physMipAddress, Latte::E_GX2SURFFMT format, uint32 width, uint32 height, uint32 depth, uint32 pitch, uint32 mipLevels, uint32 swizzle, Latte::E_HWTILEMODE tileMode, bool isDepth, LatteSurfaceUsage initialUsage = LatteSurfaceUsage::Unknown);
+LatteTextureView* LatteTexture_ApplyAttachmentPromotion(LatteTextureView* view,
+	LatteSurfaceUsage usage);
+LatteTextureView* LatteTexture_ApplyForcedNativeFallback(LatteTextureView* view,
+	LatteSurfaceUsage usage);
 void LatteTexture_Delete(LatteTexture* texture);
 
 void LatteTextureLoader_writeReadbackTextureToMemory(LatteTextureDefinition* textureData, uint32 sliceIndex, uint32 mipIndex, uint8* linearPixelData);
@@ -338,11 +390,21 @@ void LatteTextureLoader_writeReadbackTextureToMemory(LatteTextureDefinition* tex
 sint32 LatteTexture_getEffectiveWidth(LatteTexture* texture);
 bool LatteTexture_doesEffectiveRescaleRatioMatch(LatteTexture* texture1, sint32 mipLevel1, LatteTexture* texture2, sint32 mipLevel2);
 void LatteTexture_scaleToEffectiveSize(LatteTexture* texture, sint32* x, sint32* y, sint32 mipLevel);
+void LatteTexture_scaleRectToEffectiveSize(LatteTexture* texture, sint32* x, sint32* y, sint32* width, sint32* height, sint32 mipLevel);
 uint64 LatteTexture_getNextUpdateEventCounter();
 
 void LatteTexture_UpdateCacheFromDynamicTextures(LatteTexture* texture);
 void LatteTexture_MarkConnectedTexturesForReloadFromDynamicTextures(LatteTexture* texture);
 void LatteTexture_TrackTextureGPUWrite(LatteTexture* texture, uint32 slice, uint32 mip, uint64 eventCounter);
+void LatteTexture_TrackGuestInvalidation(LatteTexture* texture, uint64 eventCounter);
+void LatteTexture_TrackGuestUpload(LatteTexture* texture, uint32 slice, uint32 mip, uint64 eventCounter);
+void LatteTexture_TrackGuestDirectRenderUpload(LatteTexture* texture, uint32 slice, uint32 mip,
+	uint64 eventCounter);
+void LatteTexture_TrackGuestReadback(LatteTexture* texture, const LatteSurfaceSubresourceRange& range);
+LatteSurfaceOperationResult LatteTexture_EnsureRepresentationCurrent(LatteTexture* texture, LatteTextureRepresentation representation, const LatteSurfaceSubresourceRange& range);
+LatteSurfaceOperationResult LatteTexture_CopyAcrossNativeBoundary(LatteTexture* source, uint32 sourceMip, uint32 sourceSlice,
+	LatteTexture* destination, uint32 destinationMip, uint32 destinationSlice, const LatteSurfaceRect& sourceGuestRect,
+	sint32 destinationGuestX, sint32 destinationGuestY);
 
 void LatteTexture_InitSliceAndMipInfo(LatteTexture* texture);
 void LatteTexture_RegisterTextureMemoryOccupancy(LatteTexture* texture);
@@ -351,12 +413,12 @@ void LatteTexture_UnregisterTextureMemoryOccupancy(LatteTexture* texture);
 void LatteTexture_DeleteTextureRelations(LatteTexture* texture);
 void LatteTexture_DeleteDataOverlapTracking(LatteTexture* texture);
 
-LatteTextureView* LatteTexture_CreateMapping(MPTR physAddr, MPTR physMipAddr, sint32 width, sint32 height, sint32 depth, sint32 pitch, Latte::E_HWTILEMODE tileMode, uint32 swizzle, sint32 firstMip, sint32 numMip, sint32 firstSlice, sint32 numSlice, Latte::E_GX2SURFFMT format, Latte::E_DIM dimBase, Latte::E_DIM dimView, bool isDepth, bool allowCreateNewDataTexture = true);
+LatteTextureView* LatteTexture_CreateMapping(MPTR physAddr, MPTR physMipAddr, sint32 width, sint32 height, sint32 depth, sint32 pitch, Latte::E_HWTILEMODE tileMode, uint32 swizzle, sint32 firstMip, sint32 numMip, sint32 firstSlice, sint32 numSlice, Latte::E_GX2SURFFMT format, Latte::E_DIM dimBase, Latte::E_DIM dimView, bool isDepth, LatteSurfaceUsage usage, bool allowCreateNewDataTexture = true);
 
 LatteTextureView* LatteTC_LookupTextureByData(MPTR physAddr, sint32 width, sint32 height, sint32 pitch, sint32 firstMip, sint32 numMip, sint32 firstSlice, sint32 numSlice, sint32* searchIndex);
 void LatteTC_LookupTexturesByPhysAddr(MPTR physAddr, std::vector<LatteTexture*>& list_textures);
 
-LatteTextureView* LatteTC_GetTextureSliceViewOrTryCreate(MPTR srcImagePtr, MPTR srcMipPtr, Latte::E_GX2SURFFMT srcFormat, Latte::E_HWTILEMODE srcTileMode, uint32 srcWidth, uint32 srcHeight, uint32 srcDepth, uint32 srcPitch, uint32 srcSwizzle, uint32 srcSlice, uint32 srcMip, const bool requireExactResolution = false);
+LatteTextureView* LatteTC_GetTextureSliceViewOrTryCreate(MPTR srcImagePtr, MPTR srcMipPtr, Latte::E_GX2SURFFMT srcFormat, Latte::E_HWTILEMODE srcTileMode, uint32 srcWidth, uint32 srcHeight, uint32 srcDepth, uint32 srcPitch, uint32 srcSwizzle, uint32 srcSlice, uint32 srcMip, LatteSurfaceUsage usage, const bool requireExactResolution = false);
 
 void LatteTexture_MarkDynamicTextureAsChanged(LatteTextureView* textureView, sint32 sliceIndex, sint32 mipIndex, uint64 eventCounter);
 void LatteTexture_UpdateTextureFromDynamicChanges(LatteTexture* texture);

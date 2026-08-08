@@ -23,9 +23,16 @@ public:
 		return m_vkrObjFramebuffer;
 	}
 
-	VKRObjectRenderPass* GetRenderPassObj() const
+	VKRObjectRenderPass* GetRenderPassObj(bool omitDepthStore = false) const
 	{
+		if (omitDepthStore && m_vkrObjRenderPassNoDepthStore)
+			return m_vkrObjRenderPassNoDepthStore;
 		return m_vkrObjRenderPass;
+	}
+
+	bool SupportsDepthStoreOmission() const
+	{
+		return m_vkrObjRenderPassNoDepthStore != nullptr;
 	}
 
 	// for KHR_dynamic_rendering
@@ -87,6 +94,7 @@ private:
 
 	VkDevice m_device;
 	VKRObjectRenderPass* m_vkrObjRenderPass{};
+	VKRObjectRenderPass* m_vkrObjRenderPassNoDepthStore{};
 	VKRObjectFramebuffer* m_vkrObjFramebuffer{};
 
 	VkExtent2D m_extend;

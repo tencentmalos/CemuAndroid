@@ -4,11 +4,6 @@
 #include "HW/Latte/Core/LatteShader.h"
 #include "config/CemuConfig.h"
 
-#ifdef ENABLE_OPENGL
-#include "Common/GLInclude/GLInclude.h"
-#include "Cafe/HW/Latte/Renderer/OpenGL/LatteTextureViewGL.h"
-#endif
-
 void LatteDraw_handleSpecialState8_clearAsDepth()
 {
 	if (LatteGPUState.contextNew.GetSpecialStateValues()[0] == 0)
@@ -57,25 +52,10 @@ void LatteDraw_handleSpecialState8_clearAsDepth()
 		// todo - use fragment shader software emulation (evoke for one pixel) to determine clear color
 		// todo - dont clear entire slice, use effectiveClearWidth, effectiveClearHeight
 
-		switch (g_renderer->GetType())
-		{
-#ifdef ENABLE_OPENGL
-		case RendererAPI::OpenGL:
-		{
-			//cemu_assert_debug(false); // implement g_renderer->texture_clearColorSlice properly for OpenGL renderer
-			if (glClearTexSubImage)
-				glClearTexSubImage(((LatteTextureViewGL*)view)->glTexId, mipIndex, 0, 0, 0, effectiveClearWidth, effectiveClearHeight, 1, GL_RGBA, GL_UNSIGNED_BYTE, clearColor);
-			break;
-		}
-#endif
-		default:
-		{
-			if (view->baseTexture->isDepth)
-				g_renderer->texture_clearDepthSlice(view->baseTexture, sliceIndex + view->firstSlice, mipIndex + view->firstMip, true, view->baseTexture->hasStencil, 0.0f, 0);
-			else
-				g_renderer->texture_clearColorSlice(view->baseTexture, sliceIndex + view->firstSlice, mipIndex + view->firstMip, clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
-		}
-		}
+		if (view->baseTexture->isDepth)
+			g_renderer->texture_clearDepthSlice(view->baseTexture, sliceIndex + view->firstSlice, mipIndex + view->firstMip, true, view->baseTexture->hasStencil, 0.0f, 0);
+		else
+			g_renderer->texture_clearColorSlice(view->baseTexture, sliceIndex + view->firstSlice, mipIndex + view->firstMip, clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 	}
 }
 
