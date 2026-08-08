@@ -95,6 +95,10 @@ class InputOverlaySurfaceView(context: Context) : SurfaceView(context), OnTouchL
 
         visibility = if (isVisible) VISIBLE else GONE
 
+        if (isVisible) {
+            setInputs()
+        }
+
         invalidate()
     }
 
@@ -376,8 +380,20 @@ class InputOverlaySurfaceView(context: Context) : SurfaceView(context), OnTouchL
 
     private fun setInputs() {
         if (isControllerDisabled(controllerIndex)) {
-            inputs = mutableListOf()
-            return
+            // The touch overlay is itself a complete input source. A fresh installation may
+            // enable it before a physical controller profile exists, so give it a VPAD target
+            // instead of rendering an empty surface. Do this only while the overlay is visible;
+            // merely composing the hidden SurfaceView must not alter controller configuration.
+            if (isVisible) {
+                NativeInput.setControllerType(
+                    controllerIndex,
+                    NativeInput.EmulatedControllerType.VPAD,
+                )
+            }
+            if (isControllerDisabled(controllerIndex)) {
+                inputs = mutableListOf()
+                return
+            }
         }
 
         nativeControllerType = getControllerType(controllerIndex)
