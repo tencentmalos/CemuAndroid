@@ -304,11 +304,12 @@ adb shell dumpsys activity service \
 Tracy 内 query pass/resolve、第一次 DrawDone 和 GPU root。BotW v208 的首轮证据与回退边界见
 `docs/architecture/mobile-occlusion-query-hsr.md`。
 
-正确性长稳统一按每个目标场景至少 3 分钟执行，不需要等待 10 分钟。开始计时前必须完成
+Android gameplay 正确性快验统一按每个目标场景至少 90 秒执行。开始计时前必须完成
 `warmup_a 10 15000 5000 250 60000`，并截图确认已经进入可操作 gameplay；结束时核对 PID
 未变化、`completed_queries == cpu_queries + gpu_queries`、Guest getter 计数、内存变化，以及
 logcat 中没有 native fatal、device lost、KGSL/SMMU fault 或 GPU page fault。10 秒或 40 秒
-Tracy 窗口只用于统计稳定帧，不能替代 3 分钟正确性验证。
+Tracy 窗口只用于统计稳定帧，不能替代 90 秒正确性验证。只有复现低频问题或专项稳定性任务
+明确要求时才延长，不再默认等待 3 或 10 分钟。
 
 线程至少应能辨认 `Cemu Main`、`Latte GPU Thread`、`PPC Core N`、
 `PPCRecompiler`、`vkShaderComp` 和 `compilePl`。GPU zone
@@ -344,6 +345,24 @@ adb shell dumpsys activity service \
 `build_us`。Tracy 中对应 counter 为 `cemu.framegraph.shadow.*`。这是 shadow 编译成本与模型
 覆盖率测试，不得把开启后的 FPS 当作原执行路径基线，也不得把逻辑 RenderPass 候选直接当成
 已经合并的 Vulkan pass。测试结束后执行 `framegraph_shadow_status off`。
+
+验证 P2 Host 状态 mirror store 去重时，完成 warmup 并截图确认 gameplay 后重置固定窗口：
+
+```sh
+adb shell dumpsys activity service \
+  info.cemu.cemu/.utils.DebugDumpService command_translation_status reset
+adb shell dumpsys activity service \
+  info.cemu.cemu/.utils.DebugDumpService command_translation_status
+```
+
+至少核对 `register_payload_words`、`register_applied_store_words`、
+`register_elided_store_words`、`register_store_elision_milli_ratio` 以及 Context、Resource、
+Constant、Sampler、Config 五个 `register_domain.*` 明细。Guest context shadow 写入必须保持，
+该指标只表示值未变化的 Host `LatteGPUState` mirror store 被跳过；不得据此推断整个 SET packet、
+dirty callback 或状态翻译都已消失。Tracy 的对应逐帧 counter 使用
+`cemu.command.host.{register_payload,applied_register_store,elided_register_store}_words_per_frame`
+及 `register_store_elision_milli_ratio_per_frame`。BotW v208 证据见
+`docs/verification/botw-framegraph-state-dedup-p2.md`。
 
 ## Internal Resolution P0 验证
 

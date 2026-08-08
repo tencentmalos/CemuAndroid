@@ -581,7 +581,8 @@ void LatteCP_itSetRegistersGeneric_handleSpecialRanges(uint32 registerStartIndex
 }
 
 template<uint32 TRegisterBase>
-LatteCMDPtr LatteCP_itSetRegistersGeneric(LatteCMDPtr cmd, uint32 nWords, bool* hasAnyChange = nullptr)
+LatteCMDPtr LatteCP_itSetRegistersGeneric(LatteCMDPtr cmd, uint32 nWords,
+	bool* hasAnyChange = nullptr, uint32* elidedRegisterStores = nullptr)
 {
 	nWords--; // subtract the register offset field
 	uint32 registerOffset = LatteReadCMD();
@@ -593,9 +594,10 @@ LatteCMDPtr LatteCP_itSetRegistersGeneric(LatteCMDPtr cmd, uint32 nWords, bool* 
 #endif
 	uint32* __restrict outputReg = (uint32*)(LatteGPUState.contextRegister + registerIndex);
 	bool registerChanged = false;
+	uint32 elidedStores = 0;
 	if (LatteGPUState.contextControl0 == 0x80000077)
 	{
-		// state shadowing enabled
+		// Guest shadow stores remain observable. Only unchanged Host mirror stores may be elided.
 		uint32* __restrict shadowAddrs = LatteGPUState.contextRegisterShadowAddr + registerIndex;
 		sint32 indexCounter = 0;
 		while (nWords--)
@@ -604,9 +606,15 @@ LatteCMDPtr LatteCP_itSetRegistersGeneric(LatteCMDPtr cmd, uint32 nWords, bool* 
 			MPTR regShadowAddr = shadowAddrs[indexCounter];
 			if (regShadowAddr)
 				*(uint32*)(memory_base + regShadowAddr) = _swapEndianU32(dataWord);
-			if (hasAnyChange)
-				registerChanged |= outputReg[indexCounter] != dataWord;
-			outputReg[indexCounter] = dataWord;
+			if (outputReg[indexCounter] != dataWord)
+			{
+				registerChanged = true;
+				outputReg[indexCounter] = dataWord;
+			}
+			else
+			{
+				elidedStores++;
+			}
 			indexCounter++;
 		}
 	}
@@ -616,18 +624,27 @@ LatteCMDPtr LatteCP_itSetRegistersGeneric(LatteCMDPtr cmd, uint32 nWords, bool* 
 		if (nWords == 1) // common case
 		{
 			const uint32 value = LatteReadCMD();
-			if (hasAnyChange)
-				registerChanged = *outputReg != value;
-			*outputReg = value;
+			registerChanged = *outputReg != value;
+			if (registerChanged)
+				*outputReg = value;
+			else
+				elidedStores++;
 		}
 		else
 		{
 			sint32 i = 0;
 			while (i < nWords)
 			{
-				if (hasAnyChange)
-					registerChanged |= outputReg[i] != cmd[i];
-				outputReg[i] = cmd[i];
+				const uint32 value = cmd[i];
+				if (outputReg[i] != value)
+				{
+					registerChanged = true;
+					outputReg[i] = value;
+				}
+				else
+				{
+					elidedStores++;
+				}
 				i++;
 			}
 			cmd += nWords;
@@ -637,12 +654,15 @@ LatteCMDPtr LatteCP_itSetRegistersGeneric(LatteCMDPtr cmd, uint32 nWords, bool* 
 	LatteCP_itSetRegistersGeneric_handleSpecialRanges<TRegisterBase>(registerStartIndex, registerEndIndex);
 	if (hasAnyChange)
 		*hasAnyChange = registerChanged;
+	if (elidedRegisterStores)
+		*elidedRegisterStores = elidedStores;
 	return cmd;
 }
 
 // similar to LatteCP_itSetRegistersGeneric, but calls a callback for every register range checked and returns true ONLY if any register value has actually changed (e.g. not updated to the same value as before)
 template<uint32 TRegisterBase, typename TRegRangeCallback>
-bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCallback cbRegRange)
+bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCallback cbRegRange,
+	uint32* elidedRegisterStores = nullptr)
 {
 	nWords--;
 	const uint32 registerOffset = LatteReadCMD();
@@ -653,9 +673,10 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 
 	uint32* outputReg = (uint32*)(LatteGPUState.contextRegister + registerIndex);
 	bool hasRegChange = false;
+	uint32 elidedStores = 0;
 	if (LatteGPUState.contextControl0 == 0x80000077)
 	{
-		// state shadowing enabled
+		// Guest shadow stores remain observable. Only unchanged Host mirror stores may be elided.
 		uint32* shadowAddrs = LatteGPUState.contextRegisterShadowAddr + registerIndex;
 		sint32 indexCounter = 0;
 		while (nWords--)
@@ -664,8 +685,15 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 			MPTR regShadowAddr = shadowAddrs[indexCounter];
 			if (regShadowAddr)
 				*(uint32*)(memory_base + regShadowAddr) = _swapEndianU32(dataWord);
-			hasRegChange |= (outputReg[indexCounter] != dataWord);
-			outputReg[indexCounter] = dataWord;
+			if (outputReg[indexCounter] != dataWord)
+			{
+				hasRegChange = true;
+				outputReg[indexCounter] = dataWord;
+			}
+			else
+			{
+				elidedStores++;
+			}
 			indexCounter++;
 		}
 	}
@@ -675,8 +703,11 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 		if (nWords == 1) // common case
 		{
 			uint32 v = LatteReadCMD();
-			hasRegChange |= (*outputReg != v);
-			*outputReg = v;
+			hasRegChange = *outputReg != v;
+			if (hasRegChange)
+				*outputReg = v;
+			else
+				elidedStores++;
 		}
 		else
 		{
@@ -684,8 +715,15 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 			while (i < nWords)
 			{
 				uint32 v = cmd[i];
-				hasRegChange |= (outputReg[i] != v);
-				outputReg[i] = v;
+				if (outputReg[i] != v)
+				{
+					hasRegChange = true;
+					outputReg[i] = v;
+				}
+				else
+				{
+					elidedStores++;
+				}
 				i++;
 			}
 			cmd += nWords;
@@ -695,6 +733,8 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 	LatteCP_itSetRegistersGeneric_handleSpecialRanges<TRegisterBase>(registerStartIndex, registerEndIndex);
 	// callback
 	cbRegRange(registerStartIndex, registerEndIndex, hasRegChange);
+	if (elidedRegisterStores)
+		*elidedRegisterStores = elidedStores;
 	return hasRegChange;
 }
 
@@ -1485,6 +1525,7 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 				{
 				case IT_SET_RESOURCE: // attribute buffers, uniform buffers or texture units
 				{
+					uint32 elidedRegisterStores = 0;
 					const bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_RESOURCE>(cmdData, nWords, [&drawPassCtx](uint32 registerStart, uint32 registerEnd, bool regValuesChanged)
 						{
 							if (!regValuesChanged)
@@ -1515,8 +1556,9 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 								uint32 bufferIndex = (registerStart - mmSQ_GS_UNIFORM_BLOCK_START) / 7;
 								drawPassCtx.MarkGSUniformBufferDirty(bufferIndex);
 							}
-						});
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+						}, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterResource,
+						hasChanged, nWords + 1, elidedRegisterStores);
 					if (!drawPassCtx.isWithinDrawPass())
 					{
 						RecordCommandPacket(3, itCode, nWords + 1);
@@ -1527,6 +1569,7 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 				}
 				case IT_SET_ALU_CONST: // uniform register
 				{
+					uint32 elidedRegisterStores = 0;
 					const bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_ALU_CONST>(cmdData, nWords, [&drawPassCtx](uint32 registerStart, uint32 registerEnd, bool regValuesChanged) {
 						if (!regValuesChanged)
 							return;
@@ -1535,22 +1578,27 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 						else
 							drawPassCtx.MarkPSAluConstantsDirty();
 						// todo - we could further optimize by tracking the min/max range of modified ALU constants and only uploading the affected range. Possibly not worth it
-					});
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					}, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterConstant,
+						hasChanged, nWords + 1, elidedRegisterStores);
 					break;
 				}
 				case IT_SET_CTL_CONST:
 				{
 					bool hasChanged = false;
-					LatteCP_itSetRegistersGeneric<mmSQ_VTX_BASE_VTX_LOC>(cmdData, nWords, &hasChanged);
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					uint32 elidedRegisterStores = 0;
+					LatteCP_itSetRegistersGeneric<mmSQ_VTX_BASE_VTX_LOC>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterConstant,
+						hasChanged, nWords + 1, elidedRegisterStores);
 					break;
 				}
 				case IT_SET_CONFIG_REG:
 				{
 					bool hasChanged = false;
-					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_CONFIG>(cmdData, nWords, &hasChanged);
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					uint32 elidedRegisterStores = 0;
+					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_CONFIG>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterConfig,
+						hasChanged, nWords + 1, elidedRegisterStores);
 					break;
 				}
 				case IT_INDEX_TYPE:
@@ -1582,13 +1630,15 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 				{
 					uint32 changedRegisterStart = 0;
 					uint32 changedRegisterEnd = 0;
+					uint32 elidedRegisterStores = 0;
 					bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_CONTEXT>(cmdData, nWords, [&](uint32 registerStart, uint32 registerEnd, bool regValuesChanged) {
 						if (!regValuesChanged)
 							return;
 						changedRegisterStart = registerStart;
 						changedRegisterEnd = registerEnd;
-					});
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					}, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterContext,
+						hasChanged, nWords + 1, elidedRegisterStores);
 					if (hasChanged)
 					{
 						LattePerformanceMonitor_recordHostContextDrawPassBreak(changedRegisterStart, changedRegisterEnd);
@@ -1609,8 +1659,10 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 				}
 				case IT_SET_SAMPLER:
 				{
-					bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_SAMPLER>(cmdData, nWords, [](uint32 registerStart, uint32 registerEnd, bool regValuesChanged){});
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					uint32 elidedRegisterStores = 0;
+					bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_SAMPLER>(cmdData, nWords, [](uint32 registerStart, uint32 registerEnd, bool regValuesChanged){}, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterSampler,
+						hasChanged, nWords + 1, elidedRegisterStores);
 					if (hasChanged)
 					{
 						RecordCommandPacket(3, itCode, nWords + 1);
@@ -1671,43 +1723,55 @@ void LatteCP_processCommandBuffer(DrawPassContext& drawPassCtx)
 				case IT_SET_CONTEXT_REG:
 				{
 					bool hasChanged = false;
-					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_CONTEXT>(cmdData, nWords, &hasChanged);
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					uint32 elidedRegisterStores = 0;
+					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_CONTEXT>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterContext,
+						hasChanged, nWords + 1, elidedRegisterStores);
 				}
 				break;
 				case IT_SET_RESOURCE:
 				{
 					bool hasChanged = false;
-					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_RESOURCE>(cmdData, nWords, &hasChanged);
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					uint32 elidedRegisterStores = 0;
+					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_RESOURCE>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterResource,
+						hasChanged, nWords + 1, elidedRegisterStores);
 				}
 				break;
 				case IT_SET_ALU_CONST:
 				{
 					bool hasChanged = false;
-					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_ALU_CONST>(cmdData, nWords, &hasChanged);
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					uint32 elidedRegisterStores = 0;
+					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_ALU_CONST>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterConstant,
+						hasChanged, nWords + 1, elidedRegisterStores);
 				}
 				break;
 				case IT_SET_CTL_CONST:
 				{
 					bool hasChanged = false;
-					LatteCP_itSetRegistersGeneric<mmSQ_VTX_BASE_VTX_LOC>(cmdData, nWords, &hasChanged);
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					uint32 elidedRegisterStores = 0;
+					LatteCP_itSetRegistersGeneric<mmSQ_VTX_BASE_VTX_LOC>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterConstant,
+						hasChanged, nWords + 1, elidedRegisterStores);
 				}
 				break;
 				case IT_SET_SAMPLER:
 				{
 					bool hasChanged = false;
-					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_SAMPLER>(cmdData, nWords, &hasChanged);
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					uint32 elidedRegisterStores = 0;
+					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_SAMPLER>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterSampler,
+						hasChanged, nWords + 1, elidedRegisterStores);
 				}
 				break;
 				case IT_SET_CONFIG_REG:
 				{
 					bool hasChanged = false;
-					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_CONFIG>(cmdData, nWords, &hasChanged);
-					LattePerformanceMonitor_recordHostRegisterPacketOutcome(hasChanged, nWords + 1);
+					uint32 elidedRegisterStores = 0;
+					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_CONFIG>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterConfig,
+						hasChanged, nWords + 1, elidedRegisterStores);
 				}
 				break;
 				case IT_SET_LOOP_CONST:

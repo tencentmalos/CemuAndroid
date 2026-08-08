@@ -378,10 +378,35 @@ BotW v208 Android 的 P1 真机验证、完整字段快照和判断边界见
 
 先做不改变 GPU 顺序的优化：
 
-- 合并冗余 `SET_*` 状态；
+- 对 `SET_CONTEXT/RESOURCE/ALU_CONST/CTL_CONST/SAMPLER/CONFIG` 逐 word 比较；
+- Guest context shadow 内存写入始终保留，只跳过值未变化的 Host `LatteGPUState` mirror store；
 - 缓存相同 pipeline/descriptor/vertex binding 翻译；
 - 按 dirty domain 只重新准备受影响状态；
 - 保持 draw、copy、barrier 和 submit 原顺序。
+
+第一步 Host mirror store 去重已经实现。它不删除 PM4 packet，也不跨 packet 合并：special-range
+callback、Guest shadow 写入、dirty-domain 判定和 command pointer 推进全部照常执行。因此它与
+shader 切换、RenderPass 合并是两个不同层级的问题。
+
+```mermaid
+flowchart TB
+    P[SET_* packet]
+    S[写 Guest shadow]
+    C{Host mirror 值变化?}
+    W[写 Host mirror]
+    E[跳过 Host store]
+    D[继续 dirty / special 逻辑]
+
+    P --> S --> C
+    C -->|是| W --> D
+    C -->|否| E --> D
+```
+
+BotW v208 的 30 秒 gameplay 样本中，`87,461,082` 个寄存器 payload word 只需实际写入
+`17,345,817` 个，跳过 `70,115,265` 个 Host mirror store，消除率为 `80.1%`。这证明状态
+payload 内部有大量冗余，但不等价于 80.1% 的整帧收益；packet 解码、Guest shadow 写入、
+callback、状态翻译和 draw 仍然存在。详细证据见
+`docs/verification/botw-framegraph-state-dedup-p2.md`。
 
 ### P3：编译安全岛
 
@@ -422,7 +447,8 @@ FrameGraph 的第一目标不是“让图尽可能少”，而是把现有隐含
 6. Tracy 同时比较 Guest tag、Host compile/execute、Vulkan submit 与 GPU timeline；
 7. 不出现 validation error、device lost、KGSL/SMMU fault 或 GPU page fault；
 8. 每个接管阶段都可单独关闭并回退到上一已验证路径；
-9. 正确性测试至少三分钟，性能结论使用相同场景的多窗口统计。
+9. Android gameplay 快速正确性验证在 warmup 后持续至少 90 秒；性能结论仍使用相同场景的
+   多窗口统计。
 
 相关背景：
 

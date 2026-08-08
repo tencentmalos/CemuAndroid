@@ -34,6 +34,12 @@ namespace
 		uint64 changedRegisterPacketWords{};
 		uint64 redundantRegisterPackets{};
 		uint64 redundantRegisterPacketWords{};
+		uint64 registerPayloadWords{};
+		uint64 elidedRegisterStoreWords{};
+		std::array<uint64, static_cast<size_t>(LatteCommandPacketCategory::Count)> changedRegisterPacketsByCategory{};
+		std::array<uint64, static_cast<size_t>(LatteCommandPacketCategory::Count)> redundantRegisterPacketsByCategory{};
+		std::array<uint64, static_cast<size_t>(LatteCommandPacketCategory::Count)> registerPayloadWordsByCategory{};
+		std::array<uint64, static_cast<size_t>(LatteCommandPacketCategory::Count)> elidedRegisterStoreWordsByCategory{};
 		uint64 drawPasses{};
 		uint64 fullDraws{};
 		uint64 fastDraws{};
@@ -75,6 +81,29 @@ namespace
 	std::array<std::atomic<uint64>, 0x10000> s_contextDrawPassBreakCounts{};
 	std::array<std::atomic<uint32>, 0x10000> s_contextDrawPassBreakEnds{};
 	std::atomic<uint64> s_contextDrawPassBreakTotal{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LatteCommandPacketCategory::Count)> s_registerChangedPacketTotals{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LatteCommandPacketCategory::Count)> s_registerRedundantPacketTotals{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LatteCommandPacketCategory::Count)> s_registerPayloadWordTotals{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LatteCommandPacketCategory::Count)> s_registerElidedStoreWordTotals{};
+
+	const char* GetRegisterDomainName(LatteCommandPacketCategory category)
+	{
+		switch (category)
+		{
+		case LatteCommandPacketCategory::RegisterContext:
+			return "context";
+		case LatteCommandPacketCategory::RegisterResource:
+			return "resource";
+		case LatteCommandPacketCategory::RegisterConstant:
+			return "constant";
+		case LatteCommandPacketCategory::RegisterSampler:
+			return "sampler";
+		case LatteCommandPacketCategory::RegisterConfig:
+			return "config";
+		default:
+			return nullptr;
+		}
+	}
 
 	uint64 Consume(std::atomic<uint64>& value)
 	{
@@ -178,6 +207,30 @@ namespace
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.changed_set_register_packet_words_per_frame", Consume(s_commandStreamMetrics.changedRegisterPacketWords), "Cemu Command Decode", "words");
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.redundant_set_register_packets_per_frame", Consume(s_commandStreamMetrics.redundantRegisterPackets), "Cemu Command Decode", "packets");
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.redundant_set_register_packet_words_per_frame", Consume(s_commandStreamMetrics.redundantRegisterPacketWords), "Cemu Command Decode", "words");
+		const uint64 registerPayloadWords = Consume(s_commandStreamMetrics.registerPayloadWords);
+		const uint64 elidedRegisterStoreWords = Consume(s_commandStreamMetrics.elidedRegisterStoreWords);
+		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.register_payload_words_per_frame", registerPayloadWords, "Cemu Command Decode", "words");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.applied_register_store_words_per_frame",
+			registerPayloadWords - std::min(registerPayloadWords, elidedRegisterStoreWords), "Cemu Command Decode", "words");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.elided_register_store_words_per_frame", elidedRegisterStoreWords, "Cemu Command Decode", "words");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.register_store_elision_milli_ratio_per_frame",
+			registerPayloadWords == 0 ? 0 : (elidedRegisterStoreWords * 1000) / registerPayloadWords,
+			"Cemu Command Decode", "milli_ratio");
+		for (size_t categoryIndex = 0; categoryIndex < s_commandStreamMetrics.registerPayloadWordsByCategory.size(); ++categoryIndex)
+		{
+			const uint64 changedPackets = Consume(s_commandStreamMetrics.changedRegisterPacketsByCategory[categoryIndex]);
+			const uint64 redundantPackets = Consume(s_commandStreamMetrics.redundantRegisterPacketsByCategory[categoryIndex]);
+			const uint64 payloadWords = Consume(s_commandStreamMetrics.registerPayloadWordsByCategory[categoryIndex]);
+			const uint64 elidedStores = Consume(s_commandStreamMetrics.elidedRegisterStoreWordsByCategory[categoryIndex]);
+			if (changedPackets != 0)
+				s_registerChangedPacketTotals[categoryIndex].fetch_add(changedPackets, std::memory_order_relaxed);
+			if (redundantPackets != 0)
+				s_registerRedundantPacketTotals[categoryIndex].fetch_add(redundantPackets, std::memory_order_relaxed);
+			if (payloadWords != 0)
+				s_registerPayloadWordTotals[categoryIndex].fetch_add(payloadWords, std::memory_order_relaxed);
+			if (elidedStores != 0)
+				s_registerElidedStoreWordTotals[categoryIndex].fetch_add(elidedStores, std::memory_order_relaxed);
+		}
 
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.draw_passes_per_frame", Consume(s_commandStreamMetrics.drawPasses), "Cemu Command Translate", "passes");
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.full_draws_per_frame", Consume(s_commandStreamMetrics.fullDraws), "Cemu Command Translate", "draws");
@@ -310,18 +363,31 @@ void LattePerformanceMonitor_recordHostCommandTime(LatteCommandHostTimeCategory 
 	s_commandStreamMetrics.hostTimeNs[index] += nanoseconds;
 }
 
-void LattePerformanceMonitor_recordHostRegisterPacketOutcome(bool changed, uint32 words)
+void LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory category,
+	bool changed, uint32 words, uint32 elidedRegisterStores)
 {
+	const size_t categoryIndex = static_cast<size_t>(category);
+	if (categoryIndex >= s_registerChangedPacketTotals.size() || GetRegisterDomainName(category) == nullptr)
+		return;
+
+	const uint32 payloadWords = words >= 2 ? words - 2 : 0;
+	elidedRegisterStores = std::min(elidedRegisterStores, payloadWords);
 	if (changed)
 	{
 		s_commandStreamMetrics.changedRegisterPackets++;
 		s_commandStreamMetrics.changedRegisterPacketWords += words;
+		s_commandStreamMetrics.changedRegisterPacketsByCategory[categoryIndex]++;
 	}
 	else
 	{
 		s_commandStreamMetrics.redundantRegisterPackets++;
 		s_commandStreamMetrics.redundantRegisterPacketWords += words;
+		s_commandStreamMetrics.redundantRegisterPacketsByCategory[categoryIndex]++;
 	}
+	s_commandStreamMetrics.registerPayloadWords += payloadWords;
+	s_commandStreamMetrics.elidedRegisterStoreWords += elidedRegisterStores;
+	s_commandStreamMetrics.registerPayloadWordsByCategory[categoryIndex] += payloadWords;
+	s_commandStreamMetrics.elidedRegisterStoreWordsByCategory[categoryIndex] += elidedRegisterStores;
 }
 
 void LattePerformanceMonitor_recordHostDrawPass()
@@ -471,6 +537,44 @@ std::string LattePerformanceMonitor_getCommandTranslationStatus()
 
 	std::ostringstream out;
 	out << "command_translation_status:\n";
+	uint64 registerChangedPackets = 0;
+	uint64 registerRedundantPackets = 0;
+	uint64 registerPayloadWords = 0;
+	uint64 registerElidedStoreWords = 0;
+	for (size_t categoryIndex = 0; categoryIndex < s_registerPayloadWordTotals.size(); ++categoryIndex)
+	{
+		const auto category = static_cast<LatteCommandPacketCategory>(categoryIndex);
+		if (GetRegisterDomainName(category) == nullptr)
+			continue;
+		registerChangedPackets += s_registerChangedPacketTotals[categoryIndex].load(std::memory_order_relaxed);
+		registerRedundantPackets += s_registerRedundantPacketTotals[categoryIndex].load(std::memory_order_relaxed);
+		registerPayloadWords += s_registerPayloadWordTotals[categoryIndex].load(std::memory_order_relaxed);
+		registerElidedStoreWords += s_registerElidedStoreWordTotals[categoryIndex].load(std::memory_order_relaxed);
+	}
+	const uint64 registerAppliedStoreWords = registerPayloadWords - std::min(registerPayloadWords, registerElidedStoreWords);
+	out << "register_changed_packets=" << registerChangedPackets << "\n";
+	out << "register_redundant_packets=" << registerRedundantPackets << "\n";
+	out << "register_payload_words=" << registerPayloadWords << "\n";
+	out << "register_applied_store_words=" << registerAppliedStoreWords << "\n";
+	out << "register_elided_store_words=" << registerElidedStoreWords << "\n";
+	out << "register_store_elision_milli_ratio=";
+	out << (registerPayloadWords == 0 ? 0 : (registerElidedStoreWords * 1000) / registerPayloadWords) << "\n";
+	for (size_t categoryIndex = 0; categoryIndex < s_registerPayloadWordTotals.size(); ++categoryIndex)
+	{
+		const auto category = static_cast<LatteCommandPacketCategory>(categoryIndex);
+		const char* domainName = GetRegisterDomainName(category);
+		if (domainName == nullptr)
+			continue;
+		const uint64 payloadWords = s_registerPayloadWordTotals[categoryIndex].load(std::memory_order_relaxed);
+		const uint64 elidedStoreWords = s_registerElidedStoreWordTotals[categoryIndex].load(std::memory_order_relaxed);
+		const uint64 appliedStoreWords = payloadWords - std::min(payloadWords, elidedStoreWords);
+		out << "register_domain." << domainName;
+		out << "=changed_packets:" << s_registerChangedPacketTotals[categoryIndex].load(std::memory_order_relaxed);
+		out << ",redundant_packets:" << s_registerRedundantPacketTotals[categoryIndex].load(std::memory_order_relaxed);
+		out << ",payload_words:" << payloadWords;
+		out << ",applied_store_words:" << appliedStoreWords;
+		out << ",elided_store_words:" << elidedStoreWords << "\n";
+	}
 	out << "context_break_total=" << s_contextDrawPassBreakTotal.load(std::memory_order_relaxed) << "\n";
 	out << "context_break_unique_starts=" << entries.size() << "\n";
 	const size_t topCount = std::min<size_t>(entries.size(), 16);
@@ -493,6 +597,14 @@ void LattePerformanceMonitor_resetCommandTranslationStatus()
 	for (auto& registerEnd : s_contextDrawPassBreakEnds)
 		registerEnd.store(0, std::memory_order_relaxed);
 	s_contextDrawPassBreakTotal.store(0, std::memory_order_relaxed);
+	for (auto& count : s_registerChangedPacketTotals)
+		count.store(0, std::memory_order_relaxed);
+	for (auto& count : s_registerRedundantPacketTotals)
+		count.store(0, std::memory_order_relaxed);
+	for (auto& words : s_registerPayloadWordTotals)
+		words.store(0, std::memory_order_relaxed);
+	for (auto& words : s_registerElidedStoreWordTotals)
+		words.store(0, std::memory_order_relaxed);
 }
 
 void LattePerformanceMonitor_frameEnd()

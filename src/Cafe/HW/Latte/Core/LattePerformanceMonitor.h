@@ -251,7 +251,8 @@ void LattePerformanceMonitor_recordGuestCommandSubmission(uint32 words);
 void LattePerformanceMonitor_recordHostCommandSubmission(uint32 words);
 void LattePerformanceMonitor_recordHostCommandPacket(LatteCommandPacketCategory category, uint32 words);
 void LattePerformanceMonitor_recordHostCommandTime(LatteCommandHostTimeCategory category, uint64 nanoseconds);
-void LattePerformanceMonitor_recordHostRegisterPacketOutcome(bool changed, uint32 words);
+void LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory category,
+	bool changed, uint32 words, uint32 elidedRegisterStores);
 void LattePerformanceMonitor_recordHostDrawPass();
 void LattePerformanceMonitor_recordHostDraw(bool fastDraw);
 void LattePerformanceMonitor_recordHostDrawPassEnd(LatteDrawPassEndReason reason);
