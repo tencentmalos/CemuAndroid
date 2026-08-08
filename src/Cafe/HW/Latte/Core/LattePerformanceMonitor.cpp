@@ -71,6 +71,16 @@ namespace
 		uint64 uniformRingBankBindBytes{};
 		uint64 uniformRingBankReuseCalls{};
 		uint64 uniformRingBankReuseBytes{};
+		std::array<uint64, static_cast<size_t>(LatteDirtyStateDomain::Count)> dirtyClassifiedWords{};
+		std::array<uint64, static_cast<size_t>(LatteDirtyStateDomain::Count)> dirtyMarks{};
+		std::array<uint64, static_cast<size_t>(LatteDirtyStateDomain::Count)> dirtyConsumes{};
+		uint64 pipelineHashCalls{};
+		std::array<uint64, static_cast<size_t>(LattePipelineLookupOutcome::Count)> pipelineLookups{};
+		uint64 descriptorHashCalls{};
+		uint64 descriptorCacheHits{};
+		uint64 descriptorCacheMisses{};
+		std::array<uint64, static_cast<size_t>(LatteDynamicState::Count)> dynamicStateRequests{};
+		std::array<uint64, static_cast<size_t>(LatteDynamicState::Count)> dynamicStateEmits{};
 		std::atomic<uint64> guestSubmissionsTotal{};
 		std::atomic<uint64> guestWordsTotal{};
 		uint64 hostSubmissionsTotal{};
@@ -85,6 +95,27 @@ namespace
 	std::array<std::atomic<uint64>, static_cast<size_t>(LatteCommandPacketCategory::Count)> s_registerRedundantPacketTotals{};
 	std::array<std::atomic<uint64>, static_cast<size_t>(LatteCommandPacketCategory::Count)> s_registerPayloadWordTotals{};
 	std::array<std::atomic<uint64>, static_cast<size_t>(LatteCommandPacketCategory::Count)> s_registerElidedStoreWordTotals{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LatteDirtyStateDomain::Count)> s_dirtyClassifiedWordTotals{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LatteDirtyStateDomain::Count)> s_dirtyMarkTotals{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LatteDirtyStateDomain::Count)> s_dirtyConsumeTotals{};
+	std::atomic<uint64> s_pipelineHashCallTotal{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LattePipelineLookupOutcome::Count)> s_pipelineLookupTotals{};
+	std::atomic<uint64> s_descriptorHashCallTotal{};
+	std::atomic<uint64> s_descriptorCacheHitTotal{};
+	std::atomic<uint64> s_descriptorCacheMissTotal{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LatteDynamicState::Count)> s_dynamicStateRequestTotals{};
+	std::array<std::atomic<uint64>, static_cast<size_t>(LatteDynamicState::Count)> s_dynamicStateEmitTotals{};
+
+	static constexpr std::array<const char*, static_cast<size_t>(LatteDirtyStateDomain::Count)> s_dirtyDomainNames = {
+		"texture", "vertex_buffer", "vertex_uniform_buffer", "pixel_uniform_buffer",
+		"geometry_uniform_buffer", "vertex_alu_constant", "pixel_alu_constant", "unclassified",
+	};
+	static constexpr std::array<const char*, static_cast<size_t>(LattePipelineLookupOutcome::Count)> s_pipelineLookupNames = {
+		"transition_hit", "global_hit", "miss",
+	};
+	static constexpr std::array<const char*, static_cast<size_t>(LatteDynamicState::Count)> s_dynamicStateNames = {
+		"blend_constants", "depth_bias",
+	};
 
 	const char* GetRegisterDomainName(LatteCommandPacketCategory category)
 	{
@@ -327,6 +358,108 @@ namespace
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.uniform_ring_bank_bind.bytes_per_frame", Consume(s_commandStreamMetrics.uniformRingBankBindBytes), "Cemu Buffer Cache", "bytes");
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.uniform_ring_bank_reuse.calls_per_frame", Consume(s_commandStreamMetrics.uniformRingBankReuseCalls), "Cemu Buffer Cache", "calls");
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.uniform_ring_bank_reuse.bytes_per_frame", Consume(s_commandStreamMetrics.uniformRingBankReuseBytes), "Cemu Buffer Cache", "bytes");
+
+		static constexpr std::array<const char*, static_cast<size_t>(LatteDirtyStateDomain::Count)> dirtyClassifiedNames = {
+			"cemu.command.host.dirty_classified.texture_words_per_frame",
+			"cemu.command.host.dirty_classified.vertex_buffer_words_per_frame",
+			"cemu.command.host.dirty_classified.vertex_uniform_buffer_words_per_frame",
+			"cemu.command.host.dirty_classified.pixel_uniform_buffer_words_per_frame",
+			"cemu.command.host.dirty_classified.geometry_uniform_buffer_words_per_frame",
+			"cemu.command.host.dirty_classified.vertex_alu_constant_words_per_frame",
+			"cemu.command.host.dirty_classified.pixel_alu_constant_words_per_frame",
+			"cemu.command.host.dirty_unclassified_register_words_per_frame",
+		};
+		static constexpr std::array<const char*, static_cast<size_t>(LatteDirtyStateDomain::Count)> dirtyMarkNames = {
+			"cemu.command.host.dirty_mark.texture_per_frame",
+			"cemu.command.host.dirty_mark.vertex_buffer_per_frame",
+			"cemu.command.host.dirty_mark.vertex_uniform_buffer_per_frame",
+			"cemu.command.host.dirty_mark.pixel_uniform_buffer_per_frame",
+			"cemu.command.host.dirty_mark.geometry_uniform_buffer_per_frame",
+			"cemu.command.host.dirty_mark.vertex_alu_constant_per_frame",
+			"cemu.command.host.dirty_mark.pixel_alu_constant_per_frame",
+			"cemu.command.host.dirty_mark.unclassified_per_frame",
+		};
+		static constexpr std::array<const char*, static_cast<size_t>(LatteDirtyStateDomain::Count)> dirtyConsumeNames = {
+			"cemu.command.host.dirty_consume.texture_per_frame",
+			"cemu.command.host.dirty_consume.vertex_buffer_per_frame",
+			"cemu.command.host.dirty_consume.vertex_uniform_buffer_per_frame",
+			"cemu.command.host.dirty_consume.pixel_uniform_buffer_per_frame",
+			"cemu.command.host.dirty_consume.geometry_uniform_buffer_per_frame",
+			"cemu.command.host.dirty_consume.vertex_alu_constant_per_frame",
+			"cemu.command.host.dirty_consume.pixel_alu_constant_per_frame",
+			"cemu.command.host.dirty_consume.unclassified_per_frame",
+		};
+		for (size_t index = 0; index < dirtyClassifiedNames.size(); ++index)
+		{
+			const uint64 classifiedWords = Consume(s_commandStreamMetrics.dirtyClassifiedWords[index]);
+			const uint64 marks = Consume(s_commandStreamMetrics.dirtyMarks[index]);
+			const uint64 consumes = Consume(s_commandStreamMetrics.dirtyConsumes[index]);
+			SPATIAL_PROFILER_COUNTER_SET(dirtyClassifiedNames[index], classifiedWords, "Cemu Dirty State", "words");
+			SPATIAL_PROFILER_COUNTER_SET(dirtyMarkNames[index], marks, "Cemu Dirty State", "marks");
+			SPATIAL_PROFILER_COUNTER_SET(dirtyConsumeNames[index], consumes, "Cemu Dirty State", "consumes");
+			if (classifiedWords != 0)
+				s_dirtyClassifiedWordTotals[index].fetch_add(classifiedWords, std::memory_order_relaxed);
+			if (marks != 0)
+				s_dirtyMarkTotals[index].fetch_add(marks, std::memory_order_relaxed);
+			if (consumes != 0)
+				s_dirtyConsumeTotals[index].fetch_add(consumes, std::memory_order_relaxed);
+		}
+
+		const uint64 pipelineHashCalls = Consume(s_commandStreamMetrics.pipelineHashCalls);
+		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.pipeline.hash_calls_per_frame", pipelineHashCalls, "Cemu Pipeline Cache", "calls");
+		if (pipelineHashCalls != 0)
+			s_pipelineHashCallTotal.fetch_add(pipelineHashCalls, std::memory_order_relaxed);
+		static constexpr std::array<const char*, static_cast<size_t>(LattePipelineLookupOutcome::Count)> pipelineLookupCounterNames = {
+			"cemu.command.host.pipeline.transition_hits_per_frame",
+			"cemu.command.host.pipeline.global_hits_per_frame",
+			"cemu.command.host.pipeline.misses_per_frame",
+		};
+		for (size_t index = 0; index < pipelineLookupCounterNames.size(); ++index)
+		{
+			const uint64 count = Consume(s_commandStreamMetrics.pipelineLookups[index]);
+			SPATIAL_PROFILER_COUNTER_SET(pipelineLookupCounterNames[index], count, "Cemu Pipeline Cache", "lookups");
+			if (count != 0)
+				s_pipelineLookupTotals[index].fetch_add(count, std::memory_order_relaxed);
+		}
+
+		const uint64 descriptorHashCalls = Consume(s_commandStreamMetrics.descriptorHashCalls);
+		const uint64 descriptorCacheHits = Consume(s_commandStreamMetrics.descriptorCacheHits);
+		const uint64 descriptorCacheMisses = Consume(s_commandStreamMetrics.descriptorCacheMisses);
+		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.descriptor.hash_calls_per_frame", descriptorHashCalls, "Cemu Descriptor Cache", "calls");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.descriptor.cache_hits_per_frame", descriptorCacheHits, "Cemu Descriptor Cache", "lookups");
+		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.descriptor.cache_misses_per_frame", descriptorCacheMisses, "Cemu Descriptor Cache", "lookups");
+		if (descriptorHashCalls != 0)
+			s_descriptorHashCallTotal.fetch_add(descriptorHashCalls, std::memory_order_relaxed);
+		if (descriptorCacheHits != 0)
+			s_descriptorCacheHitTotal.fetch_add(descriptorCacheHits, std::memory_order_relaxed);
+		if (descriptorCacheMisses != 0)
+			s_descriptorCacheMissTotal.fetch_add(descriptorCacheMisses, std::memory_order_relaxed);
+
+		static constexpr std::array<const char*, static_cast<size_t>(LatteDynamicState::Count)> dynamicRequestNames = {
+			"cemu.command.host.dynamic_state.blend_constants.requested_per_frame",
+			"cemu.command.host.dynamic_state.depth_bias.requested_per_frame",
+		};
+		static constexpr std::array<const char*, static_cast<size_t>(LatteDynamicState::Count)> dynamicEmitNames = {
+			"cemu.command.host.dynamic_state.blend_constants.emitted_per_frame",
+			"cemu.command.host.dynamic_state.depth_bias.emitted_per_frame",
+		};
+		static constexpr std::array<const char*, static_cast<size_t>(LatteDynamicState::Count)> dynamicElideNames = {
+			"cemu.command.host.dynamic_state.blend_constants.elided_per_frame",
+			"cemu.command.host.dynamic_state.depth_bias.elided_per_frame",
+		};
+		for (size_t index = 0; index < dynamicRequestNames.size(); ++index)
+		{
+			const uint64 requests = Consume(s_commandStreamMetrics.dynamicStateRequests[index]);
+			const uint64 emits = Consume(s_commandStreamMetrics.dynamicStateEmits[index]);
+			const uint64 elided = requests - std::min(requests, emits);
+			SPATIAL_PROFILER_COUNTER_SET(dynamicRequestNames[index], requests, "Cemu Dynamic State", "requests");
+			SPATIAL_PROFILER_COUNTER_SET(dynamicEmitNames[index], emits, "Cemu Dynamic State", "commands");
+			SPATIAL_PROFILER_COUNTER_SET(dynamicElideNames[index], elided, "Cemu Dynamic State", "commands");
+			if (requests != 0)
+				s_dynamicStateRequestTotals[index].fetch_add(requests, std::memory_order_relaxed);
+			if (emits != 0)
+				s_dynamicStateEmitTotals[index].fetch_add(emits, std::memory_order_relaxed);
+		}
 	}
 }
 
@@ -508,6 +641,63 @@ void LattePerformanceMonitor_recordHostUniformRingBankBind(uint32 bytes, bool re
 	}
 }
 
+void LattePerformanceMonitor_recordHostDirtyRegisterClassification(LatteDirtyStateDomain domain,
+	uint32 words)
+{
+	const size_t index = static_cast<size_t>(domain);
+	if (index >= s_commandStreamMetrics.dirtyClassifiedWords.size())
+		return;
+	s_commandStreamMetrics.dirtyClassifiedWords[index] += words;
+}
+
+void LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain domain, uint32 count)
+{
+	const size_t index = static_cast<size_t>(domain);
+	if (index >= s_commandStreamMetrics.dirtyMarks.size())
+		return;
+	s_commandStreamMetrics.dirtyMarks[index] += count;
+}
+
+void LattePerformanceMonitor_recordHostDirtyStateConsume(LatteDirtyStateDomain domain, uint32 count)
+{
+	const size_t index = static_cast<size_t>(domain);
+	if (index >= s_commandStreamMetrics.dirtyConsumes.size())
+		return;
+	s_commandStreamMetrics.dirtyConsumes[index] += count;
+}
+
+void LattePerformanceMonitor_recordHostPipelineHashCall()
+{
+	s_commandStreamMetrics.pipelineHashCalls++;
+}
+
+void LattePerformanceMonitor_recordHostPipelineLookup(LattePipelineLookupOutcome outcome)
+{
+	const size_t index = static_cast<size_t>(outcome);
+	if (index >= s_commandStreamMetrics.pipelineLookups.size())
+		return;
+	s_commandStreamMetrics.pipelineLookups[index]++;
+}
+
+void LattePerformanceMonitor_recordHostDescriptorLookup(bool cacheHit)
+{
+	s_commandStreamMetrics.descriptorHashCalls++;
+	if (cacheHit)
+		s_commandStreamMetrics.descriptorCacheHits++;
+	else
+		s_commandStreamMetrics.descriptorCacheMisses++;
+}
+
+void LattePerformanceMonitor_recordHostDynamicState(LatteDynamicState state, bool emitted)
+{
+	const size_t index = static_cast<size_t>(state);
+	if (index >= s_commandStreamMetrics.dynamicStateRequests.size())
+		return;
+	s_commandStreamMetrics.dynamicStateRequests[index]++;
+	if (emitted)
+		s_commandStreamMetrics.dynamicStateEmits[index]++;
+}
+
 std::string LattePerformanceMonitor_getCommandTranslationStatus()
 {
 	struct ContextBreakEntry
@@ -575,6 +765,28 @@ std::string LattePerformanceMonitor_getCommandTranslationStatus()
 		out << ",applied_store_words:" << appliedStoreWords;
 		out << ",elided_store_words:" << elidedStoreWords << "\n";
 	}
+	for (size_t index = 0; index < s_dirtyDomainNames.size(); ++index)
+	{
+		out << "dirty_domain." << s_dirtyDomainNames[index];
+		out << "=classified_words:" << s_dirtyClassifiedWordTotals[index].load(std::memory_order_relaxed);
+		out << ",marks:" << s_dirtyMarkTotals[index].load(std::memory_order_relaxed);
+		out << ",consumes:" << s_dirtyConsumeTotals[index].load(std::memory_order_relaxed) << "\n";
+	}
+	out << "pipeline_hash_calls=" << s_pipelineHashCallTotal.load(std::memory_order_relaxed) << "\n";
+	for (size_t index = 0; index < s_pipelineLookupNames.size(); ++index)
+		out << "pipeline_lookup." << s_pipelineLookupNames[index] << "=" << s_pipelineLookupTotals[index].load(std::memory_order_relaxed) << "\n";
+	out << "descriptor_hash_calls=" << s_descriptorHashCallTotal.load(std::memory_order_relaxed) << "\n";
+	out << "descriptor_cache_hits=" << s_descriptorCacheHitTotal.load(std::memory_order_relaxed) << "\n";
+	out << "descriptor_cache_misses=" << s_descriptorCacheMissTotal.load(std::memory_order_relaxed) << "\n";
+	for (size_t index = 0; index < s_dynamicStateNames.size(); ++index)
+	{
+		const uint64 requests = s_dynamicStateRequestTotals[index].load(std::memory_order_relaxed);
+		const uint64 emits = s_dynamicStateEmitTotals[index].load(std::memory_order_relaxed);
+		out << "dynamic_state." << s_dynamicStateNames[index];
+		out << "=requested:" << requests;
+		out << ",emitted:" << emits;
+		out << ",elided:" << requests - std::min(requests, emits) << "\n";
+	}
 	out << "context_break_total=" << s_contextDrawPassBreakTotal.load(std::memory_order_relaxed) << "\n";
 	out << "context_break_unique_starts=" << entries.size() << "\n";
 	const size_t topCount = std::min<size_t>(entries.size(), 16);
@@ -605,6 +817,22 @@ void LattePerformanceMonitor_resetCommandTranslationStatus()
 		words.store(0, std::memory_order_relaxed);
 	for (auto& words : s_registerElidedStoreWordTotals)
 		words.store(0, std::memory_order_relaxed);
+	for (auto& words : s_dirtyClassifiedWordTotals)
+		words.store(0, std::memory_order_relaxed);
+	for (auto& count : s_dirtyMarkTotals)
+		count.store(0, std::memory_order_relaxed);
+	for (auto& count : s_dirtyConsumeTotals)
+		count.store(0, std::memory_order_relaxed);
+	s_pipelineHashCallTotal.store(0, std::memory_order_relaxed);
+	for (auto& count : s_pipelineLookupTotals)
+		count.store(0, std::memory_order_relaxed);
+	s_descriptorHashCallTotal.store(0, std::memory_order_relaxed);
+	s_descriptorCacheHitTotal.store(0, std::memory_order_relaxed);
+	s_descriptorCacheMissTotal.store(0, std::memory_order_relaxed);
+	for (auto& count : s_dynamicStateRequestTotals)
+		count.store(0, std::memory_order_relaxed);
+	for (auto& count : s_dynamicStateEmitTotals)
+		count.store(0, std::memory_order_relaxed);
 }
 
 void LattePerformanceMonitor_frameEnd()

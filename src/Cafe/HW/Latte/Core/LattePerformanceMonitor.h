@@ -247,6 +247,34 @@ enum class LatteBufferCacheUploadSource : std::uint8_t
 	Count,
 };
 
+enum class LatteDirtyStateDomain : std::uint8_t
+{
+	Texture,
+	VertexBuffer,
+	VertexUniformBuffer,
+	PixelUniformBuffer,
+	GeometryUniformBuffer,
+	VertexAluConstant,
+	PixelAluConstant,
+	Unclassified,
+	Count,
+};
+
+enum class LattePipelineLookupOutcome : std::uint8_t
+{
+	TransitionHit,
+	GlobalHit,
+	Miss,
+	Count,
+};
+
+enum class LatteDynamicState : std::uint8_t
+{
+	BlendConstants,
+	DepthBias,
+	Count,
+};
+
 void LattePerformanceMonitor_recordGuestCommandSubmission(uint32 words);
 void LattePerformanceMonitor_recordHostCommandSubmission(uint32 words);
 void LattePerformanceMonitor_recordHostCommandPacket(LatteCommandPacketCategory category, uint32 words);
@@ -271,6 +299,14 @@ void LattePerformanceMonitor_recordHostBufferCacheCopy(uint32 bytes);
 void LattePerformanceMonitor_recordHostVertexBufferBind(uint32 bytes);
 void LattePerformanceMonitor_recordHostUniformRingBankBind(uint32 bytes, bool reused);
 void LattePerformanceMonitor_recordHostUniformRingBankUpload(uint32 bytes);
+void LattePerformanceMonitor_recordHostDirtyRegisterClassification(LatteDirtyStateDomain domain,
+	uint32 words);
+void LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain domain, uint32 count = 1);
+void LattePerformanceMonitor_recordHostDirtyStateConsume(LatteDirtyStateDomain domain, uint32 count = 1);
+void LattePerformanceMonitor_recordHostPipelineHashCall();
+void LattePerformanceMonitor_recordHostPipelineLookup(LattePipelineLookupOutcome outcome);
+void LattePerformanceMonitor_recordHostDescriptorLookup(bool cacheHit);
+void LattePerformanceMonitor_recordHostDynamicState(LatteDynamicState state, bool emitted);
 std::string LattePerformanceMonitor_getCommandTranslationStatus();
 void LattePerformanceMonitor_resetCommandTranslationStatus();
 

@@ -16,6 +16,7 @@
 
 #include "spatial/profiler/Profiler.h"
 
+#include <algorithm>
 #include <chrono>
 
 extern bool hasValidFramebufferAttached;
@@ -231,25 +232,77 @@ PipelineInfo* VulkanRenderer::draw_getCachedPipeline()
 	// todo - optimize m_pipeline_info_cache away and store directly in vk vertex shader
 	const auto fetchShader = LatteSHRC_GetActiveFetchShader();
 	const auto vertexShader = LatteSHRC_GetActiveVertexShader();
-	const auto it = m_pipeline_info_cache.find(vertexShader->baseHash);
-	if (it == m_pipeline_info_cache.cend())
-		return nullptr;
-
 	const auto geometryShader = LatteSHRC_GetActiveGeometryShader();
 	const auto pixelShader = LatteSHRC_GetActivePixelShader();
 	auto cachedFboVk = (CachedFBOVk*)m_state.activeFBO;
 
+	LattePerformanceMonitor_recordHostPipelineHashCall();
 	const uint64 stateHash = draw_calculateGraphicsPipelineHash(fetchShader, vertexShader, geometryShader, pixelShader, cachedFboVk->GetRenderPassObj(), LatteGPUState.contextNew);
+	const uint64 vertexBaseHash = vertexShader->baseHash;
+	PipelineInfo* sourcePipeline = m_state.activePipelineInfo;
+	if (sourcePipeline)
+	{
+		const uintptr_t sourceValue = reinterpret_cast<uintptr_t>(sourcePipeline);
+		const size_t transitionIndex = ((sourceValue >> 4) ^ stateHash ^ (stateHash >> 32)) & (s_pipelineTransitionCacheSize - 1);
+		const PipelineTransitionCacheEntry& transition = m_pipelineTransitionCache[transitionIndex];
+		if (transition.source == sourcePipeline &&
+			transition.targetVertexBaseHash == vertexBaseHash &&
+			transition.targetStateHash == stateHash)
+		{
+			PipelineInfo* targetPipeline = transition.target;
+			if (targetPipeline &&
+				targetPipeline->vertexShader == vertexShader &&
+				targetPipeline->geometryShader == geometryShader &&
+				targetPipeline->pixelShader == pixelShader &&
+				targetPipeline->fetchShader->key == fetchShader->key &&
+				targetPipeline->fetchShader->vkPipelineHashFragment == fetchShader->vkPipelineHashFragment)
+			{
+				LattePerformanceMonitor_recordHostPipelineLookup(LattePipelineLookupOutcome::TransitionHit);
+				return targetPipeline;
+			}
+		}
+	}
+
+	const auto it = m_pipeline_info_cache.find(vertexBaseHash);
+	if (it == m_pipeline_info_cache.cend())
+	{
+		LattePerformanceMonitor_recordHostPipelineLookup(LattePipelineLookupOutcome::Miss);
+		return nullptr;
+	}
 
 	const auto innerit = it->second.find(stateHash);
 	if (innerit == it->second.cend())
+	{
+		LattePerformanceMonitor_recordHostPipelineLookup(LattePipelineLookupOutcome::Miss);
 		return nullptr;
+	}
 
+	if (sourcePipeline)
+	{
+		const uintptr_t sourceValue = reinterpret_cast<uintptr_t>(sourcePipeline);
+		const size_t transitionIndex = ((sourceValue >> 4) ^ stateHash ^ (stateHash >> 32)) & (s_pipelineTransitionCacheSize - 1);
+		m_pipelineTransitionCache[transitionIndex] = {
+			.source = sourcePipeline,
+			.target = innerit->second,
+			.targetVertexBaseHash = vertexBaseHash,
+			.targetStateHash = stateHash,
+		};
+	}
+
+	LattePerformanceMonitor_recordHostPipelineLookup(LattePipelineLookupOutcome::GlobalHit);
 	return innerit->second;
 }
 
 void VulkanRenderer::unregisterGraphicsPipeline(PipelineInfo* pipelineInfo)
 {
+	for (PipelineTransitionCacheEntry& transition : m_pipelineTransitionCache)
+	{
+		if (transition.source == pipelineInfo || transition.target == pipelineInfo)
+			transition = {};
+	}
+	if (m_state.activePipelineInfo == pipelineInfo)
+		m_state.activePipelineInfo = nullptr;
+
 	bool removedFromCache = false;
 	for (auto& topMapItr : m_pipeline_info_cache)
 	{
@@ -306,6 +359,7 @@ PipelineInfo* VulkanRenderer::draw_createGraphicsPipeline(uint32 indexCount)
 	auto cachedFboVk = (CachedFBOVk*)m_state.activeFBO;
 
 	uint64 minimalStateHash = draw_calculateMinimalGraphicsPipelineHash(fetchShader, LatteGPUState.contextNew);
+	LattePerformanceMonitor_recordHostPipelineHashCall();
 	uint64 pipelineHash = draw_calculateGraphicsPipelineHash(fetchShader, vertexShader, geometryShader, pixelShader, cachedFboVk->GetRenderPassObj(), LatteGPUState.contextNew);
 
 	// create PipelineInfo
@@ -672,7 +726,11 @@ VkDescriptorSetInfo* VulkanRenderer::draw_getOrCreateDescriptorSet(PipelineInfo*
 	auto& ds_cache = pipeline_info->GetDescriptorSetCache(shader->shaderType);
 	const auto it = ds_cache.find(stateHash);
 	if (it != ds_cache.cend())
+	{
+		LattePerformanceMonitor_recordHostDescriptorLookup(true);
 		return it->second;
+	}
+	LattePerformanceMonitor_recordHostDescriptorLookup(false);
 
 	VkDescriptorSetLayout descriptor_set_layout;
 	switch (shader->shaderType)
@@ -1240,6 +1298,13 @@ void VulkanRenderer::draw_prepareDescriptorSets(PipelineInfo* pipeline_info, VkD
 void VulkanRenderer::draw_updateVkBlendConstants()
 {
 	uint32* blendColorConstant = LatteGPUState.contextRegister + Latte::REGADDR::CB_BLEND_RED;
+	const bool changed = !m_state.blendConstantsValid ||
+		!std::equal(m_state.prevBlendConstants.cbegin(), m_state.prevBlendConstants.cend(), blendColorConstant);
+	LattePerformanceMonitor_recordHostDynamicState(LatteDynamicState::BlendConstants, changed);
+	if (!changed)
+		return;
+	std::copy_n(blendColorConstant, m_state.prevBlendConstants.size(), m_state.prevBlendConstants.begin());
+	m_state.blendConstantsValid = true;
 	vkCmdSetBlendConstants(m_state.currentCommandBuffer, (const float*)blendColorConstant);
 }
 
@@ -1253,7 +1318,11 @@ void VulkanRenderer::draw_updateDepthBias(bool forceUpdate)
 		m_state.prevPolygonFrontScaleU32 == frontScaleU32 &&
 		m_state.prevPolygonFrontOffsetU32 == frontOffsetU32 &&
 		m_state.prevPolygonFrontClampU32 == offsetClampU32)
+	{
+		LattePerformanceMonitor_recordHostDynamicState(LatteDynamicState::DepthBias, false);
 		return;
+	}
+	LattePerformanceMonitor_recordHostDynamicState(LatteDynamicState::DepthBias, true);
 
 	m_state.prevPolygonFrontScaleU32 = frontScaleU32;
 	m_state.prevPolygonFrontOffsetU32 = frontOffsetU32;

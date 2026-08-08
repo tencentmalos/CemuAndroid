@@ -21,7 +21,10 @@
 
 #include <boost/container/small_vector.hpp>
 
+#include <algorithm>
+#include <array>
 #include <atomic>
+#include <bit>
 #include <chrono>
 
 #include "spatial/profiler/Profiler.h"
@@ -146,6 +149,57 @@ namespace
 	};
 }
 
+namespace
+{
+	enum class DrawDirtyRuleType : uint8
+	{
+		Texture,
+		VertexBuffer,
+		VertexUniformBuffer,
+		PixelUniformBuffer,
+		GeometryUniformBuffer,
+		VertexAluConstant,
+		PixelAluConstant,
+	};
+
+	struct DrawDirtyRegisterRule
+	{
+		uint32 firstRegister;
+		uint32 lastRegister;
+		uint32 stride;
+		DrawDirtyRuleType type;
+		LatteDirtyStateDomain domain;
+	};
+
+	constexpr uint32 TextureRegisterCount = Latte::GPU_LIMITS::NUM_TEXTURES_PER_STAGE * 7;
+	constexpr std::array<DrawDirtyRegisterRule, 7> ResourceDirtyRules = {{
+		{Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_PS,
+			Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_PS + TextureRegisterCount - 1, 7,
+			DrawDirtyRuleType::Texture, LatteDirtyStateDomain::Texture},
+		{Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_VS,
+			Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_VS + TextureRegisterCount - 1, 7,
+			DrawDirtyRuleType::Texture, LatteDirtyStateDomain::Texture},
+		{Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_GS,
+			Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_GS + TextureRegisterCount - 1, 7,
+			DrawDirtyRuleType::Texture, LatteDirtyStateDomain::Texture},
+		{mmSQ_VTX_ATTRIBUTE_BLOCK_START, mmSQ_VTX_ATTRIBUTE_BLOCK_START + 7 * LATTE_MAX_VERTEX_BUFFERS - 1, 7,
+			DrawDirtyRuleType::VertexBuffer, LatteDirtyStateDomain::VertexBuffer},
+		{mmSQ_VTX_UNIFORM_BLOCK_START, mmSQ_VTX_UNIFORM_BLOCK_START + 7 * 16 - 1, 7,
+			DrawDirtyRuleType::VertexUniformBuffer, LatteDirtyStateDomain::VertexUniformBuffer},
+		{mmSQ_PS_UNIFORM_BLOCK_START, mmSQ_PS_UNIFORM_BLOCK_START + 7 * 16 - 1, 7,
+			DrawDirtyRuleType::PixelUniformBuffer, LatteDirtyStateDomain::PixelUniformBuffer},
+		{mmSQ_GS_UNIFORM_BLOCK_START, mmSQ_GS_UNIFORM_BLOCK_START + 7 * 16 - 1, 7,
+			DrawDirtyRuleType::GeometryUniformBuffer, LatteDirtyStateDomain::GeometryUniformBuffer},
+	}};
+
+	constexpr std::array<DrawDirtyRegisterRule, 2> AluConstantDirtyRules = {{
+		{mmSQ_ALU_CONSTANT0_0, mmSQ_ALU_CONSTANT0_0 + 0x3FF, 1,
+			DrawDirtyRuleType::PixelAluConstant, LatteDirtyStateDomain::PixelAluConstant},
+		{mmSQ_ALU_CONSTANT0_0 + 0x400, mmSQ_ALU_CONSTANT0_0 + 0x7FF, 1,
+			DrawDirtyRuleType::VertexAluConstant, LatteDirtyStateDomain::VertexAluConstant},
+	}};
+}
+
 class DrawPassContext
 {
 	struct CmdQueuePos
@@ -201,6 +255,7 @@ public:
 		uint32 baseVertex = LatteGPUState.contextRegister[mmSQ_VTX_BASE_VTX_LOC];
 		uint32 baseInstance = LatteGPUState.contextRegister[mmSQ_VTX_START_INST_LOC];
 		uint32 numInstances = LatteGPUState.contextNew.VGT_DMA_NUM_INSTANCES.get_NUM_INSTANCES();
+		RecordDirtyStateConsumption();
 
 		if (!isAutoIndex)
 		{
@@ -252,32 +307,118 @@ public:
 
 	void MarkVertexBufferDirty(uint32 index)
 	{
-		m_drawcallContext.vertexBufferDirtyMask |= (1<<index);
+		const uint32 bit = 1u << index;
+		if ((m_drawcallContext.vertexBufferDirtyMask & bit) == 0)
+			LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain::VertexBuffer);
+		m_drawcallContext.vertexBufferDirtyMask |= bit;
 	}
 
 	void MarkVSAluConstantsDirty()
 	{
+		if (!m_drawcallContext.aluConstVSDirty)
+			LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain::VertexAluConstant);
 		m_drawcallContext.aluConstVSDirty = true;
 	}
 
 	void MarkPSAluConstantsDirty()
 	{
+		if (!m_drawcallContext.aluConstPSDirty)
+			LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain::PixelAluConstant);
 		m_drawcallContext.aluConstPSDirty = true;
 	}
 
 	void MarkVSUniformBufferDirty(uint32 index)
 	{
-		m_drawcallContext.vsUniformBufferDirtyMask |= (1 << index);
+		const uint32 bit = 1u << index;
+		if ((m_drawcallContext.vsUniformBufferDirtyMask & bit) == 0)
+			LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain::VertexUniformBuffer);
+		m_drawcallContext.vsUniformBufferDirtyMask |= bit;
 	}
 
 	void MarkPSUniformBufferDirty(uint32 index)
 	{
-		m_drawcallContext.psUniformBufferDirtyMask |= (1 << index);
+		const uint32 bit = 1u << index;
+		if ((m_drawcallContext.psUniformBufferDirtyMask & bit) == 0)
+			LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain::PixelUniformBuffer);
+		m_drawcallContext.psUniformBufferDirtyMask |= bit;
 	}
 
 	void MarkGSUniformBufferDirty(uint32 index)
 	{
-		m_drawcallContext.gsUniformBufferDirtyMask |= (1 << index);
+		const uint32 bit = 1u << index;
+		if ((m_drawcallContext.gsUniformBufferDirtyMask & bit) == 0)
+			LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain::GeometryUniformBuffer);
+		m_drawcallContext.gsUniformBufferDirtyMask |= bit;
+	}
+
+	void MarkResourceRegisterRangeDirty(uint32 registerStart, uint32 registerEnd)
+	{
+		uint32 classifiedWords = 0;
+		bool textureChanged = false;
+		for (const auto& rule : ResourceDirtyRules)
+		{
+			const uint32 overlapStart = std::max(registerStart, rule.firstRegister);
+			const uint32 overlapEnd = std::min(registerEnd, rule.lastRegister);
+			if (overlapStart > overlapEnd)
+				continue;
+
+			const uint32 overlapWords = overlapEnd - overlapStart + 1;
+			classifiedWords += overlapWords;
+			LattePerformanceMonitor_recordHostDirtyRegisterClassification(rule.domain, overlapWords);
+			const uint32 firstIndex = (overlapStart - rule.firstRegister) / rule.stride;
+			const uint32 lastIndex = (overlapEnd - rule.firstRegister) / rule.stride;
+			switch (rule.type)
+			{
+			case DrawDirtyRuleType::Texture:
+				textureChanged = true;
+				break;
+			case DrawDirtyRuleType::VertexBuffer:
+				for (uint32 index = firstIndex; index <= lastIndex; ++index)
+					MarkVertexBufferDirty(index);
+				break;
+			case DrawDirtyRuleType::VertexUniformBuffer:
+				for (uint32 index = firstIndex; index <= lastIndex; ++index)
+					MarkVSUniformBufferDirty(index);
+				break;
+			case DrawDirtyRuleType::PixelUniformBuffer:
+				for (uint32 index = firstIndex; index <= lastIndex; ++index)
+					MarkPSUniformBufferDirty(index);
+				break;
+			case DrawDirtyRuleType::GeometryUniformBuffer:
+				for (uint32 index = firstIndex; index <= lastIndex; ++index)
+					MarkGSUniformBufferDirty(index);
+				break;
+			default:
+				break;
+			}
+		}
+		RecordUnclassifiedWords(registerStart, registerEnd, classifiedWords);
+		if (textureChanged)
+		{
+			LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain::Texture);
+			if (isWithinDrawPass())
+				endDrawPass(LatteDrawPassEndReason::ResourceChange);
+		}
+	}
+
+	void MarkAluRegisterRangeDirty(uint32 registerStart, uint32 registerEnd)
+	{
+		uint32 classifiedWords = 0;
+		for (const auto& rule : AluConstantDirtyRules)
+		{
+			const uint32 overlapStart = std::max(registerStart, rule.firstRegister);
+			const uint32 overlapEnd = std::min(registerEnd, rule.lastRegister);
+			if (overlapStart > overlapEnd)
+				continue;
+			const uint32 overlapWords = overlapEnd - overlapStart + 1;
+			classifiedWords += overlapWords;
+			LattePerformanceMonitor_recordHostDirtyRegisterClassification(rule.domain, overlapWords);
+			if (rule.type == DrawDirtyRuleType::VertexAluConstant)
+				MarkVSAluConstantsDirty();
+			else
+				MarkPSAluConstantsDirty();
+		}
+		RecordUnclassifiedWords(registerStart, registerEnd, classifiedWords);
 	}
 
 	// command buffer processing position
@@ -299,6 +440,33 @@ public:
 	}
 
 private:
+	void RecordUnclassifiedWords(uint32 registerStart, uint32 registerEnd, uint32 classifiedWords)
+	{
+		const uint32 totalWords = registerEnd - registerStart + 1;
+		const uint32 unclassifiedWords = totalWords - std::min(totalWords, classifiedWords);
+		if (unclassifiedWords == 0)
+			return;
+		LattePerformanceMonitor_recordHostDirtyRegisterClassification(
+			LatteDirtyStateDomain::Unclassified, unclassifiedWords);
+		LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain::Unclassified);
+	}
+
+	void RecordDirtyStateConsumption()
+	{
+		LattePerformanceMonitor_recordHostDirtyStateConsume(LatteDirtyStateDomain::VertexBuffer,
+			std::popcount(m_drawcallContext.vertexBufferDirtyMask));
+		LattePerformanceMonitor_recordHostDirtyStateConsume(LatteDirtyStateDomain::VertexUniformBuffer,
+			std::popcount(m_drawcallContext.vsUniformBufferDirtyMask));
+		LattePerformanceMonitor_recordHostDirtyStateConsume(LatteDirtyStateDomain::PixelUniformBuffer,
+			std::popcount(m_drawcallContext.psUniformBufferDirtyMask));
+		LattePerformanceMonitor_recordHostDirtyStateConsume(LatteDirtyStateDomain::GeometryUniformBuffer,
+			std::popcount(m_drawcallContext.gsUniformBufferDirtyMask));
+		if (m_drawcallContext.aluConstVSDirty)
+			LattePerformanceMonitor_recordHostDirtyStateConsume(LatteDirtyStateDomain::VertexAluConstant);
+		if (m_drawcallContext.aluConstPSDirty)
+			LattePerformanceMonitor_recordHostDirtyStateConsume(LatteDirtyStateDomain::PixelAluConstant);
+	}
+
 	bool m_drawPassActive{ false };
 	LatteDrawcallContext m_drawcallContext{};
 	uint32 m_guestGpuTagSection{UINT32_MAX};
@@ -659,12 +827,15 @@ LatteCMDPtr LatteCP_itSetRegistersGeneric(LatteCMDPtr cmd, uint32 nWords,
 	return cmd;
 }
 
-// similar to LatteCP_itSetRegistersGeneric, but calls a callback for every register range checked and returns true ONLY if any register value has actually changed (e.g. not updated to the same value as before)
+// Similar to LatteCP_itSetRegistersGeneric, but reports the exact contiguous spans whose Host
+// mirror values changed. Guest shadow writes and special-register handlers keep their original
+// packet-level behavior.
 template<uint32 TRegisterBase, typename TRegRangeCallback>
 bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCallback cbRegRange,
 	uint32* elidedRegisterStores = nullptr)
 {
 	nWords--;
+	const uint32 registerWordCount = nWords;
 	const uint32 registerOffset = LatteReadCMD();
 	const uint32 registerIndex = TRegisterBase + registerOffset;
 	const uint32 registerStartIndex = registerIndex;
@@ -674,6 +845,26 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 	uint32* outputReg = (uint32*)(LatteGPUState.contextRegister + registerIndex);
 	bool hasRegChange = false;
 	uint32 elidedStores = 0;
+	struct ChangedRegisterSpan
+	{
+		uint32 start;
+		uint32 end;
+	};
+	boost::container::small_vector<ChangedRegisterSpan, 4> changedSpans;
+	uint32 changedSpanStart = UINT32_MAX;
+	auto trackChangedWord = [&](uint32 wordIndex, bool changed) {
+		if (changed)
+		{
+			if (changedSpanStart == UINT32_MAX)
+				changedSpanStart = wordIndex;
+			return;
+		}
+		if (changedSpanStart != UINT32_MAX)
+		{
+			changedSpans.emplace_back(ChangedRegisterSpan{changedSpanStart, wordIndex - 1});
+			changedSpanStart = UINT32_MAX;
+		}
+	};
 	if (LatteGPUState.contextControl0 == 0x80000077)
 	{
 		// Guest shadow stores remain observable. Only unchanged Host mirror stores may be elided.
@@ -685,7 +876,8 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 			MPTR regShadowAddr = shadowAddrs[indexCounter];
 			if (regShadowAddr)
 				*(uint32*)(memory_base + regShadowAddr) = _swapEndianU32(dataWord);
-			if (outputReg[indexCounter] != dataWord)
+			const bool changed = outputReg[indexCounter] != dataWord;
+			if (changed)
 			{
 				hasRegChange = true;
 				outputReg[indexCounter] = dataWord;
@@ -694,6 +886,7 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 			{
 				elidedStores++;
 			}
+			trackChangedWord(static_cast<uint32>(indexCounter), changed);
 			indexCounter++;
 		}
 	}
@@ -708,6 +901,7 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 				*outputReg = v;
 			else
 				elidedStores++;
+			trackChangedWord(0, hasRegChange);
 		}
 		else
 		{
@@ -715,7 +909,8 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 			while (i < nWords)
 			{
 				uint32 v = cmd[i];
-				if (outputReg[i] != v)
+				const bool changed = outputReg[i] != v;
+				if (changed)
 				{
 					hasRegChange = true;
 					outputReg[i] = v;
@@ -724,15 +919,25 @@ bool LatteCP_itSetRegistersGeneric2(LatteCMDPtr cmd, uint32 nWords, TRegRangeCal
 				{
 					elidedStores++;
 				}
+				trackChangedWord(static_cast<uint32>(i), changed);
 				i++;
 			}
 			cmd += nWords;
 		}
 	}
+	if (changedSpanStart != UINT32_MAX)
+		changedSpans.emplace_back(ChangedRegisterSpan{changedSpanStart, registerWordCount - 1});
 	// some register writes trigger special behavior
 	LatteCP_itSetRegistersGeneric_handleSpecialRanges<TRegisterBase>(registerStartIndex, registerEndIndex);
-	// callback
-	cbRegRange(registerStartIndex, registerEndIndex, hasRegChange);
+	if (changedSpans.empty())
+	{
+		cbRegRange(registerStartIndex, registerEndIndex, false);
+	}
+	else
+	{
+		for (const auto& span : changedSpans)
+			cbRegRange(registerStartIndex + span.start, registerStartIndex + span.end, true);
+	}
 	if (elidedRegisterStores)
 		*elidedRegisterStores = elidedStores;
 	return hasRegChange;
@@ -1528,34 +1733,8 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 					uint32 elidedRegisterStores = 0;
 					const bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_RESOURCE>(cmdData, nWords, [&drawPassCtx](uint32 registerStart, uint32 registerEnd, bool regValuesChanged)
 						{
-							if (!regValuesChanged)
-								return;
-							if ((registerStart >= Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_PS && registerStart < (Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_PS + Latte::GPU_LIMITS::NUM_TEXTURES_PER_STAGE * 7)) ||
-								(registerStart >= Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_VS && registerStart < (Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_VS + Latte::GPU_LIMITS::NUM_TEXTURES_PER_STAGE * 7)) ||
-								(registerStart >= Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_GS && registerStart < (Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_GS + Latte::GPU_LIMITS::NUM_TEXTURES_PER_STAGE * 7)))
-							{
-								drawPassCtx.endDrawPass(LatteDrawPassEndReason::ResourceChange); // texture updates end the current draw sequence
-							}
-							else if (registerStart >= mmSQ_VTX_ATTRIBUTE_BLOCK_START && registerEnd <= mmSQ_VTX_ATTRIBUTE_BLOCK_END)
-							{
-								uint32 bufferIndex = (registerStart - mmSQ_VTX_ATTRIBUTE_BLOCK_START) / 7;
-								drawPassCtx.MarkVertexBufferDirty(bufferIndex);
-							}
-							else if (registerStart >= mmSQ_VTX_UNIFORM_BLOCK_START && registerEnd <= mmSQ_VTX_UNIFORM_BLOCK_END)
-							{
-								uint32 bufferIndex = (registerStart - mmSQ_VTX_UNIFORM_BLOCK_START) / 7;
-								drawPassCtx.MarkVSUniformBufferDirty(bufferIndex);
-							}
-							else if (registerStart >= mmSQ_PS_UNIFORM_BLOCK_START && registerEnd <= mmSQ_PS_UNIFORM_BLOCK_END)
-							{
-								uint32 bufferIndex = (registerStart - mmSQ_PS_UNIFORM_BLOCK_START) / 7;
-								drawPassCtx.MarkPSUniformBufferDirty(bufferIndex);
-							}
-							else if (registerStart >= mmSQ_GS_UNIFORM_BLOCK_START && registerEnd <= mmSQ_GS_UNIFORM_BLOCK_END)
-							{
-								uint32 bufferIndex = (registerStart - mmSQ_GS_UNIFORM_BLOCK_START) / 7;
-								drawPassCtx.MarkGSUniformBufferDirty(bufferIndex);
-							}
+							if (regValuesChanged)
+								drawPassCtx.MarkResourceRegisterRangeDirty(registerStart, registerEnd);
 						}, &elidedRegisterStores);
 					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterResource,
 						hasChanged, nWords + 1, elidedRegisterStores);
@@ -1573,11 +1752,7 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 					const bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_ALU_CONST>(cmdData, nWords, [&drawPassCtx](uint32 registerStart, uint32 registerEnd, bool regValuesChanged) {
 						if (!regValuesChanged)
 							return;
-						if ( registerStart >= (mmSQ_ALU_CONSTANT0_0 + 0x400) )
-							drawPassCtx.MarkVSAluConstantsDirty();
-						else
-							drawPassCtx.MarkPSAluConstantsDirty();
-						// todo - we could further optimize by tracking the min/max range of modified ALU constants and only uploading the affected range. Possibly not worth it
+						drawPassCtx.MarkAluRegisterRangeDirty(registerStart, registerEnd);
 					}, &elidedRegisterStores);
 					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterConstant,
 						hasChanged, nWords + 1, elidedRegisterStores);
@@ -1628,14 +1803,14 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 				}
 				case IT_SET_CONTEXT_REG:
 				{
-					uint32 changedRegisterStart = 0;
+					uint32 changedRegisterStart = UINT32_MAX;
 					uint32 changedRegisterEnd = 0;
 					uint32 elidedRegisterStores = 0;
 					bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_CONTEXT>(cmdData, nWords, [&](uint32 registerStart, uint32 registerEnd, bool regValuesChanged) {
 						if (!regValuesChanged)
 							return;
-						changedRegisterStart = registerStart;
-						changedRegisterEnd = registerEnd;
+						changedRegisterStart = std::min(changedRegisterStart, registerStart);
+						changedRegisterEnd = std::max(changedRegisterEnd, registerEnd);
 					}, &elidedRegisterStores);
 					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterContext,
 						hasChanged, nWords + 1, elidedRegisterStores);

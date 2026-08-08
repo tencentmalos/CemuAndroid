@@ -295,6 +295,18 @@ public:
 	VkDescriptorSet backbufferBlit_createDescriptorSet(VkDescriptorSetLayout descriptor_set_layout, LatteTextureViewVk* texViewVk, bool useLinearTexFilter);
 
 	robin_hood::unordered_flat_map<uint64, robin_hood::unordered_flat_map<uint64, PipelineInfo*> > m_pipeline_info_cache; // using robin_hood::unordered_flat_map is twice as fast (1-2% overall CPU time reduction)
+	// Small L1 for the common current-pipeline -> next-pipeline edge. Collisions always fall back
+	// to m_pipeline_info_cache, so capacity affects hit rate rather than correctness.
+	static constexpr size_t s_pipelineTransitionCacheSize = 256;
+	static_assert((s_pipelineTransitionCacheSize & (s_pipelineTransitionCacheSize - 1)) == 0);
+	struct PipelineTransitionCacheEntry
+	{
+		PipelineInfo* source{};
+		PipelineInfo* target{};
+		uint64 targetVertexBaseHash{};
+		uint64 targetStateHash{};
+	};
+	std::array<PipelineTransitionCacheEntry, s_pipelineTransitionCacheSize> m_pipelineTransitionCache{};
 	void draw_debugPipelineHashState();
 	PipelineInfo* draw_getCachedPipeline();
 
@@ -447,12 +459,15 @@ private:
 		uint32 prevPolygonFrontOffsetU32{ 0xFFFFFFFF };
 		uint32 prevPolygonFrontScaleU32{ 0xFFFFFFFF };
 		uint32 prevPolygonFrontClampU32{ 0xFFFFFFFF };
+		std::array<uint32, 4> prevBlendConstants{};
+		bool blendConstantsValid{};
 
 		void resetCommandBufferState()
 		{
 			prevPolygonFrontOffsetU32 = 0xFFFFFFFF;
 			prevPolygonFrontScaleU32 = 0xFFFFFFFF;
 			prevPolygonFrontClampU32 = 0xFFFFFFFF;
+			blendConstantsValid = false;
 			currentPipeline = VK_NULL_HANDLE;
 			for (auto& itr : currentVertexBinding)
 			{

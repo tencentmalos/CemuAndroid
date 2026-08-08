@@ -364,6 +364,35 @@ dirty callback 或状态翻译都已消失。Tracy 的对应逐帧 counter 使�
 及 `register_store_elision_milli_ratio_per_frame`。BotW v208 证据见
 `docs/verification/botw-framegraph-state-dedup-p2.md`。
 
+## PM4/Vulkan 翻译增量化验证
+
+验证 `feature/malos/pm4_optimize` 的 dirty routing、dynamic state 去重、pipeline transition cache
+或 descriptor cache 时，必须先按上文完成 warmup 并截图确认 gameplay，再重置固定窗口：
+
+```sh
+adb shell dumpsys activity service \
+  info.cemu.cemu/.utils.DebugDumpService command_translation_status reset
+adb shell dumpsys activity service \
+  info.cemu.cemu/.utils.DebugDumpService command_translation_status
+```
+
+至少核对：
+
+- 所有 `dirty_domain.*` 的 classified/mark/consume，尤其
+  `dirty_domain.unclassified.classified_words=0`；
+- `pipeline_hash_calls` 与 transition/global/miss 三类 lookup，miss 必须与创建或启动阶段对应；
+- descriptor hash/hit/miss，不能只看高命中率就推断 hash 工作已经消失；
+- blend constants、depth bias 的 requested/emitted/elided，command buffer reset 后首个状态必须重新
+  emitted；
+- 原有 register store elision、draw/full/fast 数量和画面没有回退。
+
+Tracy 使用 `cemu.command.host.pipeline.*`、`descriptor.*`、`dynamic_state.*`、`dirty_*` 逐帧
+counter，并同时比较 `full_draw.pipeline_us_per_frame`、`full_draw.descriptors_us_per_frame` 与
+`draw_translate_us_per_frame`。结构计数下降不等于 FPS 收益；同场景至少三个窗口一致后才可宣称
+CPU 收益。完整设计和首轮 BotW 证据分别见
+`docs/plans/pm4-vulkan-translation-optimization-spec.md` 与
+`docs/verification/botw-pm4-vulkan-translation-p1-p3.md`。
+
 ## Internal Resolution P0 验证
 
 进入 BotW v208 gameplay 并完成上述 warmup 后，从仓库根目录执行：
