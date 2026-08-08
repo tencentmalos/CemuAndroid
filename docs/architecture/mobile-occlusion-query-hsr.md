@@ -28,7 +28,8 @@ Hi-Z/HSR、binning 和 tile visibility 完成实际遮挡处理。** `accurate` 
 结果执行 Host draw culling，却完整承担了 query pass、resolve 和 Guest 可见性等待成本。**
 Adreno 的 binning/visibility stream 与 HSR 进一步降低了 always-visible 的 raster 风险，但
 不能替代 vertex/tiler/draw-recording 成本；未来若真正实现 Host conditional rendering，仍需
-重新比较 query 剔除收益。
+重新比较 query 剔除收益。Eden 的完整状态机、驱动规避和 Cemu 引入评估见
+[Host Conditional Rendering：机制、Eden 实现与 Cemu 引入评估](host-conditional-rendering.md)。
 
 ## 2. GX2、PM4 与 Host API 类型
 
@@ -383,7 +384,8 @@ always-visible 对每个 Guest query 写回可用且非零的结果 `1`，不创
 2. 某个标题若明确依赖精确 sample count 参与 CPU gameplay 逻辑，可建立标题级 accurate
    兼容例外；不能为一个例外恢复全局默认硬件 query；
 3. 若未来真正实现 Host conditional rendering，必须独立证明其节省的 draw/vertex/fragment
-   工作大于 pass break、query resolve 和同步成本；
+   工作大于 pass break、query resolve 和同步成本；状态机必须在所有 disable/fallback 路径
+   先结束正在运行的 Host predicate，再清空 buffer/offset/set/running 状态；
 4. Metal、桌面 Vulkan 与移动 Vulkan 使用同一默认语义；各 backend 只实现 accurate debug
    路径，不再维护不同产品默认值。
 
