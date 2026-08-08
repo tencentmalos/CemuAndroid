@@ -22,6 +22,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +55,30 @@ fun CustomDriversScreen(
     val installedDrivers by customDriversViewModel.installedDrivers.collectAsState()
     val isSystemDriverSelected by customDriversViewModel.isSystemDriverSelected.collectAsState()
     val isDriverInstallInProgress by customDriversViewModel.isDriverInstallInProgress.collectAsState()
+    val remoteDrivers by customDriversViewModel.remoteDrivers.collectAsState()
+    val remoteDriverOperation by customDriversViewModel.remoteDriverOperation.collectAsState()
     val context = LocalContext.current
+
+    LaunchedEffect(customDriversViewModel) {
+        customDriversViewModel.events.collect { event ->
+            val message = when (event) {
+                is CustomDriverEvent.DriverInstalled ->
+                    tr("Driver installed and selected. Restart Cemu to use it")
+
+                is CustomDriverEvent.DriverInstallFailed ->
+                    driverInstallStatusToString(event.status)
+
+                is CustomDriverEvent.Error -> event.message
+            }
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    LaunchedEffect(customDriversViewModel) {
+        if (remoteDrivers.isEmpty())
+            customDriversViewModel.refreshRemoteDrivers()
+    }
 
     val customDriversInstallLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -63,8 +87,8 @@ fun CustomDriversScreen(
             customDriversViewModel.installDriver(context, uri) { installStatus ->
                 val message = when (installStatus) {
                     DriverInstallStatus.AlreadyInstalled -> tr("Driver already installed")
-                    DriverInstallStatus.ErrorInstalling -> tr("Failed to install driver")
                     DriverInstallStatus.Installed -> tr("Driver installed successfully")
+                    else -> driverInstallStatusToString(installStatus)
                 }
 
                 coroutineScope.launch {
@@ -79,6 +103,15 @@ fun CustomDriversScreen(
         appBarText = tr("Custom drivers"),
         navigateBack = navigateBack,
         actions = {
+            IconButton(
+                enabled = remoteDriverOperation == RemoteDriverOperation.Idle,
+                onClick = customDriversViewModel::refreshRemoteDrivers,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_refresh),
+                    contentDescription = tr("Refresh driver downloads")
+                )
+            }
             IconButton(onClick = { customDriversInstallLauncher.launch(arrayOf("application/zip")) }) {
                 Icon(
                     painter = painterResource(R.drawable.ic_add),
@@ -93,6 +126,38 @@ fun CustomDriversScreen(
                 onSelect = customDriversViewModel::setSystemDriverSelected
             )
         }
+        item {
+            Text(
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp),
+                text = tr("Download drivers"),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                text = tr("Custom drivers take effect after restarting Cemu. System driver always remains available"),
+                fontSize = 14.sp,
+            )
+        }
+        if (remoteDriverOperation == RemoteDriverOperation.Fetching && remoteDrivers.isEmpty()) {
+            item {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                )
+            }
+        }
+        items(
+            items = remoteDrivers,
+            key = { "${it.repository}/${it.assetName}" },
+        ) { driver ->
+            RemoteDriverListItem(
+                driver = driver,
+                enabled = remoteDriverOperation == RemoteDriverOperation.Idle,
+                onDownload = { customDriversViewModel.downloadAndInstall(driver) },
+            )
+        }
         items(installedDrivers) {
             CustomDriverListItem(
                 driver = it,
@@ -104,6 +169,89 @@ fun CustomDriversScreen(
 
     if (isDriverInstallInProgress)
         DriverInstallProgressDialog()
+
+    when (val operation = remoteDriverOperation) {
+        is RemoteDriverOperation.Downloading ->
+            RemoteDriverProgressDialog(tr("Downloading driver"), operation.driverName)
+
+        is RemoteDriverOperation.Installing ->
+            RemoteDriverProgressDialog(tr("Installing driver"), operation.driverName)
+
+        else -> Unit
+    }
+}
+
+private fun driverInstallStatusToString(status: DriverInstallStatus): String = when (status) {
+    DriverInstallStatus.Installed -> tr("Driver installed successfully")
+    DriverInstallStatus.AlreadyInstalled -> tr("Driver already installed")
+    DriverInstallStatus.ErrorReadingArchive -> tr("Unable to read the selected driver archive")
+    DriverInstallStatus.InvalidArchive -> tr("The selected driver is not a valid ZIP archive")
+    DriverInstallStatus.InvalidMetadata -> tr("The driver metadata is missing or invalid")
+    DriverInstallStatus.UnsupportedAndroidVersion -> tr("The driver does not support this Android version")
+    DriverInstallStatus.UnsupportedSchema -> tr("The driver package format is not supported")
+    DriverInstallStatus.InvalidLibrary -> tr("The driver Vulkan library is missing or invalid")
+    DriverInstallStatus.StorageError -> tr("Cemu could not store the driver in its app data directory")
+}
+
+@Composable
+private fun RemoteDriverListItem(
+    driver: RemoteDriver,
+    enabled: Boolean,
+    onDownload: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1.0f)) {
+                Text(
+                    text = driver.releaseName,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = if (driver.recommendedForAdreno8xx)
+                        "${driver.sourceName} · ${tr("Recommended for Adreno 8xx")}"
+                    else
+                        driver.sourceName,
+                    fontSize = 14.sp,
+                )
+                Text(
+                    text = "${driver.assetName} · ${driver.publishedAt.take(10)}",
+                    fontSize = 12.sp,
+                )
+            }
+            IconButton(enabled = enabled, onClick = onDownload) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_download),
+                    contentDescription = tr("Download driver")
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RemoteDriverProgressDialog(title: String, driverName: String) {
+    AlertDialog(
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(driverName)
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+        },
+        onDismissRequest = {},
+        confirmButton = {},
+        dismissButton = {},
+    )
 }
 
 @Composable
