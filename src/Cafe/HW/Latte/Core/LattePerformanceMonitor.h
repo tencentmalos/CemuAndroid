@@ -305,6 +305,7 @@ void LattePerformanceMonitor_recordHostDirtyStateMark(LatteDirtyStateDomain doma
 void LattePerformanceMonitor_recordHostDirtyStateConsume(LatteDirtyStateDomain domain, uint32 count = 1);
 void LattePerformanceMonitor_recordHostPipelineHashCall();
 void LattePerformanceMonitor_recordHostPipelineLookup(LattePipelineLookupOutcome outcome);
+void LattePerformanceMonitor_recordHostDescriptorSnapshotHit();
 void LattePerformanceMonitor_recordHostDescriptorLookup(bool cacheHit);
 void LattePerformanceMonitor_recordHostDynamicState(LatteDynamicState state, bool emitted);
 std::string LattePerformanceMonitor_getCommandTranslationStatus();

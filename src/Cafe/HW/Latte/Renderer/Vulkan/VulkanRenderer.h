@@ -96,6 +96,12 @@ public:
 		}
 	};
 	using DescriptorSetCache = ska::flat_hash_map<uint64, VkDescriptorSetInfo*, direct_hash<uint64>>;
+	struct DescriptorBindingSnapshot
+	{
+		LatteDecompilerShader* shader{};
+		uint64 generation{};
+		VkDescriptorSetInfo* descriptorSet{};
+	};
 
 	FORCE_INLINE DescriptorSetCache& GetDescriptorSetCache(LatteConst::ShaderType shaderType)
 	{
@@ -103,10 +109,24 @@ public:
 		return ds_cache[static_cast<size_t>(shaderType)];
 	}
 
+	FORCE_INLINE DescriptorBindingSnapshot& GetDescriptorBindingSnapshot(LatteConst::ShaderType shaderType)
+	{
+		cemu_assert_debug(shaderType == LatteConst::ShaderType::Vertex || shaderType == LatteConst::ShaderType::Pixel || shaderType == LatteConst::ShaderType::Geometry);
+		return descriptorBindingSnapshots[static_cast<size_t>(shaderType)];
+	}
+
+	void InvalidateDescriptorBindingSnapshot(LatteConst::ShaderType shaderType, VkDescriptorSetInfo* descriptorSet)
+	{
+		auto& snapshot = GetDescriptorBindingSnapshot(shaderType);
+		if (snapshot.descriptorSet == descriptorSet)
+			snapshot = {};
+	}
+
 	// std::unordered_map<uint64, VkDescriptorSetInfo*> 3.16% (total CPU time)
 	// robin_hood::unordered_flat_map<uint64, VkDescriptorSetInfo*> descriptor set cache; ~1.80%
 	// ska::bytell_hash_map<uint64, VkDescriptorSetInfo*, direct_hash<uint64>> descriptor set cache; -> 1.91%
 	DescriptorSetCache ds_cache[VulkanRendererConst::SHADER_STAGE_INDEX_COUNT]; // 1.71%
+	std::array<DescriptorBindingSnapshot, 3> descriptorBindingSnapshots{};
 
 	VKRObjectPipeline* m_vkrObjPipeline;
 

@@ -198,6 +198,63 @@ namespace
 		{mmSQ_ALU_CONSTANT0_0 + 0x400, mmSQ_ALU_CONSTANT0_0 + 0x7FF, 1,
 			DrawDirtyRuleType::VertexAluConstant, LatteDirtyStateDomain::VertexAluConstant},
 	}};
+
+	void MarkDescriptorResourceRangeDirty(uint32 registerStart, uint32 registerEnd)
+	{
+		struct TextureStageRange
+		{
+			uint32 firstRegister;
+			uint32 lastRegister;
+			LatteConst::ShaderType shaderType;
+		};
+		constexpr std::array<TextureStageRange, 3> TextureStageRanges = {{
+			{Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_PS,
+				Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_PS + TextureRegisterCount - 1,
+				LatteConst::ShaderType::Pixel},
+			{Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_VS,
+				Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_VS + TextureRegisterCount - 1,
+				LatteConst::ShaderType::Vertex},
+			{Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_GS,
+				Latte::REGADDR::SQ_TEX_RESOURCE_WORD0_N_GS + TextureRegisterCount - 1,
+				LatteConst::ShaderType::Geometry},
+		}};
+
+		for (const auto& range : TextureStageRanges)
+		{
+			if (registerEnd < range.firstRegister || registerStart > range.lastRegister)
+				continue;
+			LatteGPUState.descriptorStateGeneration[static_cast<size_t>(range.shaderType)]++;
+		}
+	}
+
+	void MarkDescriptorSamplerRangeDirty(uint32 registerStart, uint32 registerEnd)
+	{
+		struct SamplerStageRange
+		{
+			uint32 firstRegister;
+			uint32 lastRegister;
+			LatteConst::ShaderType shaderType;
+		};
+		constexpr uint32 SamplerRegisterCount = LATTE_NUM_MAX_TEX_UNITS * 3;
+		constexpr std::array<SamplerStageRange, 3> SamplerStageRanges = {{
+			{Latte::REGADDR::SQ_TEX_SAMPLER_WORD0_0 + Latte::SAMPLER_BASE_INDEX_PIXEL * 3,
+				Latte::REGADDR::SQ_TEX_SAMPLER_WORD0_0 + Latte::SAMPLER_BASE_INDEX_PIXEL * 3 + SamplerRegisterCount - 1,
+				LatteConst::ShaderType::Pixel},
+			{Latte::REGADDR::SQ_TEX_SAMPLER_WORD0_0 + Latte::SAMPLER_BASE_INDEX_VERTEX * 3,
+				Latte::REGADDR::SQ_TEX_SAMPLER_WORD0_0 + Latte::SAMPLER_BASE_INDEX_VERTEX * 3 + SamplerRegisterCount - 1,
+				LatteConst::ShaderType::Vertex},
+			{Latte::REGADDR::SQ_TEX_SAMPLER_WORD0_0 + Latte::SAMPLER_BASE_INDEX_GEOMETRY * 3,
+				Latte::REGADDR::SQ_TEX_SAMPLER_WORD0_0 + Latte::SAMPLER_BASE_INDEX_GEOMETRY * 3 + SamplerRegisterCount - 1,
+				LatteConst::ShaderType::Geometry},
+		}};
+
+		for (const auto& range : SamplerStageRanges)
+		{
+			if (registerEnd < range.firstRegister || registerStart > range.lastRegister)
+				continue;
+			LatteGPUState.descriptorStateGeneration[static_cast<size_t>(range.shaderType)]++;
+		}
+	}
 }
 
 class DrawPassContext
@@ -353,6 +410,7 @@ public:
 
 	void MarkResourceRegisterRangeDirty(uint32 registerStart, uint32 registerEnd)
 	{
+		MarkDescriptorResourceRangeDirty(registerStart, registerEnd);
 		uint32 classifiedWords = 0;
 		bool textureChanged = false;
 		for (const auto& rule : ResourceDirtyRules)
@@ -1835,7 +1893,10 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 				case IT_SET_SAMPLER:
 				{
 					uint32 elidedRegisterStores = 0;
-					bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_SAMPLER>(cmdData, nWords, [](uint32 registerStart, uint32 registerEnd, bool regValuesChanged){}, &elidedRegisterStores);
+					bool hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_SAMPLER>(cmdData, nWords, [](uint32 registerStart, uint32 registerEnd, bool regValuesChanged) {
+						if (regValuesChanged)
+							MarkDescriptorSamplerRangeDirty(registerStart, registerEnd);
+					}, &elidedRegisterStores);
 					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterSampler,
 						hasChanged, nWords + 1, elidedRegisterStores);
 					if (hasChanged)
@@ -1908,7 +1969,10 @@ void LatteCP_processCommandBuffer(DrawPassContext& drawPassCtx)
 				{
 					bool hasChanged = false;
 					uint32 elidedRegisterStores = 0;
-					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_RESOURCE>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_RESOURCE>(cmdData, nWords, [](uint32 registerStart, uint32 registerEnd, bool regValuesChanged) {
+						if (regValuesChanged)
+							MarkDescriptorResourceRangeDirty(registerStart, registerEnd);
+					}, &elidedRegisterStores);
 					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterResource,
 						hasChanged, nWords + 1, elidedRegisterStores);
 				}
@@ -1935,7 +1999,10 @@ void LatteCP_processCommandBuffer(DrawPassContext& drawPassCtx)
 				{
 					bool hasChanged = false;
 					uint32 elidedRegisterStores = 0;
-					LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_SAMPLER>(cmdData, nWords, &hasChanged, &elidedRegisterStores);
+					hasChanged = LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_SAMPLER>(cmdData, nWords, [](uint32 registerStart, uint32 registerEnd, bool regValuesChanged) {
+						if (regValuesChanged)
+							MarkDescriptorSamplerRangeDirty(registerStart, registerEnd);
+					}, &elidedRegisterStores);
 					LattePerformanceMonitor_recordHostRegisterPacketOutcome(LatteCommandPacketCategory::RegisterSampler,
 						hasChanged, nWords + 1, elidedRegisterStores);
 				}
@@ -2237,7 +2304,10 @@ void LatteCP_ProcessRingbuffer()
 			break;
 			case IT_SET_RESOURCE:
 			{
-				LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_RESOURCE>(cmd, nWords);
+				LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_RESOURCE>(cmd, nWords, [](uint32 registerStart, uint32 registerEnd, bool regValuesChanged) {
+					if (regValuesChanged)
+						MarkDescriptorResourceRangeDirty(registerStart, registerEnd);
+				});
 				timerRecheck += CP_TIMER_RECHECK / 512;
 			}
 			break;
@@ -2255,7 +2325,10 @@ void LatteCP_ProcessRingbuffer()
 			}
 			case IT_SET_SAMPLER:
 			{
-				LatteCP_itSetRegistersGeneric<LATTE_REG_BASE_SAMPLER>(cmd, nWords);
+				LatteCP_itSetRegistersGeneric2<LATTE_REG_BASE_SAMPLER>(cmd, nWords, [](uint32 registerStart, uint32 registerEnd, bool regValuesChanged) {
+					if (regValuesChanged)
+						MarkDescriptorSamplerRangeDirty(registerStart, registerEnd);
+				});
 				timerRecheck += CP_TIMER_RECHECK / 512;
 				break;
 			}

@@ -76,6 +76,7 @@ namespace
 		std::array<uint64, static_cast<size_t>(LatteDirtyStateDomain::Count)> dirtyConsumes{};
 		uint64 pipelineHashCalls{};
 		std::array<uint64, static_cast<size_t>(LattePipelineLookupOutcome::Count)> pipelineLookups{};
+		uint64 descriptorSnapshotHits{};
 		uint64 descriptorHashCalls{};
 		uint64 descriptorCacheHits{};
 		uint64 descriptorCacheMisses{};
@@ -101,6 +102,7 @@ namespace
 	std::atomic<uint64> s_pipelineHashCallTotal{};
 	std::array<std::atomic<uint64>, static_cast<size_t>(LattePipelineLookupOutcome::Count)> s_pipelineLookupTotals{};
 	std::atomic<uint64> s_descriptorHashCallTotal{};
+	std::atomic<uint64> s_descriptorSnapshotHitTotal{};
 	std::atomic<uint64> s_descriptorCacheHitTotal{};
 	std::atomic<uint64> s_descriptorCacheMissTotal{};
 	std::array<std::atomic<uint64>, static_cast<size_t>(LatteDynamicState::Count)> s_dynamicStateRequestTotals{};
@@ -422,12 +424,16 @@ namespace
 				s_pipelineLookupTotals[index].fetch_add(count, std::memory_order_relaxed);
 		}
 
+		const uint64 descriptorSnapshotHits = Consume(s_commandStreamMetrics.descriptorSnapshotHits);
 		const uint64 descriptorHashCalls = Consume(s_commandStreamMetrics.descriptorHashCalls);
 		const uint64 descriptorCacheHits = Consume(s_commandStreamMetrics.descriptorCacheHits);
 		const uint64 descriptorCacheMisses = Consume(s_commandStreamMetrics.descriptorCacheMisses);
+		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.descriptor.snapshot_hits_per_frame", descriptorSnapshotHits, "Cemu Descriptor Cache", "lookups");
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.descriptor.hash_calls_per_frame", descriptorHashCalls, "Cemu Descriptor Cache", "calls");
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.descriptor.cache_hits_per_frame", descriptorCacheHits, "Cemu Descriptor Cache", "lookups");
 		SPATIAL_PROFILER_COUNTER_SET("cemu.command.host.descriptor.cache_misses_per_frame", descriptorCacheMisses, "Cemu Descriptor Cache", "lookups");
+		if (descriptorSnapshotHits != 0)
+			s_descriptorSnapshotHitTotal.fetch_add(descriptorSnapshotHits, std::memory_order_relaxed);
 		if (descriptorHashCalls != 0)
 			s_descriptorHashCallTotal.fetch_add(descriptorHashCalls, std::memory_order_relaxed);
 		if (descriptorCacheHits != 0)
@@ -679,6 +685,11 @@ void LattePerformanceMonitor_recordHostPipelineLookup(LattePipelineLookupOutcome
 	s_commandStreamMetrics.pipelineLookups[index]++;
 }
 
+void LattePerformanceMonitor_recordHostDescriptorSnapshotHit()
+{
+	s_commandStreamMetrics.descriptorSnapshotHits++;
+}
+
 void LattePerformanceMonitor_recordHostDescriptorLookup(bool cacheHit)
 {
 	s_commandStreamMetrics.descriptorHashCalls++;
@@ -775,6 +786,7 @@ std::string LattePerformanceMonitor_getCommandTranslationStatus()
 	out << "pipeline_hash_calls=" << s_pipelineHashCallTotal.load(std::memory_order_relaxed) << "\n";
 	for (size_t index = 0; index < s_pipelineLookupNames.size(); ++index)
 		out << "pipeline_lookup." << s_pipelineLookupNames[index] << "=" << s_pipelineLookupTotals[index].load(std::memory_order_relaxed) << "\n";
+	out << "descriptor_snapshot_hits=" << s_descriptorSnapshotHitTotal.load(std::memory_order_relaxed) << "\n";
 	out << "descriptor_hash_calls=" << s_descriptorHashCallTotal.load(std::memory_order_relaxed) << "\n";
 	out << "descriptor_cache_hits=" << s_descriptorCacheHitTotal.load(std::memory_order_relaxed) << "\n";
 	out << "descriptor_cache_misses=" << s_descriptorCacheMissTotal.load(std::memory_order_relaxed) << "\n";
@@ -826,6 +838,7 @@ void LattePerformanceMonitor_resetCommandTranslationStatus()
 	s_pipelineHashCallTotal.store(0, std::memory_order_relaxed);
 	for (auto& count : s_pipelineLookupTotals)
 		count.store(0, std::memory_order_relaxed);
+	s_descriptorSnapshotHitTotal.store(0, std::memory_order_relaxed);
 	s_descriptorHashCallTotal.store(0, std::memory_order_relaxed);
 	s_descriptorCacheHitTotal.store(0, std::memory_order_relaxed);
 	s_descriptorCacheMissTotal.store(0, std::memory_order_relaxed);

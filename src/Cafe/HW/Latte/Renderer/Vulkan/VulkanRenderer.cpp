@@ -3814,6 +3814,7 @@ VkDescriptorSetInfo::~VkDescriptorSetInfo()
 {
 	for (auto& it : list_referencedViews)
 		it->RemoveDescriptorSetReference(this);
+	pipeline_info->InvalidateDescriptorBindingSnapshot(shaderType, this);
 	// unregister
 	auto r = pipeline_info->GetDescriptorSetCache(shaderType).erase(stateHash);
 	cemu_assert_debug(r == 1);
@@ -4028,7 +4029,24 @@ LatteTexture* VulkanRenderer::texture_createTextureEx(Latte::E_DIM dim, MPTR phy
 
 void VulkanRenderer::texture_setLatteTexture(LatteTextureView* textureView, uint32 textureUnit)
 {
-	m_state.boundTexture[textureUnit] = static_cast<LatteTextureViewVk*>(textureView);
+	auto textureViewVk = static_cast<LatteTextureViewVk*>(textureView);
+	if (m_state.boundTexture[textureUnit] == textureViewVk)
+		return;
+	m_state.boundTexture[textureUnit] = textureViewVk;
+
+	size_t shaderStageIndex = static_cast<size_t>(LatteConst::ShaderType::TotalCount);
+	if (textureUnit >= LATTE_CEMU_GS_TEX_UNIT_BASE && textureUnit < LATTE_CEMU_GS_TEX_UNIT_BASE + LATTE_NUM_MAX_TEX_UNITS)
+		shaderStageIndex = static_cast<size_t>(LatteConst::ShaderType::Geometry);
+	else if (textureUnit >= LATTE_CEMU_VS_TEX_UNIT_BASE && textureUnit < LATTE_CEMU_VS_TEX_UNIT_BASE + LATTE_NUM_MAX_TEX_UNITS)
+		shaderStageIndex = static_cast<size_t>(LatteConst::ShaderType::Vertex);
+	else if (textureUnit >= LATTE_CEMU_PS_TEX_UNIT_BASE && textureUnit < LATTE_CEMU_PS_TEX_UNIT_BASE + LATTE_NUM_MAX_TEX_UNITS)
+		shaderStageIndex = static_cast<size_t>(LatteConst::ShaderType::Pixel);
+	else
+	{
+		cemu_assert_debug(false);
+		return;
+	}
+	LatteGPUState.descriptorStateGeneration[shaderStageIndex]++;
 }
 
 LatteSurfaceOperationResult VulkanRenderer::texture_copyImageSubData(LatteTexture* src, sint32 srcMip,

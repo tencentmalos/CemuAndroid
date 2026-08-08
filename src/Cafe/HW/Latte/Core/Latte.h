@@ -35,6 +35,10 @@ struct LatteGPUState_t
 	uint32 currentDrawCallTick; // set to current time at the beginning of a drawcall
 	uint32 drawCallCounter; // increased after every drawcall
 	uint32 textureBindCounter; // increased at the beginning of _updateTextures()
+	// Increased when a shader stage's sampled-texture descriptor state changes. The Vulkan
+	// backend uses this to skip descriptor hashing across draw-sequence breaks which only
+	// modify unrelated context state.
+	uint64 descriptorStateGeneration[3];
 	std::atomic<uint64> flipRequestCount;
 	// timer & vsync
 	uint64 timer_frequency; // contains frequency of HPC

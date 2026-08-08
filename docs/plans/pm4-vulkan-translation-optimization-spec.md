@@ -255,6 +255,7 @@ readback、DrawDone、query、display ordinal 和 surface lifecycle 的同步边
 - `cemu.command.host.pipeline.transition_hits_per_frame`；
 - `cemu.command.host.pipeline.global_hits_per_frame`；
 - `cemu.command.host.pipeline.misses_per_frame`；
+- `cemu.command.host.descriptor.snapshot_hits_per_frame`；
 - `cemu.command.host.descriptor.hash_calls_per_frame`；
 - `cemu.command.host.descriptor.cache_hits_per_frame`；
 - `cemu.command.host.descriptor.cache_misses_per_frame`；
@@ -270,6 +271,7 @@ reflection 注册字段；固定 profiler counter 名称使用静态表，不在
 ```text
 dirty_precision = consumed_dirty / marked_dirty
 transition_hit_rate = transition_hits / pipeline_lookup_requests
+descriptor_snapshot_hit_rate = snapshot_hits / (snapshot_hits + descriptor_hash_calls)
 descriptor_hit_rate = descriptor_hits / descriptor_hash_calls
 dynamic_elision = elided / requested
 translation_cost_per_draw = draw_translate_us / draws
@@ -329,6 +331,14 @@ validation、RenderDoc draw state 与基线一致。
 
 退出标准：descriptor hit/miss/bind 数据证明减少工作；self-dependency、texture invalidation 和
 地址复用测试通过。
+
+当前结果：第一阶段按 `PipelineInfo + shader stage + Host generation` 缓存 descriptor binding
+snapshot，并在 Guest resource/sampler 改动、Host texture view 替换和 descriptor set 销毁时失效。
+Snapdragon 8 Elite 的 BotW v208 正式 gameplay 窗口中，snapshot hit 为 `1187.24/帧`，剩余 hash
+为 `1271.42/帧`；最终 APK 的第二窗口为 `1190.56/帧` 与 `1273.45/帧`。两个窗口均约 `48.3%`
+的请求跳过 hash/map lookup，cache miss 仍仅 `0.043～0.055/帧`；descriptor stage 为
+`0.492～0.505 ms/帧`。结构门禁与 90 秒 gameplay 门禁通过，texture invalidation/self-dependency
+定向验证仍待完成。
 
 ### P5：扩大 dynamic state / compact key
 
@@ -422,8 +432,10 @@ adb install -r app/build/outputs/apk/relWithDebInfo/app-relWithDebInfo.apk
 3. dirty 分类、pipeline/descriptor/dynamic state 基线指标；
 4. command-buffer-local blend constants 去重；
 5. 256-entry pipeline transition cache 与销毁失效；
-6. Android RelWithDebInfo 构建、BotW warmup 后 90 秒正确性验证和 30 秒正式 Tracy 窗口；
-7. macOS `build_no_vcpkg` 中受影响的三个 CemuCafe unity translation unit 编译验证。
+6. per-pipeline/per-stage descriptor generation snapshot、Host texture view 失效与 descriptor 销毁联动；
+7. Android RelWithDebInfo 构建、BotW warmup 后正确性验证和 30 秒正式 Tracy 窗口；
+8. macOS `build_no_vcpkg` 中受影响的三个 CemuCafe unity translation unit 编译验证。
 
-详细证据见 `docs/verification/botw-pm4-vulkan-translation-p1-p3.md`。下一批从 P3 的三个同场景
-复验开始；只有 P3 收益稳定后才进入 P4 descriptor 增量化，避免同时改变两个热点导致归因失真。
+详细证据见 `docs/verification/botw-pm4-vulkan-translation-p1-p3.md`。下一批先补 P4 的
+texture invalidation/self-dependency 定向验证与两个同设备 gameplay 窗口；随后重新按 Host stage
+排序选择 P5 前的下一个热点，不继续优化已经低于 `1 ms/帧` 的 descriptor stage。

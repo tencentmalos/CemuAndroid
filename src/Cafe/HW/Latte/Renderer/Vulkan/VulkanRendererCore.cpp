@@ -721,13 +721,24 @@ uint64 VulkanRenderer::GetDescriptorSetStateHash(LatteDecompilerShader* shader)
 
 VkDescriptorSetInfo* VulkanRenderer::draw_getOrCreateDescriptorSet(PipelineInfo* pipeline_info, LatteDecompilerShader* shader)
 {
-	const uint64 stateHash = GetDescriptorSetStateHash(shader);
 	cemu_assert_debug(shader->shaderType == LatteConst::ShaderType::Vertex || shader->shaderType == LatteConst::ShaderType::Pixel || shader->shaderType == LatteConst::ShaderType::Geometry);
+	const size_t shaderStageIndex = static_cast<size_t>(shader->shaderType);
+	auto& snapshot = pipeline_info->GetDescriptorBindingSnapshot(shader->shaderType);
+	const uint64 descriptorGeneration = LatteGPUState.descriptorStateGeneration[shaderStageIndex];
+	if (snapshot.shader == shader &&
+		snapshot.generation == descriptorGeneration && snapshot.descriptorSet)
+	{
+		LattePerformanceMonitor_recordHostDescriptorSnapshotHit();
+		return snapshot.descriptorSet;
+	}
+
+	const uint64 stateHash = GetDescriptorSetStateHash(shader);
 	auto& ds_cache = pipeline_info->GetDescriptorSetCache(shader->shaderType);
 	const auto it = ds_cache.find(stateHash);
 	if (it != ds_cache.cend())
 	{
 		LattePerformanceMonitor_recordHostDescriptorLookup(true);
+		snapshot = {shader, descriptorGeneration, it->second};
 		return it->second;
 	}
 	LattePerformanceMonitor_recordHostDescriptorLookup(false);
@@ -1133,6 +1144,7 @@ VkDescriptorSetInfo* VulkanRenderer::draw_getOrCreateDescriptorSet(PipelineInfo*
 		vkUpdateDescriptorSets(m_logicalDevice, (uint32)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 
 	ds_cache[stateHash] = dsInfo;
+	snapshot = {shader, descriptorGeneration, dsInfo};
 
 	return dsInfo;
 }
