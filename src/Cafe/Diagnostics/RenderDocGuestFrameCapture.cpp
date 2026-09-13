@@ -115,6 +115,25 @@ namespace
 			if (s_renderDocModule != nullptr)
 				getApi = reinterpret_cast<RenderDocGetApi>(dlsym(s_renderDocModule, "RENDERDOC_GetAPI"));
 		}
+#elif BOOST_OS_MACOS
+		// When Cemu is launched through renderdoccmd, librenderdoc.dylib is
+		// already loaded and RTLD_DEFAULT resolves the symbol above. Otherwise,
+		// honor RENDERDOC_LIBRARY_PATH so a capture can attach without the
+		// wrapper. Prefer RTLD_NOLOAD first to avoid loading a second copy.
+		if (getApi == nullptr)
+		{
+			if (const char* rdocPath = getenv("RENDERDOC_LIBRARY_PATH"))
+			{
+				if (rdocPath[0] != '\0')
+				{
+					s_renderDocModule = dlopen(rdocPath, RTLD_NOW | RTLD_NOLOAD);
+					if (s_renderDocModule == nullptr)
+						s_renderDocModule = dlopen(rdocPath, RTLD_NOW | RTLD_LOCAL);
+					if (s_renderDocModule != nullptr)
+						getApi = reinterpret_cast<RenderDocGetApi>(dlsym(s_renderDocModule, "RENDERDOC_GetAPI"));
+				}
+			}
+		}
 #endif
 #endif
 		if (getApi == nullptr)

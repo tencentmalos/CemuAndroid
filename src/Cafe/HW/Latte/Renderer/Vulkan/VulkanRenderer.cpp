@@ -552,6 +552,11 @@ VulkanRenderer::VulkanRenderer() : Renderer(RendererAPI::Vulkan)
 	create_info.enabledExtensionCount = enabledInstanceExtensions.size();
 	create_info.ppEnabledLayerNames = m_layerNames.data();
 	create_info.enabledLayerCount = m_layerNames.size();
+	// Required to enumerate MoltenVK (a portability driver) when Cemu runs
+	// through the Vulkan loader on macOS. Harmless otherwise (flag is only set
+	// when the loader advertised the extension).
+	if (m_featureControl.instanceExtensions.khr_portability_enumeration)
+		create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
 	err = vkCreateInstance(&create_info, nullptr, &m_instance);
 
@@ -1522,6 +1527,18 @@ std::vector<const char*> VulkanRenderer::CheckInstanceExtensionSupport(FeatureCo
     #endif // HAS_WAYLAND
 	#elif BOOST_OS_MACOS
 	requiredInstanceExtensions.emplace_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+	// When Cemu runs through the Vulkan loader (e.g. LIBVULKAN_PATH set for
+	// RenderDoc capture), MoltenVK is exposed as a portability driver and the
+	// loader refuses to enumerate it unless the instance opts in with the
+	// portability-enumeration extension + flag. These are only added when the
+	// loader actually advertises them, so loading MoltenVK directly is unaffected.
+	if (isExtensionAvailable(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME))
+	{
+		requiredInstanceExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+		info.instanceExtensions.khr_portability_enumeration = true;
+		if (isExtensionAvailable(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+			requiredInstanceExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+	}
 	#endif
 	if (cemuLog_isLoggingEnabled(LogType::VulkanValidation))
 		requiredInstanceExtensions.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);

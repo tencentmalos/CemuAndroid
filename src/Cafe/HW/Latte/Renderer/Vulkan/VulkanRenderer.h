@@ -574,6 +574,7 @@ private:
 		struct
 		{
 			bool debug_utils = false; // VK_EXT_DEBUG_UTILS
+			bool khr_portability_enumeration = false; // VK_KHR_portability_enumeration (macOS via loader)
 		}instanceExtensions;
 
 		struct

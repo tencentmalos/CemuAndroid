@@ -1,6 +1,6 @@
 ---
 name: cemu-renderdoc-analysis
-description: Use when capturing or analyzing Cemu Android Vulkan frames with RenderDoc for Pico, especially for internal-resolution, render-target, viewport, texture, pass, draw, bandwidth, or final-presentation investigations that require a warmed gameplay frame and reproducible MCP evidence.
+description: Use when capturing or analyzing Cemu Vulkan frames with RenderDoc — Android real-device capture with remote replay for Pico, or macOS desktop MoltenVK capture and local replay — for internal-resolution, render-target, viewport, texture, pass, draw, bandwidth, or final-presentation investigations that require a warmed gameplay frame and reproducible MCP evidence.
 ---
 
 # Cemu RenderDoc 图形分析
@@ -17,6 +17,12 @@ description: Use when capturing or analyzing Cemu Android Vulkan frames with Ren
   `warmup_a 10 15000 5000 250 60000`；只看到 `warmup_state=completed` 不足以证明有效。
 - RenderDoc server 安装、GPU debug layer 配置和清理由脚本管理。不需要 Root；不得为抓帧
   直接调用裸 `xsu`。若其他工程正在使用设备，先停下来协调。
+- macOS 桌面端可直接抓取并本地回放 Cemu 的 **Vulkan/MoltenVK** 帧，见
+  [references/macos-capture.md](references/macos-capture.md)。Cemu 默认直接 dlopen
+  MoltenVK，会绕过 RenderDoc capture layer；必须通过 Vulkan loader（`LIBVULKAN_PATH`）
+  加载、开启 portability enumeration、并用 `VK_ADD_LAYER_PATH` 插入 RenderDoc capture
+  layer。切勿设 `DISABLE_VULKAN_RENDERDOC_CAPTURE_<主>_<次>`（会关闭 layer）。抓
+  geometry-shader 标题（如 MH3U UI）会失败，因为 Apple Silicon MoltenVK `geometryShader=false`。
 - macOS 不能本地回放 Android Adreno Vulkan 帧。出现 `APIHardwareUnsupported` 时不要改成
   软件推断，使用 RenderDoc Android remote replay。
 - MCP 先调用 `capture_status`，打开后先 `frame_overview` 与 `schema_describe`，再执行 SQL。
@@ -127,3 +133,25 @@ end_guest_frame=start_guest_frame+1
 
 不要仅凭纹理尺寸、资源命名或 Cemu 源码推断实际帧路径；任何未由这次 RDC 覆盖的最终
 present、异步 queue 或后续 UI 合成必须标为待补抓。
+
+## macOS 桌面端抓帧（Vulkan/MoltenVK）
+
+macOS 直接抓取 Cemu 的 Vulkan 帧并本地回放，完整流程和坑位见
+[references/macos-capture.md](references/macos-capture.md)。要点：
+
+1. 用 RelWithDebInfo 桌面构建（`bin/Cemu_relwithdebinfo`）。相关 Cemu 侧改动已在树内：
+   不再硬链接 MoltenVK、macOS 支持 `LIBVULKAN_PATH`、instance 开启 portability
+   enumeration、`RenderDocGuestFrameCapture` 支持 `RENDERDOC_LIBRARY_PATH`。
+2. 一次性用 `scripts/setup_macos_renderdoc_env.py` 生成 `loader-only/`（Vulkan loader +
+   指向 Cemu rpath 同一个 MoltenVK 的绝对路径 ICD，且旁边不得有第二个 libMoltenVK.dylib）
+   和 `vklayer/`（指向 librenderdoc.dylib 的 capture layer manifest）。
+3. 用 `scripts/launch_macos_renderdoc.py`（`renderdoccmd capture -w` 注入）启动，先
+   `--dry-run` 校验身份，再实跑；env 由脚本设定，切勿手改。
+4. warmup 进入 gameplay 后 `printf 'renderdoc_guest_capture\n' | nc 127.0.0.1 45987`
+   触发；`.rdc` 落在 `--capture-template` 旁。
+5. 校验 `/tmp/RenderDocForPico/RenderDoc_*.log` 出现 `Adding Vulkan device frame
+   capturer`；若是 `0 device frame capturers` 说明 layer 未插入（查 `VK_ADD_LAYER_PATH`、
+   layer JSON 的 `library_path`、disable 变量是否被误设）。
+6. geometry-shader 标题（MH3U UI）在 Vulkan/MoltenVK 上这些管线本就失败（Apple Silicon
+   `geometryShader=false`），该帧不完整会导致抓帧 `state=failed`；改抓能渲染的场景，
+   或对这类标题用 Metal 后端（mesh shader 模拟 GS，但 Metal 不可被 RenderDoc 抓帧）。

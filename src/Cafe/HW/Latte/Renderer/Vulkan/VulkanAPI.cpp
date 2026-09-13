@@ -255,7 +255,25 @@ void* dlopen_vulkan_loader()
 	if(!vulkan_so)
 		vulkan_so = dlopen("libvulkan.so.1", RTLD_NOW);
 #elif BOOST_OS_MACOS
-	void* vulkan_so = dlopen("libMoltenVK.dylib", RTLD_NOW);
+	// By default Cemu loads MoltenVK directly. For RenderDoc / Vulkan layer
+	// capture on macOS the Vulkan loader must sit in front of MoltenVK so the
+	// capture layer can interpose. Honor LIBVULKAN_PATH (an absolute path to a
+	// libvulkan*.dylib), matching the convention used by the launch tooling.
+	// When it is unset or fails to load, fall back to loading MoltenVK directly.
+	void* vulkan_so = nullptr;
+	if (const char* libVulkanPath = getenv("LIBVULKAN_PATH"))
+	{
+		if (libVulkanPath[0] != '\0')
+		{
+			vulkan_so = dlopen(libVulkanPath, RTLD_NOW);
+			if (!vulkan_so)
+				cemuLog_log(LogType::Force, "LIBVULKAN_PATH set but failed to load '{}'; falling back to MoltenVK", libVulkanPath);
+			else
+				cemuLog_log(LogType::Force, "Loaded Vulkan loader from LIBVULKAN_PATH '{}'", libVulkanPath);
+		}
+	}
+	if (!vulkan_so)
+		vulkan_so = dlopen("libMoltenVK.dylib", RTLD_NOW);
 #endif
 	return vulkan_so;
 }

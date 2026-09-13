@@ -202,17 +202,12 @@ if (MACOS_BUNDLE)
 else()
 	if(APPLE)
 		if (ENABLE_VULKAN)
-			find_file(MOLTENVK_DYLIB
-				NAMES libMoltenVK.dylib
-				PATHS /usr/local/lib /opt/homebrew/lib
-				NO_DEFAULT_PATH
-			)
-			if(MOLTENVK_DYLIB)
-				message(STATUS "Found MoltenVK: ${MOLTENVK_DYLIB}")
-				target_link_libraries(CemuBin PRIVATE ${MOLTENVK_DYLIB})
-			else()
-				message(WARNING "libMoltenVK.dylib not found")
-			endif()
+			# Do NOT hard-link MoltenVK. Cemu loads Vulkan at runtime via
+			# dlopen_vulkan_loader() (MoltenVK directly, or the Vulkan loader when
+			# LIBVULKAN_PATH is set for RenderDoc capture). A load-time link forces a
+			# second MoltenVK image alongside the loader's ICD copy and deadlocks
+			# MoltenVK init, and prevents the RenderDoc capture layer from
+			# interposing. The rpath below keeps runtime dlopen resolvable.
 			set_target_properties(CemuBin PROPERTIES
 				BUILD_WITH_INSTALL_RPATH TRUE
 				INSTALL_RPATH "/usr/local/lib;/opt/homebrew/lib"
