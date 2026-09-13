@@ -1,6 +1,7 @@
 #include "Cafe/Diagnostics/CemuDiagnostics.h"
 #include "Cafe/Diagnostics/CemuWarmup.h"
 #include "Cafe/Diagnostics/GuestExecutableDump.h"
+#include "Cafe/GuestPatch/GuestPatchHost.h"
 #include "Cafe/Diagnostics/GuestDebugger.h"
 #include "Cafe/Diagnostics/GuestProfiler.h"
 #include "Cafe/Diagnostics/RenderDocGuestFrameCapture.h"
@@ -63,6 +64,7 @@ namespace
 			GuestExecutableDump::RegisterDebugCommands(registry);
 			GuestDebugger::RegisterDebugCommands(registry);
 			GuestProfiler::RegisterDebugCommands(registry);
+			GuestPatch::Host::RegisterDebugCommands(registry);
 			registry.Register("renderdoc_guest_capture", "Capture one complete Guest GPU frame with RenderDoc", [](const std::vector<std::string>& args) {
 				if (!args.empty())
 					return std::string{"usage: renderdoc_guest_capture\n"};

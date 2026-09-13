@@ -388,6 +388,38 @@ namespace GX2
 		return GuestGpuTagEmitResult::Emitted;
 	}
 
+	GuestGpuTagEmitResult GX2EmitGuestRenderScope(bool begin, uint32 control,
+		uint32 scopeId, uint32 generation, uint32 titleEpoch,
+		uint32 frameIdLo, uint32 frameIdHi, uint32 phase, uint32 poseSnapshotId)
+	{
+		const uint32 coreIndex = coreinit::OSGetCoreId();
+		auto& coreCBState = s_perCoreCBState[coreIndex];
+		if (!coreCBState.currentWritePtr)
+			return GuestGpuTagEmitResult::NoCommandBuffer;
+		// A render scope must wrap the actual execution of a display list on the
+		// main stream, not be recorded inside it (spec 9). Refuse during
+		// display-list recording so the eye/frame identity is never baked in.
+		if (coreCBState.isDisplayList)
+			return GuestGpuTagEmitResult::DisplayList;
+
+		GX2ReserveCmdSpace(IT_HLE_GUEST_RENDER_SCOPE_WORDS + 1);
+		if (!coreCBState.currentWritePtr)
+			return GuestGpuTagEmitResult::NoCommandBuffer;
+		const uint32 controlWord = (begin ? IT_HLE_GUEST_RENDER_SCOPE_BEGIN : 0u) |
+								   (control & IT_HLE_GUEST_RENDER_SCOPE_VIEW_MASK);
+		gx2WriteGather_submit(
+			pm4HeaderType3(IT_HLE_GUEST_RENDER_SCOPE, IT_HLE_GUEST_RENDER_SCOPE_WORDS),
+			controlWord,
+			scopeId,
+			generation,
+			titleEpoch,
+			frameIdLo,
+			frameIdHi,
+			phase,
+			poseSnapshotId);
+		return GuestGpuTagEmitResult::Emitted;
+	}
+
 	void GX2WriteGather_beginDisplayList(PPCInterpreter_t* hCPU, MPTR buffer, uint32 maxSize)
 	{
 		uint32 coreIndex = PPCInterpreter_getCoreIndex(hCPU);

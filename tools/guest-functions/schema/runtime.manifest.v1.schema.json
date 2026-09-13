@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cemu.guest-functions.v1",
+  "title": "Cemu guest-function runtime manifest",
+  "description": "Runtime manifest (guest_functions.json companion) consumed by the Cemu GuestPatch loader. All fields the loader needs to verify identity, lay out the module, resolve imports, apply relocations and install hooks. This schema is validated identically by build.py and by the C++ loader; the same valid/invalid fixtures drive both (spec 4.1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "identity", "image", "sections", "symbols", "imports", "relocations", "hooks"],
+  "properties": {
+    "schema": {"const": "cemu.guest-functions.v1"},
+    "content_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Deterministic digest over normalized sections/symbols/relocations/hooks, excluding this field and non-semantic debug paths."
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title_id", "title_version", "module", "patch_crc", "source_rpx_sha256"],
+      "properties": {
+        "title_id": {"type": "string", "pattern": "^[0-9A-Fa-f]{16}$"},
+        "region": {"type": "string"},
+        "title_version": {"type": "integer", "minimum": 0},
+        "update_version": {"type": "integer", "minimum": 0},
+        "module": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}$"},
+        "patch_crc": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "source_rpx_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "rpl_imports": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["module"],
+            "properties": {"module": {"type": "string"}, "min_version": {"type": "integer"}}
+          }
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "file_sha256", "module_digest", "size"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_][A-Za-z0-9_./-]*$",
+          "description": "Relative path within the package root. Must not escape the root: no leading '/', no '..' component."
+        },
+        "file_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "module_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size": {"type": "integer", "minimum": 1, "maximum": 262144}
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "image_offset", "file_size", "memory_size", "alignment"],
+        "properties": {
+          "id": {"type": "string"},
+          "kind": {"type": "string", "enum": ["text", "rodata", "data", "bss"]},
+          "image_offset": {"type": "integer", "minimum": 0},
+          "file_size": {"type": "integer", "minimum": 0},
+          "memory_size": {"type": "integer", "minimum": 0},
+          "alignment": {"type": "integer", "enum": [4, 8, 16, 256]}
+        }
+      }
+    },
+    "symbols": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "section", "offset", "kind"],
+        "properties": {
+          "name": {"type": "string"},
+          "section": {"type": "string"},
+          "offset": {"type": "integer", "minimum": 0},
+          "kind": {"type": "string", "enum": ["func", "object", "notype"]}
+        }
+      }
+    },
+    "imports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "kind"],
+        "properties": {
+          "symbol": {"type": "string"},
+          "kind": {"type": "string", "enum": ["guest_function", "guest_data", "rpl_export", "sdk_export"]},
+          "guest_va": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+          "rpl_module": {"type": "string"},
+          "rpl_symbol": {"type": "string"},
+          "sdk_export_id": {"type": "integer", "minimum": 1, "maximum": 65535},
+          "original_bytes": {"type": "string", "pattern": "^([0-9a-fA-F]{2})*$"},
+          "abi_evidence": {"type": "string"}
+        }
+      }
+    },
+    "relocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["section", "offset", "type", "symbol", "addend"],
+        "properties": {
+          "section": {"type": "string"},
+          "offset": {"type": "integer", "minimum": 0},
+          "type": {
+            "type": "string",
+            "enum": ["R_PPC_ADDR32", "R_PPC_ADDR16_LO", "R_PPC_ADDR16_HI", "R_PPC_ADDR16_HA", "R_PPC_REL24", "R_PPC_REL32"]
+          },
+          "symbol": {"type": "string"},
+          "addend": {"type": "integer", "minimum": -2147483648, "maximum": 2147483647}
+        }
+      }
+    },
+    "hooks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "guest_va", "original_bytes", "target_symbol", "original_policy", "abi_profile"],
+        "properties": {
+          "kind": {"type": "string", "enum": ["callsite", "entry", "manual"]},
+          "guest_va": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+          "original_bytes": {"type": "string", "pattern": "^([0-9a-fA-F]{2})+$"},
+          "target_symbol": {"type": "string"},
+          "original_policy": {"type": "string", "enum": ["none", "import_original", "trampoline"]},
+          "original_symbol": {"type": "string"},
+          "continuation_bytes": {"type": "string", "pattern": "^([0-9a-fA-F]{2})*$"},
+          "abi_profile": {"type": "string", "enum": ["ppc32-eabi-v1"]}
+        }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min_host_abi"],
+      "properties": {
+        "min_host_abi": {"type": "integer", "minimum": 1},
+        "required_exports": {"type": "array", "items": {"type": "string"}},
+        "optional_exports": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "conflicts_with": {"type": "array", "items": {"type": "string"}},
+        "requires": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

@@ -42,6 +42,7 @@
 #define LATTE_REG_BASE_SAMPLER		0xF000
 
 // emulator only
+#define IT_HLE_GUEST_RENDER_SCOPE				0xEC
 #define IT_HLE_GUEST_GPU_TAG					0xED
 #define IT_HLE_COPY_SURFACE_NEW					0xEE
 #define IT_HLE_SYNC_ASYNC_OPERATIONS			0xEF
@@ -65,6 +66,12 @@
 
 #define IT_HLE_GUEST_GPU_TAG_BEGIN				0x80000000u
 #define IT_HLE_GUEST_GPU_TAG_WORDS				5u
+
+// Guest render scope (spec 9): ordered per-eye/frame scope carried in the
+// command stream. control word: bit31 = Begin, bits[1:0] = view index.
+#define IT_HLE_GUEST_RENDER_SCOPE_BEGIN			0x80000000u
+#define IT_HLE_GUEST_RENDER_SCOPE_VIEW_MASK		0x00000003u
+#define IT_HLE_GUEST_RENDER_SCOPE_WORDS			8u
 
 #define pm4HeaderType3(__itCode, __dataDWordCount) (0xC0000000|((uint32)(__itCode)<<8)|((uint32)((__dataDWordCount)-1)<<16))
 #define pm4HeaderType2Filler() (0x80000000)

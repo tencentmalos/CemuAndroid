@@ -1,4 +1,5 @@
 #include "Cafe/GraphicPack/GraphicPack2.h"
+#include "Cafe/GuestPatch/GuestPatchHost.h"
 #include "Cafe/Filesystem/fsc.h"
 #include "config/CemuConfig.h"
 #include "config/ActiveSettings.h"
@@ -1077,6 +1078,19 @@ bool GraphicPack2::Activate()
 
 	// enable patch groups
 	EnablePatches();
+
+	// Apply this pack's guest-function module (guest_functions.json) to any
+	// already-loaded modules. This runs inside Activate() -- before the pack is
+	// pushed to s_active_graphic_packs -- so we apply THIS pack directly rather
+	// than iterating the active set (which does not include us yet).
+	if (HasGuestFunctionCompanion())
+	{
+		std::lock_guard<std::recursive_mutex> lock(mtx_patches);
+		fs::path gpDir = GetRulesPath();
+		gpDir.remove_filename();
+		for (const RPLModule* rpl : list_modules)
+			GuestPatch::Host::ApplyPackToModule(_pathToUtf8(gpDir), rpl);
+	}
 
 	// load replaced files
 	LoadReplacedFiles();

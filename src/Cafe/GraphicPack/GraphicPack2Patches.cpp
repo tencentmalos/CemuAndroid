@@ -164,6 +164,14 @@ const std::vector<PatchGroup*>& GraphicPack2::GetPatchGroups() {
 	return list_patchGroups;
 }
 
+bool GraphicPack2::HasGuestFunctionCompanion() const
+{
+	fs::path packDir = m_rulesPath;
+	packDir.remove_filename();
+	std::error_code ec;
+	return fs::exists(packDir / "guest_functions.json", ec);
+}
+
 void GraphicPack2::ApplyPatchesForModule(const RPLModule* rpl)
 {
 	if (list_patchGroups.empty())

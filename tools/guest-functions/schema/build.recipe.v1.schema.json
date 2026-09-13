@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cemu.guest-function-build.v1",
+  "title": "Cemu guest-function build recipe",
+  "description": "Input recipe (build.json) that drives tools/guest-functions/build.py. Describes one身份-bound guest-function module: its sources, imports, hooks and optional Host SDK requirement. Addresses in this file are game-space where noted and are validated against the module map at build time.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "module", "identity_ref", "sources"],
+  "properties": {
+    "schema": {"const": "cemu.guest-function-build.v1"},
+    "module": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]{1,64}$",
+      "description": "Logical module name, unique within a package."
+    },
+    "identity_ref": {
+      "type": "string",
+      "description": "Relative path to the identity.json this module binds to."
+    },
+    "abi_profile": {
+      "type": "string",
+      "enum": ["ppc32-eabi-v1"],
+      "default": "ppc32-eabi-v1"
+    },
+    "max_module_bytes": {
+      "type": "integer",
+      "minimum": 4096,
+      "maximum": 262144,
+      "default": 262144,
+      "description": "Upper bound on the module's total codecave allocation. Hard cap is 256 KiB in v1 (spec 4.3)."
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "lang"],
+        "properties": {
+          "path": {"type": "string"},
+          "lang": {"type": "string", "enum": ["c", "cpp", "asm"]},
+          "extra_flags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "default": []
+          }
+        }
+      }
+    },
+    "include_dirs": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": []
+    },
+    "imports": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "kind"],
+        "properties": {
+          "symbol": {"type": "string"},
+          "kind": {
+            "type": "string",
+            "enum": ["guest_function", "guest_data", "rpl_export", "sdk_export"]
+          },
+          "guest_va": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295,
+            "description": "For guest_function/guest_data: absolute guest VA of the target (validated against the module map)."
+          },
+          "rpl_module": {"type": "string"},
+          "rpl_symbol": {"type": "string"},
+          "sdk_export_id": {"type": "integer", "minimum": 1, "maximum": 65535},
+          "abi_evidence": {"type": "string"},
+          "original_bytes": {
+            "type": "string",
+            "pattern": "^([0-9a-fA-F]{2})*$",
+            "description": "Expected original bytes (hex) at guest_va, for fingerprint verification."
+          }
+        }
+      }
+    },
+    "hooks": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "guest_va", "target_symbol"],
+        "properties": {
+          "kind": {"type": "string", "enum": ["callsite", "entry", "manual"]},
+          "guest_va": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+          "target_symbol": {
+            "type": "string",
+            "description": "Module symbol the hook redirects to."
+          },
+          "original_bytes": {
+            "type": "string",
+            "pattern": "^([0-9a-fA-F]{2})+$",
+            "description": "Expected original bytes (hex) at guest_va, verified before the hook is installed and, for entry hooks, replayed into the trampoline."
+          },
+          "original_policy": {
+            "type": "string",
+            "enum": ["none", "import_original", "trampoline"],
+            "default": "none",
+            "description": "How the wrapper reaches the original function: not at all, direct import (callsite), or a generated original trampoline (entry)."
+          },
+          "original_symbol": {
+            "type": "string",
+            "description": "For import_original/trampoline: the module import symbol bound to the original entry."
+          },
+          "continuation_bytes": {
+            "type": "string",
+            "pattern": "^([0-9a-fA-F]{2})*$",
+            "description": "For manual hooks: the overwritten bytes the .S bridge must replay."
+          },
+          "abi_profile": {"type": "string", "enum": ["ppc32-eabi-v1"], "default": "ppc32-eabi-v1"}
+        }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Present only for modules that use the Custom SDK.",
+      "required": ["min_host_abi"],
+      "properties": {
+        "min_host_abi": {"type": "integer", "minimum": 1},
+        "required_exports": {"type": "array", "items": {"type": "string"}, "default": []},
+        "optional_exports": {"type": "array", "items": {"type": "string"}, "default": []}
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 #include "Cafe/GraphicPack/GraphicPack2.h"
+#include "Cafe/GuestPatch/GuestPatchHost.h"
 #include "Common/FileStream.h"
 #include "Cemu/PPCAssembler/ppcAssembler.h"
 #include "Cafe/OS/RPL/rpl_structs.h"
@@ -693,11 +694,16 @@ void GraphicPack2::NotifyModuleLoaded(const RPLModule* rpl)
 	std::lock_guard<std::recursive_mutex> lock(mtx_patches);
 	list_modules.emplace_back(rpl);
 
+	// Guest-function modules (guest_functions.json companions) are prepared and
+	// committed here, after RPL linking, alongside legacy patch_*.asm groups.
+	GuestPatch::Host::OnModuleLoaded(rpl);
+
 	// todo - iterate all active graphic packs and apply any matching patch groups
 }
 
 void GraphicPack2::NotifyModuleUnloaded(const RPLModule* rpl)
 {
 	std::lock_guard<std::recursive_mutex> lock(mtx_patches);
+	GuestPatch::Host::OnModulesUnloaded();
 	list_modules.erase(std::remove(list_modules.begin(), list_modules.end(), rpl), list_modules.end());
 }

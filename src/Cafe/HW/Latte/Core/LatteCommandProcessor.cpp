@@ -13,6 +13,7 @@
 #include "Cafe/HW/Latte/Core/LattePM4.h"
 #include "Cafe/HW/Latte/Core/LatteSurfaceCopy.h"
 #include "Cafe/Diagnostics/GuestProfiler.h"
+#include "Cafe/GuestPatch/GuestRenderScope.h"
 
 #include "Cafe/OS/libs/coreinit/coreinit_Time.h"
 #include "Cafe/OS/libs/TCL/TCL.h" // TCL currently handles the GPU command ringbuffer
@@ -62,6 +63,8 @@ namespace
 		case IT_HLE_STRUCTURED_DRAW:
 			return LatteCommandPacketCategory::Draw;
 		case IT_HLE_GUEST_GPU_TAG:
+			return LatteCommandPacketCategory::Other;
+		case IT_HLE_GUEST_RENDER_SCOPE:
 			return LatteCommandPacketCategory::Other;
 		case IT_SET_CONTEXT_REG:
 		case IT_LOAD_CONTEXT_REG:
@@ -1459,6 +1462,41 @@ LatteCMDPtr LatteCP_itHLEGuestGpuTag(LatteCMDPtr cmd, uint32 nWords)
 	return cmd;
 }
 
+LatteCMDPtr LatteCP_itHLEGuestRenderScope(LatteCMDPtr cmd, uint32 nWords)
+{
+	cemu_assert_debug(nWords == IT_HLE_GUEST_RENDER_SCOPE_WORDS);
+	if (nWords != IT_HLE_GUEST_RENDER_SCOPE_WORDS)
+		return cmd + nWords;
+	const uint32 control = LatteReadCMD();
+	const uint32 scopeId = LatteReadCMD();
+	const uint32 generation = LatteReadCMD();
+	const uint32 titleEpoch = LatteReadCMD();
+	const uint32 frameIdLo = LatteReadCMD();
+	const uint32 frameIdHi = LatteReadCMD();
+	const uint32 phase = LatteReadCMD();
+	const uint32 poseSnapshotId = LatteReadCMD();
+	const bool isBegin = (control & IT_HLE_GUEST_RENDER_SCOPE_BEGIN) != 0;
+	const uint32 viewIndex = control & IT_HLE_GUEST_RENDER_SCOPE_VIEW_MASK;
+	const uint64 frameId = ((uint64)frameIdHi << 32) | frameIdLo;
+	if (isBegin)
+	{
+		GuestPatch::RenderScopeDesc desc;
+		desc.titleEpoch = titleEpoch;
+		desc.moduleGeneration = generation;
+		desc.frameId = frameId;
+		desc.viewIndex = viewIndex;
+		desc.phase = phase;
+		desc.poseSnapshotId = poseSnapshotId;
+		desc.scopeId = scopeId;
+		GuestPatch::RenderScopeConsumer::Instance().OnBegin(desc);
+	}
+	else
+	{
+		GuestPatch::RenderScopeConsumer::Instance().OnEnd(scopeId, frameId, viewIndex);
+	}
+	return cmd;
+}
+
 MPTR _tempIndexArrayMPTR = MPTR_NULL;
 
 LatteCMDPtr LatteCP_itDrawImmediate(LatteCMDPtr cmd, uint32 nWords, DrawPassContext& drawPassCtx)
@@ -1854,6 +1892,11 @@ void LatteCP_processCommandBuffer_continuousDrawPass(DrawPassContext& drawPassCt
 					LatteCP_itHLEGuestGpuTag(cmdData, nWords);
 					break;
 				}
+				case IT_HLE_GUEST_RENDER_SCOPE:
+				{
+					LatteCP_itHLEGuestRenderScope(cmdData, nWords);
+					break;
+				}
 				case IT_DRAW_INDEX_2:
 				{
 					LatteCP_itDrawIndex2(cmdData, nWords, drawPassCtx);
@@ -2088,6 +2131,11 @@ void LatteCP_processCommandBuffer(DrawPassContext& drawPassCtx)
 				case IT_HLE_GUEST_GPU_TAG:
 				{
 					LatteCP_itHLEGuestGpuTag(cmdData, nWords);
+				}
+				break;
+				case IT_HLE_GUEST_RENDER_SCOPE:
+				{
+					LatteCP_itHLEGuestRenderScope(cmdData, nWords);
 				}
 				break;
 				case IT_DRAW_INDEX_IMMD:
@@ -2394,6 +2442,12 @@ void LatteCP_ProcessRingbuffer()
 			case IT_HLE_GUEST_GPU_TAG:
 			{
 				LatteCP_itHLEGuestGpuTag(cmd, nWords);
+				timerRecheck += CP_TIMER_RECHECK / 1024;
+				break;
+			}
+			case IT_HLE_GUEST_RENDER_SCOPE:
+			{
+				LatteCP_itHLEGuestRenderScope(cmd, nWords);
 				timerRecheck += CP_TIMER_RECHECK / 1024;
 				break;
 			}
@@ -2801,6 +2855,11 @@ void LatteCP_DebugPrintCmdBuffer(uint32be* bufferPtr, uint32 size)
 			case IT_HLE_GUEST_GPU_TAG:
 			{
 				cemuLog_log(LogType::Force, "{} IT_HLE_GUEST_GPU_TAG", strPrefix);
+				break;
+			}
+			case IT_HLE_GUEST_RENDER_SCOPE:
+			{
+				cemuLog_log(LogType::Force, "{} IT_HLE_GUEST_RENDER_SCOPE", strPrefix);
 				break;
 			}
 			case IT_HLE_TRIGGER_SCANBUFFER_SWAP:

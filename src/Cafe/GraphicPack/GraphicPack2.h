@@ -303,6 +303,10 @@ public:
 	void ApplyPatchesForModule(const RPLModule* rpl);
 	void RevertPatchesForModule(const RPLModule* rpl);
 
+	// True if this pack has a guest_functions.json companion (guest-function
+	// module) next to its rules.txt.
+	bool HasGuestFunctionCompanion() const;
+
 	static void NotifyModuleLoaded(const RPLModule* rpl);
 	static void NotifyModuleUnloaded(const RPLModule* rpl);
 };

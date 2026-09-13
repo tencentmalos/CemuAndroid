@@ -46,6 +46,18 @@ add_library(CemuCafe
   GraphicPack/GraphicPack2Patches.h
   GraphicPack/GraphicPack2PatchesParser.cpp
   GraphicPack/GraphicPackError.h
+  GuestPatch/GuestPatchModule.cpp
+  GuestPatch/GuestPatchModule.h
+  GuestPatch/GuestPatchRelocator.cpp
+  GuestPatch/GuestPatchRelocator.h
+  GuestPatch/GuestPatchLoader.cpp
+  GuestPatch/GuestPatchLoader.h
+  GuestPatch/GuestPatchSdk.cpp
+  GuestPatch/GuestPatchSdk.h
+  GuestPatch/GuestRenderScope.cpp
+  GuestPatch/GuestRenderScope.h
+  GuestPatch/GuestPatchHost.cpp
+  GuestPatch/GuestPatchHost.h
   HW/ACR/ACR.cpp
   HW/AI/AI.cpp
   HW/AI/AI.h

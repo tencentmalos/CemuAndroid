@@ -97,6 +97,13 @@ namespace GX2
 	GuestGpuTagEmitResult GX2EmitGuestGpuTag(bool begin, uint32 sectionId,
 		uint32 guestThreadId, uint32 guestLr, uint32 generation);
 
+	// Guest render scope (spec 9). Emits an ordered Begin/End scope packet into
+	// the current main GX2 command stream. Returns DisplayList if called during
+	// display-list recording (the scope must wrap the list's execution instead).
+	GuestGpuTagEmitResult GX2EmitGuestRenderScope(bool begin, uint32 control,
+		uint32 scopeId, uint32 generation, uint32 titleEpoch,
+		uint32 frameIdLo, uint32 frameIdHi, uint32 phase, uint32 poseSnapshotId);
+
 	uint64 GX2GetLastSubmittedTimeStamp();
 	uint64 GX2GetRetiredTimeStamp();
 	bool GX2WaitTimeStamp(uint64 tsWait);

@@ -1,0 +1,58 @@
+{
+  "schema": "cemu.guest-function-build.v1",
+  "module": "u-king",
+  "identity_ref": "../../../identity/analysis-manifest.json",
+  "abi_profile": "ppc32-eabi-v1",
+  "max_module_bytes": 65536,
+  "sources": [
+    {
+      "path": "src/precalc_probe.cpp",
+      "lang": "cpp"
+    },
+    {
+      "path": "src/sdk_call.S",
+      "lang": "asm"
+    },
+    {
+      "path": "src/precalc_bridge.S",
+      "lang": "asm"
+    }
+  ],
+  "include_dirs": [
+    "../../../../../../../guest/custom/v1/include"
+  ],
+  "imports": [
+    {
+      "symbol": "cemu_sdk_gateway",
+      "kind": "sdk_export",
+      "sdk_export_id": 5,
+      "abi_evidence": "SDK v1 dispatcher gateway (RPLLoader_MakePPCCallable)"
+    },
+    {
+      "symbol": "uking_System_preCalc_original",
+      "kind": "guest_function",
+      "guest_va": 46497356,
+      "abi_evidence": "trampoline-bound original of System::preCalc; true entry 0x02C57E4C (mflr r0), verified from RPX text + runtime"
+    }
+  ],
+  "hooks": [
+    {
+      "kind": "entry",
+      "guest_va": 46497356,
+      "target_symbol": "guest_precalc_bridge",
+      "original_policy": "trampoline",
+      "original_symbol": "uking_System_preCalc_original",
+      "original_bytes": "7c0802a6",
+      "abi_profile": "ppc32-eabi-v1"
+    }
+  ],
+  "host": {
+    "min_host_abi": 1,
+    "required_exports": [
+      "math.transform_batch"
+    ],
+    "optional_exports": [
+      "xr.read_input"
+    ]
+  }
+}
