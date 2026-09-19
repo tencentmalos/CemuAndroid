@@ -1,0 +1,646 @@
+{
+ "NES Remix 1": {
+  "zh_name": "FC红白机复古游戏合集",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH001"
+  ]
+ },
+ "Wii Party U": {
+  "zh_name": "Wii派对U",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH003"
+  ]
+ },
+ "Darksiders II": {
+  "zh_name": "暗黑血统 战神版",
+  "kinds": [
+   "官方简中"
+  ],
+  "teams": [],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH005"
+  ]
+ },
+ "Another World 20th Anniversary Edition": {
+  "zh_name": "傲气雄鹰 周年版",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "欧版"
+  ],
+  "ids": [
+   "WIIUCH007"
+  ]
+ },
+ "Jotun: Valhalla Edition": {
+  "zh_name": "北欧巨神瓦尔哈拉 约顿",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH008"
+  ]
+ },
+ "Shovel Knight": {
+  "zh_name": "铲子骑士",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH010"
+  ]
+ },
+ "Super Mario 3D World": {
+  "zh_name": "超级马里奥3D世界",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "咸鱼汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH011"
+  ]
+ },
+ "Super Mario Maker": {
+  "zh_name": "超级马里奥制造",
+  "kinds": [
+   "简体汉化v1.4"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH013"
+  ]
+ },
+ "Super Meat Boy": {
+  "zh_name": "超级食肉男孩",
+  "kinds": [
+   "官方繁中"
+  ],
+  "teams": [],
+  "regions": [
+   "欧版"
+  ],
+  "ids": [
+   "WIIUCH015"
+  ]
+ },
+ "Assassin's Creed III": {
+  "zh_name": "刺客信条3",
+  "kinds": [
+   "繁体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH016"
+  ]
+ },
+ "Assassin's Creed IV: Black Flag": {
+  "zh_name": "刺客信条4 黑旗",
+  "kinds": [
+   "繁体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH017"
+  ]
+ },
+ "Monster Hunter 3 Ultimate": {
+  "zh_name": "怪物猎人3G HD",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "3DS汉化吧汉化组+ACG汉化组"
+  ],
+  "regions": [
+   "日版"
+  ],
+  "ids": [
+   "WIIUCH018"
+  ]
+ },
+ "Child of Light": {
+  "zh_name": "光之子",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH019"
+  ]
+ },
+ "Tokyo Mirage Sessions": {
+  "zh_name": "幻影异闻录",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "日版"
+  ],
+  "ids": [
+   "WIIUCH021"
+  ]
+ },
+ "Watch Dogs": {
+  "zh_name": "看门狗",
+  "kinds": [
+   "繁体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "欧版"
+  ],
+  "ids": [
+   "WIIUCH023"
+  ]
+ },
+ "LEGO City: Undercover": {
+  "zh_name": "乐高都市 卧底风云",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "欧版"
+  ],
+  "ids": [
+   "WIIUCH024"
+  ]
+ },
+ "LEGO Marvel Super Heroes": {
+  "zh_name": "乐高漫威超级英雄",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH025"
+  ]
+ },
+ "LEGO Jurassic World": {
+  "zh_name": "乐高侏罗纪世界",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH026"
+  ]
+ },
+ "Rayman Legends": {
+  "zh_name": "雷曼 传奇",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH027"
+  ]
+ },
+ "Bayonetta 2": {
+  "zh_name": "猎天使魔女2",
+  "kinds": [
+   "简体汉化v2.0"
+  ],
+  "teams": [
+   "游侠LMAO汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH028"
+  ]
+ },
+ "Project Zero: Maiden of Black Water": {
+  "zh_name": "零 濡鸦之巫女",
+  "kinds": [
+   "简体汉化v2"
+  ],
+  "teams": [
+   "ACG汉化组"
+  ],
+  "regions": [
+   "日版"
+  ],
+  "ids": [
+   "WIIUCH030"
+  ]
+ },
+ "Mario vs. Donkey Kong: Tipping Stars": {
+  "zh_name": "马里奥vs大金刚 大家的迷你岛",
+  "kinds": [
+   "繁体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH031"
+  ]
+ },
+ "Mario Party 10": {
+  "zh_name": "马里奥派对10",
+  "kinds": [
+   "简繁体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH033"
+  ]
+ },
+ "Mario Kart 8": {
+  "zh_name": "马里奥赛车8",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH035"
+  ]
+ },
+ "Captain Toad: Treasure Tracker": {
+  "zh_name": "蘑菇队长 奇诺比奥 宝藏追踪者",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "猫星汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH039"
+  ]
+ },
+ "Splatoon": {
+  "zh_name": "喷射战士",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH042"
+  ]
+ },
+ "Pikmin 3": {
+  "zh_name": "皮克敏3",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "猫星汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH044"
+  ]
+ },
+ "Oddworld: New 'n' Tasty!": {
+  "zh_name": "奇异世界 阿比逃亡记 新鲜可口",
+  "kinds": [
+   "简体汉化v2.0"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "欧版"
+  ],
+  "ids": [
+   "WIIUCH046"
+  ]
+ },
+ "Nintendo Land": {
+  "zh_name": "任天堂大陆",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH048"
+  ]
+ },
+ "The Legend of Zelda: The Wind Waker HD": {
+  "zh_name": "塞尔达传说 风之杖 HD",
+  "kinds": [
+   "简体汉化v1.01"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "日版"
+  ],
+  "ids": [
+   "WIIUCH050"
+  ]
+ },
+ "The Legend of Zelda: Breath of the Wild": {
+  "zh_name": "塞尔达传说 荒野之息",
+  "kinds": [
+   "简繁体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "日版"
+  ],
+  "ids": [
+   "WIIUCH051"
+  ]
+ },
+ "The Legend of Zelda: Twilight Princess HD": {
+  "zh_name": "塞尔达传说 黄昏公主 HD",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "ACG汉化组"
+  ],
+  "regions": [
+   "欧版"
+  ],
+  "ids": [
+   "WIIUCH052"
+  ]
+ },
+ "Resident Evil Revelations": {
+  "zh_name": "生化危机 启示录 HD",
+  "kinds": [
+   "繁体汉化"
+  ],
+  "teams": [
+   "扑家汉化组"
+  ],
+  "regions": [
+   "欧版"
+  ],
+  "ids": [
+   "WIIUCH053"
+  ]
+ },
+ "Minecraft: Wii U Edition": {
+  "zh_name": "我的世界",
+  "kinds": [
+   "官方简中"
+  ],
+  "teams": [],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH055"
+  ]
+ },
+ "Minecraft: Story Mode": {
+  "zh_name": "我的世界 故事模式",
+  "kinds": [
+   "官方简中"
+  ],
+  "teams": [],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH057"
+  ]
+ },
+ "New Super Luigi U": {
+  "zh_name": "新超级路易吉U",
+  "kinds": [
+   "简体汉化v20190223"
+  ],
+  "teams": [
+   "91wii+无名汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH058"
+  ]
+ },
+ "New Super Mario Bros. U": {
+  "zh_name": "新超级马里奥兄弟U",
+  "kinds": [
+   "简体汉化v20190223"
+  ],
+  "teams": [
+   "91wii+无名汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH059"
+  ]
+ },
+ "Kirby and the Rainbow Curse": {
+  "zh_name": "星之卡比 彩虹诅咒",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "猫星汉化组"
+  ],
+  "regions": [
+   "美版"
+  ],
+  "ids": [
+   "WIIUCH061"
+  ]
+ },
+ "Yoshi's Woolly World": {
+  "zh_name": "耀西的毛线世界",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "日版"
+  ],
+  "ids": [
+   "WIIUCH063"
+  ]
+ },
+ "The Binding of Isaac: Rebirth": {
+  "zh_name": "以撒的结合 重生",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "91WII汉化组"
+  ],
+  "regions": [
+   "欧版"
+  ],
+  "ids": [
+   "WIIUCH064"
+  ]
+ },
+ "Xenoblade Chronicles X": {
+  "zh_name": "异度之刃X",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "游侠LMAO汉化组"
+  ],
+  "regions": [
+   "日版"
+  ],
+  "ids": [
+   "WIIUCH065"
+  ]
+ },
+ "Paper Mario: Color Splash": {
+  "zh_name": "纸片马里奥 彩色喷涂",
+  "kinds": [
+   "简体汉化"
+  ],
+  "teams": [
+   "漫游汉化组+91Wii汉化组"
+  ],
+  "regions": [
+   "日版"
+  ],
+  "ids": [
+   "WIIUCH069"
+  ]
+ },
+ "Puyo Puyo Tetris": {
+  "zh_name": "魔法气泡噗哟噗哟俄罗斯方块",
+  "kinds": [
+   "官中移植简体汉化"
+  ],
+  "teams": [],
+  "regions": [],
+  "ids": [
+   "WIIUCH104"
+  ]
+ },
+ "Just Dance 2015": {
+  "zh_name": "舞力全开 东方版",
+  "kinds": [
+   "中文歌曲"
+  ],
+  "teams": [],
+  "regions": [],
+  "ids": [
+   "WIIUCH119"
+  ]
+ }
+}
